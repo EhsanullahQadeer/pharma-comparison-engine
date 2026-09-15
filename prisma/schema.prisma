@@ -81,6 +81,12 @@ enum CorrectionStatus {
   REJECTED
 }
 
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
 model StaffUser {
   id           String    @id @default(cuid())
   email        String    @unique
@@ -96,6 +102,7 @@ model StaffUser {
   authoredArticles Article[]    @relation("ArticleAuthor")
   reviewedArticles Article[]    @relation("ArticleReviewer")
   ownedCorrections Correction[] @relation("CorrectionOwner")
+  auditLogs        AuditLog[]   @relation("AuditLogActor")
 }
 
 // Trading/legal names, website, regulator references, dispensing partner, service regions (roadmap §4).
@@ -267,4 +274,23 @@ model Referral {
   clickCount     Int      @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+// Generic "who changed what, when" trail for every model — separate from PriceHistory, which only
+// records accepted offer-price changes for the price engine. entityType/entityId are a string
+// pair (not a Prisma relation) since one log must be able to point at any model in this schema;
+// enforced/interpreted at the application layer, same approach as Evidence's polymorphic parent.
+model AuditLog {
+  id         String      @id @default(cuid())
+  actorId    String?
+  actor      StaffUser?  @relation("AuditLogActor", fields: [actorId], references: [id], onDelete: SetNull)
+  action     AuditAction
+  entityType String
+  entityId   String
+  changes    Json?
+  createdAt  DateTime    @default(now())
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([createdAt])
 }

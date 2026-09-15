@@ -1,0 +1,32 @@
+echo "Running pre-push checks..."
+
+echo "Checking for pending Prisma migrations..."
+if ! npx prisma migrate status | grep -q "Database schema is up to date"; then
+  echo "Pending migrations detected - applying with 'prisma migrate deploy'..."
+  npx prisma migrate deploy || {
+    echo "Migration failed. Push aborted."
+    exit 1
+  }
+else
+  echo "No pending migrations."
+fi
+
+echo "Applying ESLint auto-fixes..."
+npx eslint . --fix || {
+  echo "ESLint auto-fix failed. Push aborted."
+  exit 1
+}
+
+echo "Running lint..."
+npm run lint || {
+  echo "Lint failed. Push aborted."
+  exit 1
+}
+
+echo "Running build..."
+npm run build || {
+  echo "Build failed. Push aborted."
+  exit 1
+}
+
+echo "All pre-push checks passed."

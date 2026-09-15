@@ -10,8 +10,8 @@ Status legend: ⬜ Not started · 🟨 In progress · 🟩 Mostly complete · �
 | --- | --- | --- | --- |
 | M1 | Scope, compliance & data-source feasibility | 🟨 | [01-scope-and-compliance.md](01-scope-and-compliance.md) |
 | M2 | Layout, routes/pages, content & theme | 🟨 | [02-layout-theme-foundation.md](02-layout-theme-foundation.md) |
-| M3a | Admin dashboard, auth & data model | ⬜ | [03-admin-dashboard-data-model.md](03-admin-dashboard-data-model.md) |
-| M3b | Pharmacy listing — manual & automatic | ⬜ | [04-pharmacy-listing.md](04-pharmacy-listing.md) |
+| M3a | Admin dashboard, auth & data model | ✅ | [03-admin-dashboard-data-model.md](03-admin-dashboard-data-model.md) |
+| M3b | Pharmacy listing — manual & automatic | 🟨 | [04-pharmacy-listing.md](04-pharmacy-listing.md) |
 | M4/M5 | Price comparison engine — collection & calculation | ⬜ | [05-price-comparison-engine.md](05-price-comparison-engine.md) |
 | M6 | Educational content, trust & search discovery | ⬜ | [06-content-trust-seo.md](06-content-trust-seo.md) |
 | M7 | External referrals, corrections & commercial reporting | ⬜ | [07-referrals-reporting.md](07-referrals-reporting.md) |
@@ -21,6 +21,8 @@ Status legend: ⬜ Not started · 🟨 In progress · 🟩 Mostly complete · �
 
 ## Recent scope updates
 
+- **2026-09-15, later same day:** M3a completed — every remaining admin-dashboard checklist item (provider detail/edit/status-transitions/archive, ProductVariant/Offer/Discount CRUD, an Evidence/Correction review queue, staff role management, an audit-log viewer, and a Recharts analytics build) is built and browser-verified. See `03-admin-dashboard-data-model.md` for detail. M3b's remaining scope (discovery adapters, public submission form, pilot run) is unchanged.
+- **2026-09-15:** Corrected this index's status column — M3a and M3b had been left at ⬜ Not started after work on both actually began (schema, auth, seed data, admin layout, provider list/create screens for M3a; the state-machine enum and manual-entry form for M3b). Both now show 🟨 In progress, matching their own files.
 - **2026-09-14:** Reviewed Monj's live navigation directly (Guides / Side Effects / Tools / Trust mega-menus, a sticky trust bar, and a cited-article template). This substantially expanded M6's content taxonomy (see that file for the full guides/side-effects breakdown, including a **Dangerous Interactions** category — nitrates, alpha-blockers, poppers — that has no Monj equivalent but is safety-critical for PDE5 inhibitors), added mega-menu nav + sticky trust bar to M2, and reclassified M9's "tools": static reference content (medicine comparison, onset/duration, dose-strength charts) moved to M5/M6 as core scope, leaving M9 with only genuinely optional or higher-risk items (accounts-gated features, a tracker app, and an explicitly deferred personalisation quiz).
 - **2026-09-14, later same day:** Corrected the first pass above — it had mostly relabelled Monj's own column names rather than thinking from the ED patient journey. Rebuilt M6's Guides taxonomy around three genuinely ED-specific categories with no Monj equivalent (**Understanding ED** — causes, cardiovascular link, prevalence; **Beyond Medication** — non-drug treatment options; **Talking About It** — stigma, partner communication), added a **Cardiovascular Safety Before Starting** side-effects category distinct from drug interactions, and added two ED-specific tools (IIEF-5 self-assessment explainer, cardiovascular pre-screening checklist) reclassified as core M6 scope in `09-retention-tools.md` — contrasted explicitly against the personalisation quiz that stays out of scope.
 

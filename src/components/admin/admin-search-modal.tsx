@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { Plus } from "lucide-react";
-import { useRouter } from "@/hooks/useRouter";
+
 import {
   CommandDialog,
   CommandEmpty,
@@ -10,13 +9,11 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command";
+} from "@/components/common/command";
+import { useRouter } from "@/hooks/useRouter";
 import { adminNavSections } from "@/lib/admin-nav";
 
-const quickLinks = [
-  ...adminNavSections.flatMap((section) => section.items),
-  { href: "/admin/pharmacies/new", label: "Add pharmacy", icon: Plus },
-];
+const quickLinks = adminNavSections.flatMap((section) => section.items);
 
 export function AdminSearchModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const router = useRouter();
@@ -38,7 +35,7 @@ export function AdminSearchModal({ open, onOpenChange }: { open: boolean; onOpen
   }
 
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange} title="Search" description="Jump to an admin page">
+    <CommandDialog open={open} onOpenChange={onOpenChange} title="Search" description="Jump to an admin page" className="p-4">
       <CommandInput placeholder="Search pages…" />
       <CommandList>
         <CommandEmpty>No matching pages.</CommandEmpty>

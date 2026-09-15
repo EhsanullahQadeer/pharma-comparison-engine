@@ -1,10 +1,12 @@
 # M3b — Pharmacy Listing: Manual & Automatic
 
-**Status:** 🟨 In progress — manual entry is built; the state machine is modelled but not staff-editable, and no discovery adapter, review queue or public submission form exists yet.
+**Status:** 🟨 In progress — manual entry and the staff-editable state machine are built; no discovery adapter, review queue or public submission form exists yet.
 **Depends on:** M3a (schema must exist first)
 **Roadmap:** [monj-functionality-and-ed-milestones.md § Milestone 3](../monj-functionality-and-ed-milestones.md#milestone-3--provider-directory-catalogue-and-staff-editing), [§4.1–4.2](../monj-functionality-and-ed-milestones.md#41-where-do-we-get-uk-pharmacy-listings)
 
-**2026-09-15 implementation update:** M3a's schema landed with the `ProviderStatus` enum modelling this file's state machine (`DISCOVERED → IDENTITY_VERIFIED → ED_CATALOGUE_VERIFIED → PUBLISHED → TEMPORARILY_WITHHELD/ARCHIVED`) and a staff-facing manual-entry form at `/admin/pharmacies/new` — every new provider lands as `DISCOVERED`, matching "first-time provider approval stays manual." Not yet built: a staff UI to move a provider through the later states, any of the six discovery adapters, the review queue, or the public "suggest a provider" form (`/ed/pharmacies/submit` is still the coming-soon preview). The identity-resolution model (separate legal entity/brand/domain/premises records for multi-brand dispensers, per §4.2 step 2) also remains a flat `Provider` record for now — a deliberate simplification for the first manual-entry pass, not an oversight; see the comment in `prisma/schema.prisma`.
+**2026-09-15 implementation update:** M3a's schema landed with the `ProviderStatus` enum modelling this file's state machine (`DISCOVERED → IDENTITY_VERIFIED → ED_CATALOGUE_VERIFIED → PUBLISHED → TEMPORARILY_WITHHELD/ARCHIVED`) and a staff-facing manual-entry form at `/admin/pharmacies/new` — every new provider lands as `DISCOVERED`, matching "first-time provider approval stays manual." Not yet built: any of the six discovery adapters, the review queue, or the public "suggest a provider" form (`/ed/pharmacies/submit` is still the coming-soon preview). The identity-resolution model (separate legal entity/brand/domain/premises records for multi-brand dispensers, per §4.2 step 2) also remains a flat `Provider` record for now — a deliberate simplification for the first manual-entry pass, not an oversight; see the comment in `prisma/schema.prisma`.
+
+**2026-09-15, later same day:** The staff UI to advance a provider through the state machine landed as part of finishing M3a — `/admin/pharmacies/[id]` now has a status-transition control (`src/lib/provider-status-transitions.ts`'s explicit transition map + role check: catalogue editors can progress a provider forward and raise/clear `TEMPORARILY_WITHHELD`; only administrators can archive or reinstate from `ARCHIVED`). Discovery adapters, the review queue and the public submission form are still this milestone's real remaining scope.
 
 ## What we're building
 
@@ -41,7 +43,7 @@ Per the roadmap, this explicitly does **not** mean auto-publishing scraped data 
 ## Checklist
 
 - [x] Manual provider-entry form (staff-facing) — `/admin/pharmacies/new`
-- [ ] Provider status state machine implemented (`discovered → … → published/archived`) — enum modelled in `prisma/schema.prisma`; no staff UI to advance a provider past `DISCOVERED` yet
+- [x] Provider status state machine implemented (`discovered → … → published/archived`) — enum modelled in `prisma/schema.prisma`; staff UI at `/admin/pharmacies/[id]`
 - [ ] Public "suggest a provider" form
 - [ ] NHSBSA CPL + Contractor Details adapter
 - [ ] NHS ODS FHIR R4 adapter

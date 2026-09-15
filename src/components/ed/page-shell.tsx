@@ -1,5 +1,6 @@
-import type { ReactNode } from "react";
 import Link from "@/components/Link";
+
+import type { ReactNode } from "react";
 
 export function PageShell({ title, eyebrow, description, children }: { title: string; eyebrow: string; description: string; children: ReactNode }) {
   return (

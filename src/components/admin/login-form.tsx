@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+
 import { staffSignIn, type SignInState } from "@/actions/auth/sign-in";
 import { Button } from "@/components/common/button";
 import { Input } from "@/components/common/input";
@@ -21,7 +22,7 @@ export function LoginForm() {
         <Label htmlFor="password">Password</Label>
         <Input id="password" name="password" type="password" autoComplete="current-password" required />
       </div>
-      {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+      {!!state.error && <p className="text-sm text-destructive">{state.error}</p>}
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Signing in…" : "Sign in"}
       </Button>

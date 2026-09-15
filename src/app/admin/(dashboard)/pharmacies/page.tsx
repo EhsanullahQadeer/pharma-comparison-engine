@@ -1,13 +1,15 @@
-import type { Metadata } from "next";
-import { Plus, Search } from "lucide-react";
+import { Search } from "lucide-react";
+
 import { getProviders } from "@/actions/providers/providers";
-import Link from "@/components/Link";
-import { buttonVariants } from "@/components/common/button";
+import { AddPharmacyModal } from "@/components/admin/add-pharmacy-modal";
 import { Badge } from "@/components/common/badge";
-import { Input } from "@/components/common/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/card";
+import { Input } from "@/components/common/input";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/common/table";
+import Link from "@/components/Link";
 import { providerStatusLabels, providerStatusBadgeVariant, regulatorTypeLabels } from "@/lib/provider-labels";
+
+import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Pharmacies", robots: { index: false, follow: false } };
 
@@ -23,10 +25,7 @@ export default async function AdminPharmaciesPage(props: PageProps<"/admin/pharm
           <h1 className="text-2xl font-semibold">Pharmacies</h1>
           <p className="mt-1 text-sm text-muted-foreground">{providers.length} provider{providers.length === 1 ? "" : "s"}{query ? ` matching "${query}"` : " in the catalogue"}.</p>
         </div>
-        <Link href="/admin/pharmacies/new" className={buttonVariants({ className: "gap-1.5" })}>
-          <Plus aria-hidden="true" className="size-4" />
-          Add pharmacy
-        </Link>
+        <AddPharmacyModal />
       </div>
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-4 space-y-0">
@@ -36,9 +35,9 @@ export default async function AdminPharmaciesPage(props: PageProps<"/admin/pharm
             <Input name="q" type="search" defaultValue={query} placeholder="Search by name or domain…" className="pl-8" />
           </form>
         </CardHeader>
-        <CardContent className="px-0">
+        <CardContent>
           {providers.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+            <p className="py-8 text-center text-sm text-muted-foreground">
               {query ? "No providers match that search." : "No providers yet. Add the first pharmacy manually to start the catalogue."}
             </p>
           ) : (
@@ -54,8 +53,12 @@ export default async function AdminPharmaciesPage(props: PageProps<"/admin/pharm
               </TableHeader>
               <TableBody>
                 {providers.map((provider) => (
-                  <TableRow key={provider.id}>
-                    <TableCell className="font-medium">{provider.tradingName}</TableCell>
+                  <TableRow key={provider.id} className="cursor-pointer hover:bg-muted/50">
+                    <TableCell className="font-medium">
+                      <Link href={`/admin/pharmacies/${provider.id}`} className="block hover:underline">
+                        {provider.tradingName}
+                      </Link>
+                    </TableCell>
                     <TableCell className="text-muted-foreground">{provider.websiteDomain}</TableCell>
                     <TableCell>{regulatorTypeLabels[provider.regulatorType]}</TableCell>
                     <TableCell className="text-muted-foreground">{provider.serviceRegions.join(", ") || "—"}</TableCell>

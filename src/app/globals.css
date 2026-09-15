@@ -59,7 +59,7 @@
   --popover: #f5f4ef;
   --popover-foreground: #151514;
   --primary: #2ee92b;
-  --primary-foreground: #ffffff;
+  --primary-foreground: #0a0a0a;
   --secondary: #e9e6dc;
   --secondary-foreground: #535146;
   --muted: #ede9de;
@@ -79,7 +79,7 @@
   --sidebar: #faf9f5;
   --sidebar-foreground: #3d3929;
   --sidebar-primary: #2ee92b;
-  --sidebar-primary-foreground: #ffffff;
+  --sidebar-primary-foreground: #0a0a0a;
   --sidebar-accent: #e9e6dc;
   --sidebar-accent-foreground: #535146;
   --sidebar-border: #dad9d4;
@@ -96,7 +96,7 @@
   --popover: #2a2822;
   --popover-foreground: #f5f4ef;
   --primary: #2ee92b;
-  --primary-foreground: #ffffff;
+  --primary-foreground: #0a0a0a;
   --secondary: #3a382f;
   --secondary-foreground: #d9d6c9;
   --muted: #322f28;
@@ -115,7 +115,7 @@
   --sidebar: #211f1a;
   --sidebar-foreground: #f5f4ef;
   --sidebar-primary: #2ee92b;
-  --sidebar-primary-foreground: #ffffff;
+  --sidebar-primary-foreground: #0a0a0a;
   --sidebar-accent: #3a382f;
   --sidebar-accent-foreground: #d9d6c9;
   --sidebar-border: oklch(1 0 0 / 10%);
@@ -145,4 +145,15 @@
   html {
     @apply font-sans;
   }
+}
+/* Hide number input spinner arrows */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }

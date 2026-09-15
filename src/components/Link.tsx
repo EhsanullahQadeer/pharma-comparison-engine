@@ -2,6 +2,7 @@
 
 import NextLink, { type LinkProps } from "next/link";
 import { type ComponentProps } from "react";
+
 import { start } from "@/lib/route-progress";
 
 export default function Link({

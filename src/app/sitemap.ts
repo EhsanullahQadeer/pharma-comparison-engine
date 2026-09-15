@@ -1,6 +1,7 @@
-import type { MetadataRoute } from "next";
 import { publicRoutes } from "@/lib/ed-pages";
 import { siteUrl } from "@/lib/site-url";
+
+import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   if (!siteUrl) return [];

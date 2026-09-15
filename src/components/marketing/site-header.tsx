@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
-import Link from "@/components/Link";
 import { ChevronDown, Menu, X, ArrowUpRight } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import Link from "@/components/Link";
 import { edHref, navigationGroups } from "@/lib/ed-pages";
 import { cn } from "@/lib/utils";
 

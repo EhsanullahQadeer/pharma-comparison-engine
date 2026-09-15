@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
 import Link from "@/components/Link";
+
+import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "ED page not found", description: "This page is not part of the ED platform. Explore the planned routes through build progress.", robots: { index: false } };
 

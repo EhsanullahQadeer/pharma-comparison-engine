@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "@/components/Link";
 import { AdminIconRail } from "@/components/admin/admin-icon-rail";
 import { AdminNav } from "@/components/admin/admin-nav";
+import Link from "@/components/Link";
 import { cn } from "@/lib/utils";
 
 export function AdminSidebar({ panelOpen, onTogglePanel }: { panelOpen: boolean; onTogglePanel: () => void }) {

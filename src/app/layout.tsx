@@ -1,8 +1,11 @@
-import type { Metadata } from "next";
 import { Outfit, Geist_Mono } from "next/font/google";
+
 import "./globals.css";
+import { ConfirmDialogHost } from "@/components/common/ConfirmDialogHost";
 import { RouteProgressBar } from "@/components/RouteProgressBar";
 import { siteUrl } from "@/lib/site-url";
+
+import type { Metadata } from "next";
 
 const fontSans = Outfit({
   variable: "--font-sans",
@@ -39,6 +42,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         />
         <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-0 focus:z-50 focus:rounded-lg focus:bg-background focus:p-4">Skip to content</a>
         <RouteProgressBar />
+        <ConfirmDialogHost />
         {children}
       </body>
     </html>

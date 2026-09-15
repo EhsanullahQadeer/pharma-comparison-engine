@@ -1,4 +1,5 @@
 import Image from "next/image";
+
 import { Badge } from "@/components/common/badge";
 
 const PRIORITIES = [
@@ -31,7 +32,7 @@ export function TestimonialsSection() {
         </Badge>
         <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
           A thoughtful approach to{" "}
-          <span className="bg-gradient-to-r from-[var(--chart-1)] via-[var(--chart-2)] to-[var(--chart-5)] bg-clip-text text-transparent">
+          <span className="bg-linear-to-r from-chart-1 via-chart-2 to-chart-5 bg-clip-text text-transparent">
             ED treatment information.
           </span>
         </h2>

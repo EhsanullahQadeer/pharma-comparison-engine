@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/common/card";
 import { ProviderForm } from "@/components/admin/provider-form";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/common/card";
+
+import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Add pharmacy", robots: { index: false, follow: false } };
 

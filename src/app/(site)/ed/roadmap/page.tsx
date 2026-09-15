@@ -1,8 +1,10 @@
-import type { Metadata } from "next";
 import { CheckCircle2, Circle } from "lucide-react";
-import Link from "@/components/Link";
+
 import { PageShell } from "@/components/ed/page-shell";
+import Link from "@/components/Link";
 import { deliveryStages, edHref, edPages } from "@/lib/ed-pages";
+
+import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "ED platform build progress", description: "What is built, what comes next and what remains in the ED pharmacy comparison platform.", robots: { index: false, follow: true } };
 

@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
 import { useRouter as useNextRouter } from "next/navigation";
+import { useMemo } from "react";
+
 import { start } from "@/lib/route-progress";
 
 export function useRouter() {

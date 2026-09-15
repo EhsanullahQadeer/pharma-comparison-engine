@@ -1,15 +1,16 @@
 "use client";
 
 import { type ReactNode, useState } from "react";
-import { AdminSidebar } from "@/components/admin/admin-sidebar";
+
 import { AdminHeader } from "@/components/admin/admin-header";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
-} from "@/components/ui/sheet";
+} from "@/components/common/sheet";
 import type { StaffRole } from "@/generated/prisma/client";
 
 export function AdminShell({

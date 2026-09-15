@@ -1,10 +1,12 @@
 "use client";
 
 import { useActionState } from "react";
-import { createProvider, type CreateProviderState } from "@/actions/providers/providers";
+
+import { createProvider, updateProvider, type CreateProviderState } from "@/actions/providers/providers";
 import { Button } from "@/components/common/button";
 import { Input } from "@/components/common/input";
 import { Label } from "@/components/common/label";
+import type { Provider } from "@/generated/prisma/client";
 import { regulatorTypeLabels, regulatorTypeValues } from "@/lib/provider-labels";
 
 const initialState: CreateProviderState = {};
@@ -14,27 +16,38 @@ function FieldError({ messages }: { messages?: string[] }) {
   return <p className="text-sm text-destructive">{messages[0]}</p>;
 }
 
-export function ProviderForm() {
-  const [state, formAction, pending] = useActionState(createProvider, initialState);
+type ProviderFormProps = {
+  provider?: Pick<
+    Provider,
+    "id" | "tradingName" | "legalName" | "websiteDomain" | "regulatorType" | "regulatorReference" | "dispensingPartnerName" | "serviceRegions"
+  >;
+};
+
+export function ProviderForm({ provider }: ProviderFormProps) {
+  const action = provider ? updateProvider.bind(null, provider.id) : createProvider;
+  const [state, formAction, pending] = useActionState(action, initialState);
+
+  let submitLabel = provider ? "Save changes" : "Add pharmacy as discovered";
+  if (pending) submitLabel = "Saving…";
 
   return (
     <form action={formAction} className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="tradingName">Trading name</Label>
-          <Input id="tradingName" name="tradingName" required />
+          <Input id="tradingName" name="tradingName" defaultValue={provider?.tradingName} required />
           <FieldError messages={state.fieldErrors?.tradingName} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="legalName">Legal (registered) name</Label>
-          <Input id="legalName" name="legalName" required />
+          <Input id="legalName" name="legalName" defaultValue={provider?.legalName} required />
           <FieldError messages={state.fieldErrors?.legalName} />
         </div>
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="websiteDomain">Website domain</Label>
-        <Input id="websiteDomain" name="websiteDomain" placeholder="example-pharmacy.co.uk" required />
+        <Input id="websiteDomain" name="websiteDomain" placeholder="example-pharmacy.co.uk" defaultValue={provider?.websiteDomain} required />
         <FieldError messages={state.fieldErrors?.websiteDomain} />
       </div>
 
@@ -45,7 +58,7 @@ export function ProviderForm() {
             id="regulatorType"
             name="regulatorType"
             required
-            defaultValue={regulatorTypeValues[0]}
+            defaultValue={provider?.regulatorType ?? regulatorTypeValues[0]}
             className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
           >
             {regulatorTypeValues.map((value) => (
@@ -56,31 +69,39 @@ export function ProviderForm() {
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="regulatorReference">Regulator registration number</Label>
-          <Input id="regulatorReference" name="regulatorReference" required />
+          <Input id="regulatorReference" name="regulatorReference" defaultValue={provider?.regulatorReference} required />
           <FieldError messages={state.fieldErrors?.regulatorReference} />
         </div>
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="dispensingPartnerName">Dispensing partner (if different from trading name)</Label>
-        <Input id="dispensingPartnerName" name="dispensingPartnerName" />
+        <Input id="dispensingPartnerName" name="dispensingPartnerName" defaultValue={provider?.dispensingPartnerName ?? undefined} />
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="serviceRegions">Service regions</Label>
-        <Input id="serviceRegions" name="serviceRegions" placeholder="England, Scotland, Wales" required />
+        <Input
+          id="serviceRegions"
+          name="serviceRegions"
+          placeholder="England, Scotland, Wales"
+          defaultValue={provider?.serviceRegions.join(", ")}
+          required
+        />
         <p className="text-xs text-muted-foreground">Comma-separated.</p>
         <FieldError messages={state.fieldErrors?.serviceRegions} />
       </div>
 
-      {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+      {!!state.error && <p className="text-sm text-destructive">{state.error}</p>}
 
       <Button type="submit" disabled={pending}>
-        {pending ? "Saving…" : "Add pharmacy as discovered"}
+        {submitLabel}
       </Button>
-      <p className="text-xs text-muted-foreground">
-        New entries start as &ldquo;Discovered&rdquo;. Identity and ED-catalogue verification happen as separate review steps before publication.
-      </p>
+      {!provider && (
+        <p className="text-xs text-muted-foreground">
+          New entries start as &ldquo;Discovered&rdquo;. Identity and ED-catalogue verification happen as separate review steps before publication.
+        </p>
+      )}
     </form>
   );
 }

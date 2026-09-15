@@ -1,6 +1,7 @@
 import Image from "next/image";
-import Link from "@/components/Link";
+
 import { Button } from "@/components/common/button";
+import Link from "@/components/Link";
 
 export function HeroSection() {
   return (
@@ -21,7 +22,7 @@ export function HeroSection() {
           <div className="mt-8 flex flex-wrap gap-3">
             <Button
               size="lg"
-              className="rounded-full px-6 text-foreground"
+              className="rounded-full px-6"
               nativeButton={false}
               render={<Link href="/ed/pharmacies">Explore the directory plan</Link>}
             />

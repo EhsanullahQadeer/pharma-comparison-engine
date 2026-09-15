@@ -1,7 +1,9 @@
-import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
+
 import { auth } from "@/auth";
 import { AdminShell } from "@/components/admin/admin-shell";
+
+import type { ReactNode } from "react";
 
 export default async function AdminDashboardLayout({ children }: { children: ReactNode }) {
   const session = await auth();

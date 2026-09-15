@@ -1,21 +1,22 @@
 "use client";
 
-import { useState } from "react";
 import { Bell, LogOut, Menu, Search } from "lucide-react";
+import { useState } from "react";
+
 import { staffSignOut } from "@/actions/auth/sign-out";
-import { Button } from "@/components/common/button";
-import { ThemeToggle } from "@/components/common/theme-toggle";
 import { AdminSearchModal } from "@/components/admin/admin-search-modal";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/common/avatar";
+import { Button } from "@/components/common/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { staffRoleLabels } from "@/lib/staff-role-labels";
+} from "@/components/common/dropdown-menu";
+import { ThemeToggle } from "@/components/common/theme-toggle";
 import type { StaffRole } from "@/generated/prisma/client";
+import { staffRoleLabels } from "@/lib/staff-role-labels";
 
 function initials(name: string) {
   const parts = name.trim().split(/\s+/);
@@ -32,7 +33,7 @@ export function AdminHeader({
   const [searchOpen, setSearchOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 px-4 lg:px-6">
+    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 bg-background px-4 lg:px-6">
       <Button type="button" variant="ghost" size="icon" onClick={onOpenMobileNav} aria-label="Open navigation" className="lg:hidden">
         <Menu aria-hidden="true" className="size-4.5" />
       </Button>

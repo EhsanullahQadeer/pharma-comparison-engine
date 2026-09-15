@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+
 import Link from "@/components/Link";
 import { adminNavSections } from "@/lib/admin-nav";
 import { cn } from "@/lib/utils";

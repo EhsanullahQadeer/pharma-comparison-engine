@@ -1,9 +1,11 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { ArrowRight, Clock3, Circle } from "lucide-react";
-import Link from "@/components/Link";
+import { notFound } from "next/navigation";
+
 import { PageShell } from "@/components/ed/page-shell";
+import Link from "@/components/Link";
 import { deliveryStages, edHref, edPages, groupLabels } from "@/lib/ed-pages";
+
+import type { Metadata } from "next";
 
 export const dynamicParams = false;
 export function generateStaticParams() {
@@ -24,7 +26,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ComingSoonPage({ params }: { params: Promise<{ slug: string[] }> }) {
   const page = await resolvePage(params);
-  const stage = deliveryStages.find((entry) => entry.id === page.stage)!;
+  const stage = deliveryStages.find((entry) => entry.id === page.stage);
+  if (!stage) notFound();
   const related = edPages.filter((entry) => entry.group === page.group && entry.path !== page.path);
   return (
     <PageShell title={page.title} eyebrow={`${groupLabels[page.group]} / ${page.section}`} description={page.description}>

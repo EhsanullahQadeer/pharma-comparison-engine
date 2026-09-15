@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { auth } from "@/auth";
 
 // Convenience redirect only — the authoritative role/session check lives in
