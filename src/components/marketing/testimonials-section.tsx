@@ -1,24 +1,24 @@
 import Image from "next/image";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/common/badge";
 
-const TESTIMONIALS = [
+const PRIORITIES = [
   {
-    name: "Dean & Allie",
+    name: "A discreet starting point",
     image: "/images/dean-and-allie.jpg",
     quote:
-      "We compared five pharmacies in two minutes and saved $40 on a refill. Wish we'd found this sooner.",
+      "Explore ED pharmacy information and prepare questions for a professional consultation.",
   },
   {
-    name: "Summer & Colin",
+    name: "Evidence you can inspect",
     image: "/images/summer-and-colin.jpg",
     quote:
-      "Knowing the pharmacy was verified gave us peace of mind ordering online for the first time.",
+      "Understand where listing details come from and when registration evidence was checked.",
   },
   {
-    name: "Jordan M.",
+    name: "Costs with context",
     image: "/images/download.jpg",
     quote:
-      "Simple, fast, and the price match was spot on. It's now our go-to before every pickup.",
+      "See pack sizes, delivery fees and offer conditions together when price comparison launches.",
   },
 ];
 
@@ -27,38 +27,36 @@ export function TestimonialsSection() {
     <section className="px-6 py-24">
       <div className="mx-auto max-w-3xl text-center">
         <Badge variant="secondary" className="rounded-full px-3 py-1">
-          Real Patients, Real Savings
+          What we’re designing for
         </Badge>
         <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
-          Loved by families{" "}
+          A thoughtful approach to{" "}
           <span className="bg-gradient-to-r from-[var(--chart-1)] via-[var(--chart-2)] to-[var(--chart-5)] bg-clip-text text-transparent">
-            managing their health.
+            ED treatment information.
           </span>
         </h2>
       </div>
 
       <div className="mx-auto mt-14 grid max-w-5xl gap-6 sm:grid-cols-3">
-        {TESTIMONIALS.map(({ name, image, quote }) => (
-          <figure
+        {PRIORITIES.map(({ name, image, quote }) => (
+          <div
             key={name}
             className="flex flex-col items-center rounded-2xl border border-border bg-card p-8 text-center shadow-(--shadow)"
           >
             <div className="relative size-16 overflow-hidden rounded-full ring-2 ring-primary/20">
               <Image
                 src={image}
-                alt={name}
+                alt=""
                 fill
                 sizes="64px"
                 className="object-cover"
               />
             </div>
-            <blockquote className="mt-5 text-sm text-muted-foreground">
-              &ldquo;{quote}&rdquo;
-            </blockquote>
-            <figcaption className="mt-4 text-sm font-medium">
+            <h3 className="mt-4 text-sm font-medium">
               {name}
-            </figcaption>
-          </figure>
+            </h3>
+            <p className="mt-5 text-sm text-muted-foreground">{quote}</p>
+          </div>
         ))}
       </div>
     </section>

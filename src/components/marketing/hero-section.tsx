@@ -1,6 +1,6 @@
 import Image from "next/image";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import Link from "@/components/Link";
+import { Button } from "@/components/common/button";
 
 export function HeroSection() {
   return (
@@ -8,29 +8,29 @@ export function HeroSection() {
       <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2 lg:gap-16">
         <div>
           <span className="mb-6 inline-block text-sm font-medium text-primary">
-            Transparent Pricing, Every Time
+            UK ED treatment · Platform preview
           </span>
           <h1 className="max-w-xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-            Compare medicines and save with confidence.
+            A clearer way to explore ED pharmacies.
           </h1>
           <p className="mt-6 max-w-lg text-muted-foreground">
-            PharmaCompare helps patients, caregivers and pharmacists find the
-            best medicine prices across verified pharmacies. Compare
-            instantly, without the guesswork.
+            We’re building a UK pharmacy directory for erectile dysfunction
+            treatment. Pharmacy listings come first, followed by clear sildenafil
+            and tadalafil price comparisons and reviewed guides.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button
               size="lg"
-              className="rounded-full px-6"
+              className="rounded-full px-6 text-foreground"
               nativeButton={false}
-              render={<Link href="#get-started">Compare Now</Link>}
+              render={<Link href="/ed/pharmacies">Explore the directory plan</Link>}
             />
             <Button
               size="lg"
               variant="outline"
               className="rounded-full px-6"
               nativeButton={false}
-              render={<Link href="#how-it-works">See how it works</Link>}
+              render={<Link href="/ed/roadmap">See build progress</Link>}
             />
           </div>
         </div>
@@ -47,7 +47,7 @@ export function HeroSection() {
           <div className="relative aspect-4/5 w-full overflow-hidden rounded-3xl border border-border shadow-(--shadow)">
             <Image
               src="/images/download.jpg"
-              alt="A couple confidently managing their medicine costs with PharmaCompare"
+              alt="A couple sitting together"
               fill
               sizes="(min-width: 1024px) 40vw, 90vw"
               className="object-cover"

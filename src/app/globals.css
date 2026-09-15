@@ -11,6 +11,8 @@
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --spacing: 0.25rem;
+  --color-sidebar-rail-foreground: var(--sidebar-rail-foreground);
+  --color-sidebar-rail: var(--sidebar-rail);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -82,6 +84,8 @@
   --sidebar-accent-foreground: #535146;
   --sidebar-border: #dad9d4;
   --sidebar-ring: #47c940;
+  --sidebar-rail: #15321a;
+  --sidebar-rail-foreground: #e9f2e8;
 }
 
 .dark {
@@ -116,6 +120,8 @@
   --sidebar-accent-foreground: #d9d6c9;
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: #47c940;
+  --sidebar-rail: #0b1a0d;
+  --sidebar-rail-foreground: #dbe6d9;
 }
 
 :root {

@@ -10,6 +10,8 @@
 
 ## What we're building
 
+**2026-09-15 implementation update:** Navigation now exposes the ED taxonomy through 50 coming-soon routes across the platform, including Guides, Side Effects, Tools and Trust topic hubs. These hubs group the detailed articles below; individual article writing, clinical review and publication remain pending. The trust preview uses **Pharmacy evidence and checks**, not a composite pharmacy safety score. Route metadata and a route-derived sitemap are implemented; previews remain noindex. See [M2](02-layout-theme-foundation.md) for configuration and verification details.
+
 - A **guides library** covering the ED treatment journey, not just condition basics.
 - A **side-effects library** organised by urgency and body system, with dangerous drug interactions as a first-class, prominent category — not an afterthought.
 - Provider trust pages **and** a general trust/legal hub (About, Editorial Policy, How Pricing Works, legal pages) — Monj treats "Trust" as a top-level nav item, not a footer afterthought.
@@ -60,9 +62,9 @@ Both tools must be reviewed by the named clinical reviewer (see Open questions) 
 
 | Column | ED equivalent | Status against current route registry |
 | --- | --- | --- |
-| Our checks | GPhC verification · Pharmacy score · Independence statement · Editorial & review policy · How we work · How pricing works | `independence`, `howItWorks` already in `ed-pages.ts`; **pharmacy score and editorial policy are not yet routes — add them** |
-| About us | About us · Contact | `contact` already in `ed-pages.ts` |
-| Legal | Privacy policy · Terms of use · Disclaimers · Listing disclaimer · Legal & data transparency | `privacy`, `terms` already in `ed-pages.ts`; **listing disclaimer and data-transparency page are not yet routes — add them** |
+| Our checks | GPhC verification · Pharmacy score · Independence statement · Editorial & review policy · How we work · How pricing works | `independence`, `how-it-works` already in `ed-pages.ts`; `editorial-policy` added as a route. "Pharmacy score" deliberately built as `trust/pharmacy-evidence` instead — no composite score, per the hard constraint below |
+| About us | About us · Contact | `contact`, `trust/about` already in `ed-pages.ts` |
+| Legal | Privacy policy · Terms of use · Disclaimers · Listing disclaimer · Legal & data transparency | `privacy`, `terms`, `trust/disclaimer`, `trust/listing-disclaimer`, `trust/data-transparency` all already in `ed-pages.ts` |
 
 Deliberately **not** carrying over: Monj's "Monjour Forum & Support" (community) and "Charity Pledge." Community/moderated forum is explicitly a separate, later feature per the main roadmap's M6/M9 notes — don't build it as part of this milestone. A charity pledge is a business decision, not a content-build item; raise it with the client rather than assuming it.
 
@@ -112,11 +114,11 @@ This validates the `Article`/`Evidence` fields already planned in M3a (author, r
 - [ ] Side effects: Vision & Hearing articles
 - [ ] IIEF-5 self-assessment explainer tool (clinical review required before publish)
 - [ ] Cardiovascular pre-screening checklist tool (clinical review required before publish)
-- [ ] Trust hub: add `pharmacyScore` and `editorialPolicy` routes to `ed-pages.ts`
-- [ ] Trust hub: add `listingDisclaimer` and `dataTransparency` routes to `ed-pages.ts`
+- [x] Trust hub: `trust/pharmacy-evidence` and `trust/editorial-policy` routes added to `ed-pages.ts` (evidence page deliberately replaces a composite "pharmacy score")
+- [x] Trust hub: `trust/listing-disclaimer` and `trust/data-transparency` routes added to `ed-pages.ts`
 - [ ] Provider trust-page template (evidence, checked dates, unknown states)
-- [ ] `generateMetadata` on every public route
-- [ ] `app/sitemap.ts` generated from real routes
+- [x] `generateMetadata` on every public route (coming-soon preview copy; real content pending)
+- [x] `app/sitemap.ts` generated from real routes (route-derived, excludes noindex previews)
 - [ ] Named clinical reviewer assigned per published medical article
 
 ## Open questions

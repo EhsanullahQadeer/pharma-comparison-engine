@@ -1,8 +1,10 @@
 # M3a — Admin Dashboard: Layout, Routes, Auth & Data Model
 
-**Status:** ⬜ Not started
+**Status:** 🟨 In progress — schema, auth and the first Provider screens (login, dashboard, list, manual-entry form) are built; other models' CRUD screens, the correction/evidence review queue and staff role management are not.
 **Depends on:** M1, M2
 **Roadmap:** [monj-functionality-and-ed-milestones.md § Milestone 3](../monj-functionality-and-ed-milestones.md#milestone-3--provider-directory-catalogue-and-staff-editing) (staff-editing portion) + [§4 data records](../monj-functionality-and-ed-milestones.md#4-proposed-system-and-operating-model)
+
+**2026-09-15 implementation update:** `prisma/schema.prisma` now has all ten models from the roadmap's §4 table, migrated to the project's Postgres instance (`prisma/migrations/20260915060613_init_provider_catalogue`). Auth decision made: Auth.js (`next-auth@beta`) with a Credentials provider against `StaffUser` (bcrypt-hashed passwords) and JWT sessions — no database adapter, since Credentials-provider users aren't persisted by Auth.js itself and this is a staff-only tool with no need for OAuth/MFA. `/admin/*` is gated both by `src/proxy.ts` (convenience redirect) and an authoritative session/role check in `src/app/admin/(dashboard)/layout.tsx` (Server Functions can bypass proxy matchers, so the layout check is the real gate). `prisma/seed.ts` creates the first administrator (from `SEED_ADMIN_EMAIL`/`SEED_ADMIN_PASSWORD` in `.env`) and 12 fake providers via `@faker-js/faker`. Built so far: staff login, a dashboard with provider status counts, a provider list table, and the manual pharmacy-entry form (`src/actions/providers/providers.ts`, Zod-validated, role-checked, new providers always start `DISCOVERED`). Not yet built: ProductVariant/Offer/Discount screens, an Evidence/Correction review queue, provider status-transition UI, and staff role management.
 
 ## What we're building
 
@@ -40,26 +42,25 @@ The internal tool catalogue editors, content reviewers, administrators and the c
 
 ## Checklist
 
-- [ ] Auth approach decided
-- [ ] Prisma schema: `Provider`
-- [ ] Prisma schema: `ProductVariant`
-- [ ] Prisma schema: `Offer`
-- [ ] Prisma schema: `Discount`
-- [ ] Prisma schema: `Evidence`
-- [ ] Prisma schema: `PriceHistory`
-- [ ] Prisma schema: `Article`
-- [ ] Prisma schema: `Correction`
-- [ ] Prisma schema: `Referral`
-- [ ] Prisma schema: `StaffUser` / `Role`
-- [ ] First migration applied to a real Postgres instance
-- [ ] `prisma/seed.ts` seeding realistic fake data
-- [ ] Admin route group + layout + role guard
-- [ ] Provider CRUD screens
+- [x] Auth approach decided — Auth.js Credentials provider + JWT sessions (no adapter/OAuth)
+- [x] Prisma schema: `Provider`
+- [x] Prisma schema: `ProductVariant`
+- [x] Prisma schema: `Offer`
+- [x] Prisma schema: `Discount`
+- [x] Prisma schema: `Evidence`
+- [x] Prisma schema: `PriceHistory`
+- [x] Prisma schema: `Article`
+- [x] Prisma schema: `Correction`
+- [x] Prisma schema: `Referral`
+- [x] Prisma schema: `StaffUser` / `Role`
+- [x] First migration applied to a real Postgres instance
+- [x] `prisma/seed.ts` seeding realistic fake data
+- [x] Admin route group + layout + role guard
+- [ ] Provider CRUD screens — create + list built (`/admin/pharmacies`, `/admin/pharmacies/new`); edit, status transitions and archive not yet
 - [ ] ProductVariant / Offer CRUD screens
 - [ ] Audit / correction review-queue screen
 - [ ] Staff role-management screen
 
 ## Open questions
 
-- Auth provider decision (above) — blocks finalising the `StaffUser` model shape.
 - Do we need a generic audit-log table (who changed what, when) beyond what `PriceHistory` already covers for prices specifically?

@@ -117,22 +117,6 @@
    `lucide-react` (already used throughout `src/components/ui`, `Sidebar`,
    `MainHeader`) rather than adding new SVG assets or a wrapper component
    for them.
-10. **This app is multilingual (`en`/`ur`) — never hardcode user-facing
-   text.** All display text (labels, buttons, placeholders, empty/error
-   states, toasts) must go through next-intl — `useTranslations()` in Client
-   Components, `getTranslations()` (from `next-intl/server`) in Server
-   Components — never a raw string literal in JSX. When you add a new
-   component or page, add its keys to **both** locale trees in the same
-   change:
-   - Shared/global strings → `src/messages/{en,ur}/common.json`.
-   - Page-specific strings → `src/messages/{en,ur}/app/{segment}.json` or
-     `src/messages/{en,ur}/auth/{segment}.json`, matching the route's first
-     two path segments (see `src/i18n/messages.ts`'s `loadMessages` — it
-     resolves the file by segment and silently falls back to an empty object
-     if the file/key is missing, so a forgotten translation fails silently
-     instead of erroring).
-   - Add the key to `en` and `ur` together — never ship an English-only key
-     with the Urdu file left to catch up later.
 
 ## Code Rules
 
@@ -244,18 +228,19 @@
    tree-shaking/module splitting in Next.js. If you find one, delete it
    rather than keeping it updated.
 15. **Navigate with `@/components/Link` and `@/hooks/useRouter`, never
-   `next/link`/`next/navigation`, and never `@/i18n/navigation`'s `Link`/
-   `useRouter` directly.** Every in-app navigation (link clicks and
-   programmatic `push`/`replace`/`back`/`forward`) must show the top
-   route-progress bar (`src/components/RouteProgressBar.tsx`, driven by
+   `next/link`/`next/navigation` directly.** Every in-app navigation (link
+   clicks and programmatic `push`/`replace`/`back`/`forward`) must show the
+   top route-progress bar (`src/components/RouteProgressBar.tsx`, driven by
    `src/lib/route-progress.ts`'s `start()`/`done()`). `@/components/Link` and
-   `@/hooks/useRouter` are drop-in wrappers around `@/i18n/navigation`'s
-   `Link`/`useRouter` that call `start()` on navigation — importing the
-   underlying next-intl versions (or raw Next.js ones) bypasses that and the
-   navigation happens with no loading feedback. `@/i18n/navigation`'s
-   `usePathname`/`redirect`/`getPathname` are unaffected by this rule (they
-   don't trigger navigation) and stay imported directly from
-   `@/i18n/navigation`.
+   `@/hooks/useRouter` are drop-in wrappers around `next/link`'s `Link` and
+   `next/navigation`'s `useRouter` that call `start()` on navigation —
+   importing the underlying Next.js versions directly bypasses that and the
+   navigation happens with no loading feedback. `next/navigation`'s
+   `usePathname` is unaffected by this rule (it doesn't trigger navigation)
+   and can be imported directly. (This app is English-only — there is no
+   `next-intl`/locale-routing layer to route through; if multilingual
+   support is added later, this rule and these wrappers are the place to
+   introduce it.)
 
 16. **List/table pages follow one canonical layout: `CardWrapper` +
    `useTableColumns` + `FilterToggleRowServer` + a `PaginationServer` footer.**
@@ -343,6 +328,67 @@
    reads triggered only by a button/scan event (e.g. an invoice lookup) and
    cache-warming calls may keep a direct `await action(...)`; pure server
    components keep their direct `await` in the async page body.
+
+## SEO Rules
+
+1. **Every route sets its own metadata — no shared/duplicate titles.** Export
+   `metadata` (static) or `generateMetadata()` (dynamic — needed whenever the
+   title/description depends on fetched data, e.g. a specific provider or
+   article page) from every route segment. Each page needs a unique,
+   descriptive `title` and `description`; never leave a dynamic page
+   inheriting the parent layout's generic title.
+2. **Set a canonical URL on every indexable page.** Use `alternates.canonical`
+   in that page's metadata. This matters especially for any page reachable
+   through multiple query-string variants (filters, sort order, pagination)
+   — the canonical must point at the primary, filter-less URL so search
+   engines don't treat each filter combination as a separate duplicate page.
+3. **`app/sitemap.ts` and `app/robots.ts` are generated from real route data,
+   never hand-maintained.** Use Next's built-in `MetadataRoute.Sitemap` /
+   `MetadataRoute.Robots` conventions, sourcing the URL list from the same
+   place the app itself derives its routes (e.g. a route registry or a
+   database query) — a sitemap that drifts from the actual published pages
+   is worse than no sitemap. Exclude non-indexable pages (auth, internal
+   admin/staff routes) via `robots.ts`, not by simply omitting them from the
+   sitemap and hoping crawlers don't find them another way.
+4. **One `<h1>` per page, logical heading order, semantic landmarks.** Don't
+   skip heading levels (`h1` → `h3` with no `h2`) and don't use heading tags
+   for visual sizing alone — pick the tag for its place in the document
+   outline, style it separately. Use `<nav>`, `<main>`, `<header>`, `<footer>`
+   semantically rather than generic `<div>`s for page chrome; this overlaps
+   with accessibility, not just SEO, and the same markup serves both.
+5. **Every meaningful image gets real `alt` text; decorative images get
+   `alt=""`.** Never leave `alt` empty on an image that conveys information,
+   and never stuff it with keywords unrelated to what the image actually
+   shows. Use `next/image` for all content images (already implied by
+   general Next.js practice) so responsive sizing and lazy-loading below the
+   fold are automatic — this also directly helps Core Web Vitals (LCP),
+   which is itself a ranking factor.
+6. **Structured data (JSON-LD) only describes what's actually true.** Where a
+   schema.org type genuinely fits (e.g. `Article` for editorial content,
+   `BreadcrumbList` for navigation, `FAQPage` for a real FAQ section), add it
+   as a `<script type="application/ld+json">`. Never fabricate or inflate
+   fields to look more attractive to search engines (fake ratings, invented
+   review counts, a `datePublished` that doesn't match the real publish
+   date) — this is both a Google guidelines violation and, for anything
+   health/medicine-adjacent, a credibility risk that matters more than the
+   SEO upside.
+7. **Prefer Server Components and server-side data fetching for indexable
+   content pages** (already Code Rule 4) — content that only renders after a
+   client-side fetch may not be seen by crawlers reliably, and server
+   rendering is also what makes fast Core Web Vitals achievable in the first
+   place. Reserve `"use client"` for genuinely interactive leaf components,
+   not the page shell that holds the crawlable content.
+8. **No orphan pages.** Every route meant to be indexed must be reachable via
+   real internal navigation (nav menu, footer, breadcrumbs, or contextual
+   in-content links) — a page that only exists in the sitemap with no
+   internal links pointing to it is a weak signal to search engines and a
+   dead end for users who land on it directly.
+9. **Clean, descriptive, stable URL slugs.** Use kebab-case, human-readable
+   path segments (`/guides/switching-pharmacy`, not `/g?id=42`) for anything
+   meant to be indexed and shared. Once a page is published and indexed,
+   changing its slug means adding a redirect (`next.config.ts`'s `redirects()`
+   or middleware) — don't silently break inbound links/search rankings by
+   renaming a live route's path with no redirect.
 
 ---
 

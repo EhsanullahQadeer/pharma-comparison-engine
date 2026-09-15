@@ -1,20 +1,20 @@
 import { Check, X } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/common/badge";
 
 const PAIN_POINTS = [
-  "Prices vary wildly between pharmacies with no easy way to compare",
-  "Hours lost calling around just to find one medicine in stock",
-  "Unclear which generics are actually equivalent to brand names",
-  "No way to confirm a pharmacy is licensed before you order",
-  "Insurance and discount coverage buried in confusing fine print",
+  "Comparing different pack sizes can hide the actual cost",
+  "An advertised price may exclude delivery or consultation",
+  "Introductory discounts may not apply to repeat purchases",
+  "A directory entry alone does not explain its registration evidence",
+  "Outdated offers can make a comparison misleading",
 ];
 
 const BENEFITS = [
-  "Real-time price comparison across every nearby and online pharmacy",
-  "Instant stock lookup so you know before you call or drive",
-  "Clear generic-equivalence labels backed by pharmacist review",
-  "Every pharmacy verified and licensed before it appears in results",
-  "Insurance and discount eligibility shown upfront, no surprises",
+  "Planned: match medicine, strength and pack quantity",
+  "Planned: show known charges and the total payable cost",
+  "Planned: separate first-order offers from repeat prices",
+  "Planned: link to registration evidence and checked dates",
+  "Planned: label stale prices and explain update schedules",
 ];
 
 function ComparisonRing() {
@@ -51,9 +51,9 @@ export function ComparisonSection() {
           Clarity
         </Badge>
         <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
-          Stop overpaying at the counter.{" "}
+          More context for ED prices.{" "}
           <span className="bg-gradient-to-r from-[var(--chart-1)] via-[var(--chart-2)] to-[var(--chart-5)] bg-clip-text text-transparent">
-            Buy with confidence.
+            That’s what we’re building.
           </span>
         </h2>
       </div>

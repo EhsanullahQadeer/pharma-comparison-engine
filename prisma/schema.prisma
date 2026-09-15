@@ -11,3 +11,260 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// Roadmap §4 "Staff roles" table.
+enum StaffRole {
+  CATALOGUE_EDITOR
+  CONTENT_REVIEWER
+  ADMINISTRATOR
+  COMMERCIAL_MANAGER
+}
+
+// M3b state machine: discovered -> identity verified -> ED catalogue verified -> published -> temporarily withheld / archived.
+// Every transition is a deliberate staff action; nothing auto-publishes a first-time provider.
+enum ProviderStatus {
+  DISCOVERED
+  IDENTITY_VERIFIED
+  ED_CATALOGUE_VERIFIED
+  PUBLISHED
+  TEMPORARILY_WITHHELD
+  ARCHIVED
+}
+
+enum RegulatorType {
+  GPHC
+  PSNI
+}
+
+enum Ingredient {
+  SILDENAFIL
+  TADALAFIL
+}
+
+enum SupplyClassification {
+  POM
+  P
+  GSL
+}
+
+enum Availability {
+  IN_STOCK
+  OUT_OF_STOCK
+  UNKNOWN
+}
+
+enum PurchaseModel {
+  ONE_OFF
+  RECURRING
+}
+
+enum DiscountValueType {
+  PERCENT
+  FIXED_AMOUNT
+}
+
+enum EvidenceApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum CorrectionStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+}
+
+model StaffUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  role         StaffRole
+  active       Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  reviewedEvidence Evidence[]   @relation("EvidenceReviewer")
+  authoredArticles Article[]    @relation("ArticleAuthor")
+  reviewedArticles Article[]    @relation("ArticleReviewer")
+  ownedCorrections Correction[] @relation("CorrectionOwner")
+}
+
+// Trading/legal names, website, regulator references, dispensing partner, service regions (roadmap §4).
+// Kept as one flat record for M3a; M3b's fuller identity-resolution model (separate legal entity /
+// trading brand / domain / premises records for multi-brand dispensers) is a later refinement, not
+// required for the first manual-entry + discovery pass.
+model Provider {
+  id                    String         @id @default(cuid())
+  legalName             String
+  tradingName           String
+  websiteDomain         String         @unique
+  regulatorType         RegulatorType
+  regulatorReference    String
+  dispensingPartnerName String?
+  serviceRegions        String[]
+  status                ProviderStatus @default(DISCOVERED)
+  affiliateApproved     Boolean        @default(false)
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  offers      Offer[]
+  evidence    Evidence[]
+  corrections Correction[]
+
+  @@index([status])
+}
+
+// The canonical catalogue of ingredient/brand/strength/pack combinations. Provider-agnostic —
+// Offer is what links a Provider to a ProductVariant with a price.
+model ProductVariant {
+  id                   String               @id @default(cuid())
+  ingredient           Ingredient
+  brandName            String?
+  strengthMg           Int
+  formulation          String
+  packQuantity         Int
+  supplyClassification SupplyClassification
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  offers Offer[]
+}
+
+// Money stored as integer pence per roadmap §4 "Fair price calculation" — never float.
+model Offer {
+  id                      String         @id @default(cuid())
+  providerId              String
+  provider                Provider       @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  productVariantId        String
+  productVariant          ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Restrict)
+  itemPricePence          Int
+  deliveryFeePence        Int            @default(0)
+  consultationFeePence    Int            @default(0)
+  otherMandatoryFeesPence Int            @default(0)
+  deliveryAssumption      String
+  availability            Availability   @default(UNKNOWN)
+  purchaseModel           PurchaseModel  @default(ONE_OFF)
+  billingPeriodDays       Int?
+  sourceUrl               String
+  retrievedAt             DateTime
+  priceVerifiedAt         DateTime?
+  feeVerifiedAt           DateTime?
+  publishedAt             DateTime?
+  nextDueAt               DateTime?
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
+
+  discounts    Discount[]
+  priceHistory PriceHistory[]
+  evidence     Evidence[]
+  referrals    Referral[]
+
+  @@index([providerId])
+  @@index([productVariantId])
+}
+
+model Discount {
+  id           String            @id @default(cuid())
+  offerId      String
+  offer        Offer             @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  eligibility  String
+  valueType    DiscountValueType
+  valuePence   Int?
+  valuePercent Int?
+  stackable    Boolean           @default(false)
+  expiresAt    DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  evidence Evidence[]
+}
+
+// Source URL, retrieved date, checked date, reviewer and approved status (roadmap §4). Attaches to
+// exactly one of Provider / Offer / Discount / Article — enforced at the application layer since
+// Prisma has no native polymorphic relation.
+model Evidence {
+  id             String                 @id @default(cuid())
+  sourceUrl      String
+  retrievedAt    DateTime
+  checkedAt      DateTime?
+  reviewerId     String?
+  reviewer       StaffUser?             @relation("EvidenceReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  approvedStatus EvidenceApprovalStatus @default(PENDING)
+  providerId     String?
+  provider       Provider?              @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  offerId        String?
+  offer          Offer?                 @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  discountId     String?
+  discount       Discount?              @relation(fields: [discountId], references: [id], onDelete: Cascade)
+  articleId      String?
+  article        Article?               @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  createdAt      DateTime               @default(now())
+}
+
+model PriceHistory {
+  id                  String   @id @default(cuid())
+  offerId             String
+  offer               Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  itemPricePence      Int
+  deliveredTotalPence Int
+  effectiveFrom       DateTime
+  recordedAt          DateTime @default(now())
+
+  @@index([offerId])
+}
+
+model Article {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String
+  topic       String
+  language    String        @default("en")
+  sources     String[]
+  revision    Int           @default(1)
+  status      ArticleStatus @default(DRAFT)
+  authorId    String
+  author      StaffUser     @relation("ArticleAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  reviewerId  String?
+  reviewer    StaffUser?    @relation("ArticleReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  publishedAt DateTime?
+  reviewedAt  DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  evidence Evidence[]
+}
+
+model Correction {
+  id              String           @id @default(cuid())
+  reportedIssue   String
+  reporterEmail   String?
+  providerId      String?
+  provider        Provider?        @relation(fields: [providerId], references: [id], onDelete: SetNull)
+  assignedOwnerId String?
+  assignedOwner   StaffUser?       @relation("CorrectionOwner", fields: [assignedOwnerId], references: [id], onDelete: SetNull)
+  status          CorrectionStatus @default(OPEN)
+  resolution      String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+// Non-sensitive offer reference, destination and aggregate counts (roadmap §4) — scaffolded for
+// when partner referral terms are agreed (M7); not wired into any public flow yet.
+model Referral {
+  id             String   @id @default(cuid())
+  offerId        String
+  offer          Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  destinationUrl String
+  clickCount     Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}

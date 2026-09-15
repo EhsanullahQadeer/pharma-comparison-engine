@@ -4,26 +4,26 @@ const FEATURES = [
   {
     icon: ScanSearch,
     label: "Search",
-    heading: "Find every option without digging through tabs.",
-    bullets: ["Nationwide pharmacy index", "Generic & brand matches"],
+    heading: "Find UK pharmacies offering ED treatment.",
+    bullets: ["Manual listings first", "Reviewed discovery imports"],
   },
   {
     icon: CircleDot,
     label: "Compare",
-    heading: "See real prices side by side, instantly.",
-    bullets: ["Live price tracking", "Dosage-accurate comparisons"],
+    heading: "Compare matching ED offers side by side.",
+    bullets: ["Sildenafil & tadalafil", "Pack and total-cost comparisons"],
   },
   {
     icon: ShieldCheck,
     label: "Verify",
-    heading: "Confirm authenticity before you buy.",
-    bullets: ["Licensed pharmacy checks", "Batch & expiry validation"],
+    heading: "See the evidence behind each listing.",
+    bullets: ["Registration source links", "Clearly labelled checked dates"],
   },
   {
     icon: Truck,
-    label: "Order",
-    heading: "Get your medicine with complete confidence.",
-    bullets: ["One-click checkout", "Delivery tracking included"],
+    label: "Continue",
+    heading: "Continue to the pharmacy for assessment.",
+    bullets: ["Pharmacy consultation", "Purchase on the provider’s site"],
   },
 ];
 
@@ -32,14 +32,14 @@ export function FeatureGridSection() {
     <section className="px-6 pb-24">
       <div className="mx-auto max-w-3xl text-center">
         <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          Trusted by patients and pharmacies{" "}
+          The planned journey,{" "}
           <span className="bg-gradient-to-r from-[var(--chart-1)] via-[var(--chart-2)] to-[var(--chart-5)] bg-clip-text text-transparent">
-            from search to savings.
+            from discovery to comparison.
           </span>
         </h2>
         <p className="mt-4 text-muted-foreground">
-          Built for clarity in a confusing market. Comparing 10,000+
-          medicines across verified pharmacy partners.
+          These features are coming soon. Our initial catalogue will focus on
+          sildenafil and tadalafil for ED treatment.
         </p>
       </div>
 

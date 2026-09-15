@@ -1,25 +1,25 @@
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/common/badge";
 import { WaveDivider } from "@/components/marketing/wave-divider";
 
 const FLOW = [
   {
     label: "Searches",
-    items: ["medicine name", "dosage", "generic", "brand"],
+    items: ["ED medicine", "strength", "pack size", "pharmacy"],
     offset: "lg:mt-24",
   },
   {
     label: "Compares",
-    items: ["price", "pharmacy", "distance", "delivery"],
+    items: ["pack price", "consultation", "delivery", "total cost"],
     offset: "lg:mt-16",
   },
   {
     label: "Verifies",
-    items: ["license", "authenticity", "batch", "expiry"],
+    items: ["registration", "source", "checked date", "service details"],
     offset: "lg:mt-8",
   },
   {
-    label: "Secures",
-    items: ["coverage", "discount", "checkout", "tracking"],
+    label: "Continues",
+    items: ["pharmacy site", "assessment", "pharmacy terms", "provider checkout"],
     offset: "lg:mt-0",
   },
 ];
@@ -29,17 +29,17 @@ export function FlowSection() {
     <section className="px-6 pb-8 pt-24">
       <div className="mx-auto max-w-3xl text-center">
         <Badge variant="secondary" className="rounded-full px-3 py-1">
-          One Search, Full Picture
+          Planned comparison journey
         </Badge>
         <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
-          One search, every answer.{" "}
+          Clearer information.{" "}
           <span className="bg-gradient-to-r from-[var(--chart-1)] via-[var(--chart-2)] to-[var(--chart-5)] bg-clip-text text-transparent">
-            Confidence that compounds.
+            A practical next step.
           </span>
         </h2>
         <p className="mt-4 text-muted-foreground">
-          PharmaCompare surfaces price, stock, authenticity and coverage
-          exactly when you need them.
+          The planned journey brings ED pharmacy evidence and offer details
+          together. Clinical assessments and purchases stay with the pharmacy.
         </p>
       </div>
 
