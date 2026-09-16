@@ -6,6 +6,8 @@ Expanded on 14 September 2026 to cover commercial viability, provider discovery,
 
 The two supplied Compass research documents have also been reviewed. Their useful source-discovery proposals are incorporated below; see [research reconciliation and source corrections](pharmacy-discovery-research-review.md) for what was adopted, corrected or left unverified. The original research files are preserved.
 
+**2026-09-16 — read as the ED vertical's design record, not the whole product:** the client has since redirected the strategy to a multi-vertical platform (ED + weight-loss, more later; brand/domain is the unit, not a fixed condition). See [`milestones/00-platform-strategy.md`](milestones/00-platform-strategy.md) for the pivot and [`milestones/01-scope-and-compliance.md`](milestones/01-scope-and-compliance.md) for the per-vertical compliance framework it required. Everything below is preserved unchanged as the ED vertical's own plan, per this document's own convention of staying the historical record while `milestones/*.md` tracks live status.
+
 ## 1. Recommended product
 
 Build a UK-focused ED information and pharmacy comparison website first. Visitors should be able to understand treatment categories, compare equivalent products and provider services, check the evidence behind listings, and continue to the chosen pharmacy for assessment and purchase.

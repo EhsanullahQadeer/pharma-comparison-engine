@@ -10,7 +10,9 @@ type AuditEntityType =
   | "Article"
   | "Correction"
   | "Referral"
-  | "StaffUser";
+  | "StaffUser"
+  | "DiscoverySource"
+  | "DiscoveryCandidate";
 
 type RecordAuditLogInput = {
   actorId: string | null;

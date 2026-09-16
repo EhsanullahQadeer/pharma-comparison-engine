@@ -9,6 +9,7 @@ import { ProvidersTrendChart } from "@/components/admin/charts/providers-trend-c
 import { StatusDonutChart } from "@/components/admin/charts/status-donut-chart";
 import { Badge } from "@/components/common/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/common/card";
+import { EmptyState } from "@/components/common/empty-state";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/common/table";
 import Link from "@/components/Link";
 import type { ProviderStatus } from "@/generated/prisma/client";
@@ -90,7 +91,7 @@ export default async function AdminDashboardPage() {
         </CardHeader>
         <CardContent>
           {recentProviders.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">No providers yet.</p>
+            <EmptyState title="No providers yet." />
           ) : (
             <Table>
               <TableHeader>

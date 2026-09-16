@@ -2,7 +2,14 @@ import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 import { faker } from "@faker-js/faker";
-import { PrismaClient, RegulatorType, type ProviderStatus, type StaffRole } from "../src/generated/prisma/client";
+import {
+  PrismaClient,
+  RegulatorType,
+  type DiscoveryCadence,
+  type DiscoverySourceType,
+  type ProviderStatus,
+  type StaffRole,
+} from "../src/generated/prisma/client";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -75,12 +82,17 @@ async function seedProviders(count: number) {
 }
 
 const productVariantSeeds = [
-  { ingredient: "SILDENAFIL", brandName: "Viagra", strengthMg: 50, formulation: "Film-coated tablet", packQuantity: 4, supplyClassification: "POM" },
-  { ingredient: "SILDENAFIL", brandName: "Viagra", strengthMg: 100, formulation: "Film-coated tablet", packQuantity: 4, supplyClassification: "POM" },
-  { ingredient: "SILDENAFIL", brandName: undefined, strengthMg: 100, formulation: "Film-coated tablet (generic)", packQuantity: 8, supplyClassification: "POM" },
-  { ingredient: "TADALAFIL", brandName: "Cialis", strengthMg: 10, formulation: "Film-coated tablet", packQuantity: 4, supplyClassification: "POM" },
-  { ingredient: "TADALAFIL", brandName: "Cialis", strengthMg: 20, formulation: "Film-coated tablet", packQuantity: 4, supplyClassification: "POM" },
-  { ingredient: "TADALAFIL", brandName: undefined, strengthMg: 5, formulation: "Film-coated tablet (generic, daily dose)", packQuantity: 28, supplyClassification: "POM" },
+  { category: "ERECTILE_DYSFUNCTION", ingredient: "SILDENAFIL", brandName: "Viagra Connect", strengthMg: 50, formulation: "Film-coated tablet", packQuantity: 4, supplyClassification: "P" },
+  { category: "ERECTILE_DYSFUNCTION", ingredient: "SILDENAFIL", brandName: "Viagra", strengthMg: 100, formulation: "Film-coated tablet", packQuantity: 4, supplyClassification: "POM" },
+  { category: "ERECTILE_DYSFUNCTION", ingredient: "SILDENAFIL", brandName: undefined, strengthMg: 100, formulation: "Film-coated tablet (generic)", packQuantity: 8, supplyClassification: "POM" },
+  { category: "ERECTILE_DYSFUNCTION", ingredient: "TADALAFIL", brandName: "Cialis", strengthMg: 10, formulation: "Film-coated tablet", packQuantity: 4, supplyClassification: "POM" },
+  { category: "ERECTILE_DYSFUNCTION", ingredient: "TADALAFIL", brandName: "Cialis", strengthMg: 20, formulation: "Film-coated tablet", packQuantity: 4, supplyClassification: "POM" },
+  { category: "ERECTILE_DYSFUNCTION", ingredient: "TADALAFIL", brandName: undefined, strengthMg: 5, formulation: "Film-coated tablet (generic, daily dose)", packQuantity: 28, supplyClassification: "POM" },
+  // Weight-loss vertical (platform pivot, 2026-09-16) — both POM, no P-medicine tier exists for
+  // these ingredients in the UK (see docs/milestones/01-scope-and-compliance.md).
+  { category: "WEIGHT_LOSS", ingredient: "TIRZEPATIDE", brandName: "Mounjaro", strengthMg: 5, formulation: "Pre-filled pen", packQuantity: 4, supplyClassification: "POM" },
+  { category: "WEIGHT_LOSS", ingredient: "TIRZEPATIDE", brandName: "Mounjaro", strengthMg: 10, formulation: "Pre-filled pen", packQuantity: 4, supplyClassification: "POM" },
+  { category: "WEIGHT_LOSS", ingredient: "SEMAGLUTIDE", brandName: "Wegovy", strengthMg: 1, formulation: "Pre-filled pen", packQuantity: 4, supplyClassification: "POM" },
 ] as const;
 
 async function seedProductVariants() {
@@ -120,6 +132,7 @@ async function seedOffersAndDiscounts(providerIds: string[], variantIds: string[
     for (const productVariantId of offerVariants) {
       const itemPricePence = faker.number.int({ min: 1500, max: 4500 });
       const deliveryFeePence = faker.helpers.arrayElement([0, 0, 295, 395]);
+      const availability = faker.helpers.arrayElement(availabilityOptions);
       const retrievedAt = faker.date.recent({ days: 21 });
 
       const offer = await prisma.offer.create({
@@ -131,7 +144,7 @@ async function seedOffersAndDiscounts(providerIds: string[], variantIds: string[
           consultationFeePence: 0,
           otherMandatoryFeesPence: 0,
           deliveryAssumption: "1 pack, standard tracked delivery",
-          availability: faker.helpers.arrayElement(availabilityOptions),
+          availability,
           purchaseModel: "ONE_OFF",
           sourceUrl: `https://${faker.internet.domainName()}/ed/pricing`,
           retrievedAt,
@@ -143,22 +156,43 @@ async function seedOffersAndDiscounts(providerIds: string[], variantIds: string[
         data: {
           offerId: offer.id,
           itemPricePence,
+          deliveryFeePence,
+          consultationFeePence: 0,
+          otherMandatoryFeesPence: 0,
           deliveredTotalPence: itemPricePence + deliveryFeePence,
+          availability,
           effectiveFrom: retrievedAt,
         },
       });
 
       if (faker.datatype.boolean({ probability: 0.4 })) {
+        const valuePercent = faker.helpers.arrayElement([10, 15, 20]);
         await prisma.discount.create({
           data: {
             offerId: offer.id,
             eligibility: "First-time customers",
             valueType: "PERCENT",
-            valuePercent: faker.helpers.arrayElement([10, 15, 20]),
+            valuePercent,
             stackable: false,
           },
         });
         discountCount += 1;
+
+        // Demonstrates the offer/discount history extension (platform pivot, 2026-09-16): a
+        // snapshot row with the discount's terms attached, not just a bare price change.
+        await prisma.priceHistory.create({
+          data: {
+            offerId: offer.id,
+            itemPricePence,
+            deliveryFeePence,
+            consultationFeePence: 0,
+            otherMandatoryFeesPence: 0,
+            deliveredTotalPence: itemPricePence + deliveryFeePence,
+            availability,
+            activeDiscountSnapshot: { eligibility: "First-time customers", valueType: "PERCENT", valuePercent, stackable: false },
+            effectiveFrom: faker.date.recent({ days: 7 }),
+          },
+        });
       }
     }
   }
@@ -207,6 +241,30 @@ async function seedEvidenceAndCorrections(providerIds: string[]) {
   console.log("Seeded evidence and correction records.");
 }
 
+// Seeded once, disabled by default — an admin turns a source on once its API key is configured
+// and can change cadence from the Discovery sources screen. Defaults follow the recommendation in
+// docs/pharmacy-discovery-research-review.md: weekly for the three confirmed-stable sources,
+// monthly for the two stubbed sources pending live-schema verification.
+const discoverySourceSeeds: { type: DiscoverySourceType; cadence: DiscoveryCadence }[] = [
+  { type: "COMPANIES_HOUSE", cadence: "WEEKLY" },
+  { type: "CQC", cadence: "WEEKLY" },
+  { type: "NHS_ODS", cadence: "WEEKLY" },
+  { type: "GPHC", cadence: "MONTHLY" },
+  { type: "NHSBSA_CONTRACTOR_DETAILS", cadence: "MONTHLY" },
+];
+
+async function seedDiscoverySources() {
+  for (const { type, cadence } of discoverySourceSeeds) {
+    await prisma.discoverySource.upsert({
+      where: { type },
+      update: {},
+      create: { type, cadence, enabled: false },
+    });
+  }
+
+  console.log(`Seeded ${discoverySourceSeeds.length} discovery source configs.`);
+}
+
 async function main() {
   await seedAdmin();
   await seedOtherStaff();
@@ -218,6 +276,7 @@ async function main() {
 
   await seedOffersAndDiscounts(providers.map((p) => p.id), allVariants.map((v) => v.id));
   await seedEvidenceAndCorrections(providers.map((p) => p.id));
+  await seedDiscoverySources();
 }
 
 main()

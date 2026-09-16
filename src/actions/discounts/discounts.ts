@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { DiscountValueType } from "@/generated/prisma/client";
 import { recordAuditLog } from "@/lib/audit-log";
+import { recordPriceHistorySnapshot } from "@/lib/price-history";
 import { prisma } from "@/lib/prisma";
 import { requireStaffRole } from "@/lib/staff-auth";
 
@@ -45,7 +46,11 @@ export async function createDiscount(offerId: string, providerId: string, _prevS
   });
   if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const discount = await prisma.discount.create({ data: { offerId, ...parsed.data } });
+  const discount = await prisma.$transaction(async (tx) => {
+    const created = await tx.discount.create({ data: { offerId, ...parsed.data } });
+    await recordPriceHistorySnapshot(tx, offerId, new Date());
+    return created;
+  });
 
   await recordAuditLog({ actorId: staffUser.id, action: "CREATE", entityType: "Discount", entityId: discount.id, changes: { offerId } });
 
@@ -55,7 +60,12 @@ export async function createDiscount(offerId: string, providerId: string, _prevS
 
 export async function deleteDiscount(discountId: string, providerId: string) {
   const staffUser = await requireStaffRole(["CATALOGUE_EDITOR", "ADMINISTRATOR"]);
-  await prisma.discount.delete({ where: { id: discountId } });
-  await recordAuditLog({ actorId: staffUser.id, action: "DELETE", entityType: "Discount", entityId: discountId, changes: {} });
+
+  await prisma.$transaction(async (tx) => {
+    const deleted = await tx.discount.delete({ where: { id: discountId } });
+    await recordPriceHistorySnapshot(tx, deleted.offerId, new Date());
+  });
+
+  await recordAuditLog({ actorId: staffUser.id, action: "DELETE", entityType: "Discount", entityId: discountId, changes: { providerId } });
   revalidatePath(`/admin/pharmacies/${providerId}`);
 }

@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { Availability, PurchaseModel } from "@/generated/prisma/client";
 import { recordAuditLog } from "@/lib/audit-log";
+import { recordPriceHistorySnapshot } from "@/lib/price-history";
 import { prisma } from "@/lib/prisma";
 import { requireStaffRole } from "@/lib/staff-auth";
 
@@ -56,14 +57,7 @@ export async function createOffer(providerId: string, _prevState: OfferState, fo
 
   const offer = await prisma.$transaction(async (tx) => {
     const created = await tx.offer.create({ data: { providerId, ...parsed.data } });
-    await tx.priceHistory.create({
-      data: {
-        offerId: created.id,
-        itemPricePence: created.itemPricePence,
-        deliveredTotalPence: created.itemPricePence + created.deliveryFeePence + created.consultationFeePence + created.otherMandatoryFeesPence,
-        effectiveFrom: created.retrievedAt,
-      },
-    });
+    await recordPriceHistorySnapshot(tx, created.id, created.retrievedAt);
     return created;
   });
 
@@ -84,26 +78,23 @@ export async function updateOffer(offerId: string, providerId: string, _prevStat
   const parsed = parseOfferFormData(formData);
   if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
 
-  const existing = await prisma.offer.findUnique({ where: { id: offerId }, select: { itemPricePence: true, deliveryFeePence: true, consultationFeePence: true, otherMandatoryFeesPence: true } });
+  const existing = await prisma.offer.findUnique({
+    where: { id: offerId },
+    select: { itemPricePence: true, deliveryFeePence: true, consultationFeePence: true, otherMandatoryFeesPence: true, availability: true },
+  });
   if (!existing) return { error: "Offer not found." };
 
-  const priceChanged =
+  const stateChanged =
     existing.itemPricePence !== parsed.data.itemPricePence ||
     existing.deliveryFeePence !== parsed.data.deliveryFeePence ||
     existing.consultationFeePence !== parsed.data.consultationFeePence ||
-    existing.otherMandatoryFeesPence !== parsed.data.otherMandatoryFeesPence;
+    existing.otherMandatoryFeesPence !== parsed.data.otherMandatoryFeesPence ||
+    existing.availability !== parsed.data.availability;
 
   const offer = await prisma.$transaction(async (tx) => {
     const updated = await tx.offer.update({ where: { id: offerId }, data: parsed.data });
-    if (priceChanged) {
-      await tx.priceHistory.create({
-        data: {
-          offerId: updated.id,
-          itemPricePence: updated.itemPricePence,
-          deliveredTotalPence: updated.itemPricePence + updated.deliveryFeePence + updated.consultationFeePence + updated.otherMandatoryFeesPence,
-          effectiveFrom: updated.retrievedAt,
-        },
-      });
+    if (stateChanged) {
+      await recordPriceHistorySnapshot(tx, updated.id, updated.retrievedAt);
     }
     return updated;
   });

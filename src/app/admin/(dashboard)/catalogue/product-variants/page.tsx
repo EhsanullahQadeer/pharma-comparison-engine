@@ -4,10 +4,11 @@ import { getProductVariants } from "@/actions/product-variants/product-variants"
 import { ProductVariantDeleteButton } from "@/components/admin/product-variant-delete-button";
 import { AddProductVariantModal, EditProductVariantModal } from "@/components/admin/product-variant-form-modal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/card";
+import { EmptyState } from "@/components/common/empty-state";
 import { Input } from "@/components/common/input";
 import PaginationServer from "@/components/common/PaginationServer";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/common/table";
-import { ingredientLabels, supplyClassificationLabels } from "@/lib/catalogue-labels";
+import { ingredientLabels, productCategoryLabels, supplyClassificationLabels } from "@/lib/catalogue-labels";
 import { parsePageSize } from "@/lib/pagination";
 
 import type { Metadata } from "next";
@@ -41,13 +42,12 @@ export default async function ProductVariantsPage(props: PageProps<"/admin/catal
         </CardHeader>
         <CardContent>
           {variants.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              {query ? "No variants match that search." : "No product variants yet. Add the first one to start pricing offers against it."}
-            </p>
+            <EmptyState title={query ? "No variants match that search." : "No product variants yet. Add the first one to start pricing offers against it."} />
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Category</TableHead>
                   <TableHead>Ingredient</TableHead>
                   <TableHead>Brand</TableHead>
                   <TableHead>Strength</TableHead>
@@ -60,6 +60,7 @@ export default async function ProductVariantsPage(props: PageProps<"/admin/catal
               <TableBody>
                 {variants.map((variant) => (
                   <TableRow key={variant.id}>
+                    <TableCell className="text-muted-foreground">{productCategoryLabels[variant.category]}</TableCell>
                     <TableCell className="font-medium">{ingredientLabels[variant.ingredient]}</TableCell>
                     <TableCell className="text-muted-foreground">{variant.brandName || "—"}</TableCell>
                     <TableCell>{variant.strengthMg}mg</TableCell>

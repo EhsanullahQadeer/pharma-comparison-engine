@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 
+import { promoteDiscoveryCandidate } from "@/actions/discovery/discovery-candidates";
 import { createProvider, updateProvider, type CreateProviderState } from "@/actions/providers/providers";
 import { Button } from "@/components/common/button";
 import { Input } from "@/components/common/input";
@@ -21,10 +22,20 @@ type ProviderFormProps = {
     Provider,
     "id" | "tradingName" | "legalName" | "websiteDomain" | "regulatorType" | "regulatorReference" | "dispensingPartnerName" | "serviceRegions"
   >;
+  // Prefill + a different submit action when this form is promoting a discovery candidate rather
+  // than a from-scratch manual entry — mutually exclusive with `provider` (editing).
+  fromCandidateId?: string;
+  defaultValues?: { tradingName?: string; websiteDomain?: string };
 };
 
-export function ProviderForm({ provider }: ProviderFormProps) {
-  const action = provider ? updateProvider.bind(null, provider.id) : createProvider;
+function resolveFormAction(provider: ProviderFormProps["provider"], fromCandidateId: string | undefined) {
+  if (fromCandidateId) return promoteDiscoveryCandidate.bind(null, fromCandidateId);
+  if (provider) return updateProvider.bind(null, provider.id);
+  return createProvider;
+}
+
+export function ProviderForm({ provider, fromCandidateId, defaultValues }: ProviderFormProps) {
+  const action = resolveFormAction(provider, fromCandidateId);
   const [state, formAction, pending] = useActionState(action, initialState);
 
   let submitLabel = provider ? "Save changes" : "Add pharmacy as discovered";
@@ -35,7 +46,7 @@ export function ProviderForm({ provider }: ProviderFormProps) {
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="tradingName">Trading name</Label>
-          <Input id="tradingName" name="tradingName" defaultValue={provider?.tradingName} required />
+          <Input id="tradingName" name="tradingName" defaultValue={provider?.tradingName ?? defaultValues?.tradingName} required />
           <FieldError messages={state.fieldErrors?.tradingName} />
         </div>
         <div className="space-y-1.5">
@@ -47,7 +58,13 @@ export function ProviderForm({ provider }: ProviderFormProps) {
 
       <div className="space-y-1.5">
         <Label htmlFor="websiteDomain">Website domain</Label>
-        <Input id="websiteDomain" name="websiteDomain" placeholder="example-pharmacy.co.uk" defaultValue={provider?.websiteDomain} required />
+        <Input
+          id="websiteDomain"
+          name="websiteDomain"
+          placeholder="example-pharmacy.co.uk"
+          defaultValue={provider?.websiteDomain ?? defaultValues?.websiteDomain}
+          required
+        />
         <FieldError messages={state.fieldErrors?.websiteDomain} />
       </div>
 

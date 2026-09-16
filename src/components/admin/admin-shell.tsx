@@ -12,6 +12,8 @@ import {
   SheetTitle,
 } from "@/components/common/sheet";
 import type { StaffRole } from "@/generated/prisma/client";
+import { siteConfig } from "@/lib/site-config";
+
 
 export function AdminShell({
   user,
@@ -33,7 +35,7 @@ export function AdminShell({
       <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
         <SheetContent side="left" className="w-72 p-0">
           <SheetHeader className="border-b border-sidebar-border">
-            <SheetTitle>PharmaCompare</SheetTitle>
+            <SheetTitle>{siteConfig.brandShortName}</SheetTitle>
           </SheetHeader>
           <AdminNav onNavigate={() => setMobileNavOpen(false)} />
         </SheetContent>

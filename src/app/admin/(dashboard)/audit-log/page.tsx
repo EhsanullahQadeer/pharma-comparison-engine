@@ -1,6 +1,7 @@
 import { getAuditLog, getAuditLogEntityTypes } from "@/actions/audit-log/audit-log";
 import { Badge } from "@/components/common/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/card";
+import { EmptyState } from "@/components/common/empty-state";
 import PaginationServer from "@/components/common/PaginationServer";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/common/table";
 import Link from "@/components/Link";
@@ -67,7 +68,7 @@ export default async function AuditLogPage(props: PageProps<"/admin/audit-log">)
         </CardHeader>
         <CardContent className="px-0">
           {entries.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-muted-foreground">No audit entries match these filters.</p>
+            <EmptyState title="No audit entries match these filters." />
           ) : (
             <Table>
               <TableHeader>

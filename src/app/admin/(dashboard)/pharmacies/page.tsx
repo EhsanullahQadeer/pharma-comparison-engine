@@ -4,6 +4,7 @@ import { getProviders } from "@/actions/providers/providers";
 import { AddPharmacyModal } from "@/components/admin/add-pharmacy-modal";
 import { Badge } from "@/components/common/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/card";
+import { EmptyState } from "@/components/common/empty-state";
 import { Input } from "@/components/common/input";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/common/table";
 import Link from "@/components/Link";
@@ -37,9 +38,7 @@ export default async function AdminPharmaciesPage(props: PageProps<"/admin/pharm
         </CardHeader>
         <CardContent>
           {providers.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              {query ? "No providers match that search." : "No providers yet. Add the first pharmacy manually to start the catalogue."}
-            </p>
+            <EmptyState title={query ? "No providers match that search." : "No providers yet. Add the first pharmacy manually to start the catalogue."} />
           ) : (
             <Table>
               <TableHeader>

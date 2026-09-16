@@ -10,7 +10,14 @@ import { Label } from "@/components/common/label";
 import Modal, { DialogContent, DialogHeader, DialogTitle } from "@/components/common/modal";
 import type { ProductVariant } from "@/generated/prisma/client";
 import { useCloseModalOnSuccess } from "@/hooks/useCloseModalOnSuccess";
-import { ingredientLabels, ingredientValues, supplyClassificationLabels, supplyClassificationValues } from "@/lib/catalogue-labels";
+import {
+  ingredientLabels,
+  ingredientValues,
+  productCategoryLabels,
+  productCategoryValues,
+  supplyClassificationLabels,
+  supplyClassificationValues,
+} from "@/lib/catalogue-labels";
 
 const initialState: ProductVariantState = {};
 
@@ -29,6 +36,22 @@ function ProductVariantForm({ variant, onClose }: { variant?: ProductVariant; on
 
   return (
     <form action={formAction} className="space-y-5">
+      <div className="space-y-1.5">
+        <Label htmlFor="category">Category</Label>
+        <select
+          id="category"
+          name="category"
+          required
+          defaultValue={variant?.category ?? productCategoryValues[0]}
+          className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+        >
+          {productCategoryValues.map((value) => (
+            <option key={value} value={value}>{productCategoryLabels[value]}</option>
+          ))}
+        </select>
+        <FieldError messages={state.fieldErrors?.category} />
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="ingredient">Ingredient</Label>

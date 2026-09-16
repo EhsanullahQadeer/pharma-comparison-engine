@@ -1,8 +1,16 @@
 # M2 — Layout, Routes/Pages, Content & Theme
 
-**Status:** In progress — navigation and route preview complete; launch content and remaining shared states pending.
+**Status:** 🟩 Development-complete — everything buildable without a real domain or real clinical/legal-approved copy is done and verified. Two items remain, and both are genuinely out of reach at any "dev" level: approved clinical/legal/commercial content (needs a real reviewer, not code) and production domain/indexing (needs a real domain to point at).
 **Depends on:** M1 (scope)
 **Roadmap:** [Milestone 2](../monj-functionality-and-ed-milestones.md#milestone-2--brand-mobile-layouts-and-application-foundation)
+**Platform context:** [`00-platform-strategy.md`](00-platform-strategy.md) — everything below was built as the ED vertical's layout/nav/content and stays exactly as-is; it's now read as "vertical #1's content," not "the site's content." The "Route and delivery decisions" line below ("there are no weight-loss or unrelated medicine routes") was a scope boundary for the original ED-only build — it's the thing the pivot deliberately lifts, not a constraint to keep enforcing.
+
+**2026-09-16, later same day — brand/category config layer and empty states/error boundaries built:**
+
+- **Brand/category config** (`src/lib/site-config.ts`) — a `siteConfig` object (`brandName`, `brandShortName`, `tagline`, `activeCategory`) resolved once from `NEXT_PUBLIC_DEPLOYMENT_VERTICAL` (`"ed"` default, or `"weight-loss"`), replacing 8 independent hardcoded `"PharmaCompare"` string literals across the root layout's metadata, `SiteHeader`, `SiteFooter`, the admin sidebar/shell/login card. **Deliberately scoped, not a full multi-tenant rewrite**: `src/lib/ed-pages.ts`'s 43-route content catalogue, the homepage hero copy, and the header's top-bar/CTA strings stay exactly as ED-vertical content — genericizing 43 hardcoded ED articles into a category-driven catalogue is real content-planning work for whenever the weight-loss vertical is actually scheduled (same reasoning `06-content-trust-seo.md` already gives), not a retrofit to do speculatively here. Theme-token swapping per vertical was also left out — inventing weight-loss brand colors with no real design input would be exactly the kind of premature, undirected design decision Code Rule 1 warns against; the shared green-soft theme stays the default until a real one is requested. Verified by running the dev server with `NEXT_PUBLIC_DEPLOYMENT_VERTICAL=weight-loss` and screenshotting: the header logo/tagline correctly swap to "PharmaCompare Weight Loss" / "Weight loss treatment" while the rest of the page (nav, hero, top bar) visibly stays ED content — proving the seam works and honestly showing what's still vertical-specific.
+- **Empty states** — new `src/components/common/empty-state.tsx` (`EmptyState`) replaces the same hand-rolled `<p className="text-center text-sm text-muted-foreground">…</p>` pattern that had drifted across the admin dashboard, audit log, product-variants list, pharmacies list, and the corrections review table (5 real call sites, not a speculative component — see AGENTS.md's own `drawer.tsx`/`toggle.tsx` cautionary precedent for adding wrappers with zero call sites). Left two smaller inline notices (evidence/corrections on the provider detail page) untouched since they're a different, more compact visual pattern, not the same "empty list page" shape.
+- **Error boundaries** — `src/app/(site)/error.tsx` (renders inside the public site's header/footer chrome, matching `not-found.tsx`/`loading.tsx`'s existing tone) and a root `src/app/error.tsx` fallback for anything outside that group (e.g. admin, which has no error boundary of its own yet). Both are the standard Next.js App Router `error.tsx` convention (`reset()` + a "Try again" button), not a bespoke error-tracking system — dev-level, not a production observability integration.
+- Verified with `tsc --noEmit`, `eslint`, `next build` (all clean) and a real Playwright pass: default ED brand strings render correctly, the weight-loss env var visibly changes the header, and the product-variants empty-state search renders the shared component with no visual regression. Spotted the same pre-existing, unrelated search-input hydration warning noted in `03-admin-dashboard-data-model.md` — not touched, out of scope here too.
 
 ## What is built
 
@@ -59,9 +67,10 @@ Set `NEXT_PUBLIC_SITE_URL` to the confirmed production HTTPS origin before a pub
 - [x] ED loading skeleton and not-found page.
 - [x] Unique route metadata and route-derived sitemap.
 - [x] English-only scope confirmed.
-- [ ] Data-fetching empty states and error boundaries when live services are introduced.
-- [ ] Approved clinical, legal and commercial content replacing feature previews.
-- [ ] Production domain configured and launch indexing reviewed.
+- [x] Data-fetching empty states and error boundaries — `EmptyState` component (5 real call sites) + `(site)`/root `error.tsx` boundaries. Dev-level: standard Next.js `error.tsx` convention, not a production error-tracking integration.
+- [ ] Approved clinical, legal and commercial content replacing feature previews. **Not a dev-vs-production gap** — this needs a real clinical/legal reviewer's sign-off regardless of environment; not something to fabricate at any level. Stays open until M1's named-clinical-reviewer open question (see `06-content-trust-seo.md`) is answered.
+- [ ] Production domain configured and launch indexing reviewed. Explicitly out of scope for a dev-level pass — needs a real domain to point `NEXT_PUBLIC_SITE_URL` at.
+- [x] Brand/category config layer — `src/lib/site-config.ts`, env-driven (`NEXT_PUBLIC_DEPLOYMENT_VERTICAL`), verified switching brand name/tagline at runtime. Scoped to brand identity only — the ED route catalogue/content and theme colors are deliberately not genericized yet (see note above).
 
 ## Validation
 

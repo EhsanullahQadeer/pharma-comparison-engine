@@ -1,4 +1,5 @@
 import Link from "@/components/Link";
+import { siteConfig } from "@/lib/site-config";
 
 export function SiteFooter() {
   return (
@@ -6,9 +7,9 @@ export function SiteFooter() {
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 text-sm text-muted-foreground sm:flex-row">
         <span className="flex items-center gap-2 font-medium text-foreground">
           <span className="inline-block size-3 rounded-full border-2 border-primary" />
-          PharmaCompare
+          {siteConfig.brandShortName}
         </span>
-        <p>&copy; {new Date().getFullYear()} PharmaCompare. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} {siteConfig.brandShortName}. All rights reserved.</p>
       </div>
       <div className="mx-auto mt-6 max-w-6xl space-y-4 text-sm text-muted-foreground">
         <p>ED comparison platform preview. Pharmacy listings and prices are coming soon. Consultations and purchases will take place with the pharmacy.</p>

@@ -36,9 +36,20 @@ enum RegulatorType {
   PSNI
 }
 
+// Which vertical a ProductVariant belongs to (platform pivot, 2026-09-16 — see
+// docs/milestones/00-platform-strategy.md). A variant belongs to exactly one category; a Provider
+// stays category-agnostic since one pharmacy can legitimately sell both (confirmed for real during
+// M1's feasibility exercise — Pharmica, Click Pharmacy, Foundry UK and Quick Meds all list both).
+enum ProductCategory {
+  ERECTILE_DYSFUNCTION
+  WEIGHT_LOSS
+}
+
 enum Ingredient {
   SILDENAFIL
   TADALAFIL
+  TIRZEPATIDE
+  SEMAGLUTIDE
 }
 
 enum SupplyClassification {
@@ -87,6 +98,50 @@ enum AuditAction {
   DELETE
 }
 
+// M3b automatic discovery (see docs/pharmacy-discovery-research-review.md, which reconciles the
+// raw source research against reality — GPHC and NHSBSA_CONTRACTOR_DETAILS have unconfirmed live
+// schemas as of 2026-09-16 and are registered slots only; their adapters are stubs until verified.
+enum DiscoverySourceType {
+  COMPANIES_HOUSE
+  CQC
+  NHS_ODS
+  NHSBSA_CONTRACTOR_DETAILS
+  GPHC
+}
+
+enum DiscoveryCadence {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+}
+
+enum DiscoveryRunStatus {
+  SUCCESS
+  FAILURE
+  PARTIAL
+}
+
+// A candidate is never auto-merged into a Provider — per the research-review doc's explicit
+// rejection of score-based auto-approval, every NEW/LINKED_EXISTING candidate needs a staff click
+// before any Provider data changes.
+enum DiscoveryCandidateStatus {
+  NEW
+  LINKED_EXISTING
+  PROMOTED
+  REJECTED
+}
+
+// The whole dedup mechanism is an exact match against one of these on ProviderIdentifier — no
+// fuzzy/scored matching. GPhC number identifies a premises only, not a universal join key across
+// sources (research-review doc) — kept alongside the others as one of several identifier types.
+enum ProviderIdentifierType {
+  COMPANY_NUMBER
+  CQC_LOCATION_ID
+  ODS_CODE
+  GPHC_NUMBER
+}
+
 model StaffUser {
   id           String    @id @default(cuid())
   email        String    @unique
@@ -98,11 +153,13 @@ model StaffUser {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  reviewedEvidence Evidence[]   @relation("EvidenceReviewer")
-  authoredArticles Article[]    @relation("ArticleAuthor")
-  reviewedArticles Article[]    @relation("ArticleReviewer")
-  ownedCorrections Correction[] @relation("CorrectionOwner")
-  auditLogs        AuditLog[]   @relation("AuditLogActor")
+  reviewedEvidence            Evidence[]           @relation("EvidenceReviewer")
+  authoredArticles            Article[]            @relation("ArticleAuthor")
+  reviewedArticles            Article[]            @relation("ArticleReviewer")
+  ownedCorrections            Correction[]         @relation("CorrectionOwner")
+  auditLogs                   AuditLog[]           @relation("AuditLogActor")
+  triggeredDiscoveryRuns      DiscoveryRun[]       @relation("DiscoveryRunTrigger")
+  reviewedDiscoveryCandidates DiscoveryCandidate[] @relation("DiscoveryCandidateReviewer")
 }
 
 // Trading/legal names, website, regulator references, dispensing partner, service regions (roadmap §4).
@@ -123,9 +180,11 @@ model Provider {
   createdAt             DateTime       @default(now())
   updatedAt             DateTime       @updatedAt
 
-  offers      Offer[]
-  evidence    Evidence[]
-  corrections Correction[]
+  offers              Offer[]
+  evidence            Evidence[]
+  corrections         Correction[]
+  identifiers         ProviderIdentifier[]
+  discoveryCandidates DiscoveryCandidate[]
 
   @@index([status])
 }
@@ -134,6 +193,7 @@ model Provider {
 // Offer is what links a Provider to a ProductVariant with a price.
 model ProductVariant {
   id                   String               @id @default(cuid())
+  category             ProductCategory
   ingredient           Ingredient
   brandName            String?
   strengthMg           Int
@@ -144,6 +204,8 @@ model ProductVariant {
   updatedAt            DateTime             @updatedAt
 
   offers Offer[]
+
+  @@index([category])
 }
 
 // Money stored as integer pence per roadmap §4 "Fair price calculation" — never float.
@@ -217,14 +279,26 @@ model Evidence {
   createdAt      DateTime               @default(now())
 }
 
+// A full offer-state snapshot written on every accepted change to an offer's price, fees,
+// availability or active discount — not just the price number. Originally price-only; broadened
+// 2026-09-16 (platform pivot, M3a reopened item) because the roadmap's own failure scenarios
+// (§4.7: disputed/expired discounts, feed-vs-visible-price mismatches) need to show *why* a
+// delivered total changed, not just that it did. `activeDiscountSnapshot` is a point-in-time copy
+// of the discount terms that applied (if any) — not a live relation, since the Discount row itself
+// may later change or be deleted.
 model PriceHistory {
-  id                  String   @id @default(cuid())
-  offerId             String
-  offer               Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
-  itemPricePence      Int
-  deliveredTotalPence Int
-  effectiveFrom       DateTime
-  recordedAt          DateTime @default(now())
+  id                      String       @id @default(cuid())
+  offerId                 String
+  offer                   Offer        @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  itemPricePence          Int
+  deliveryFeePence        Int          @default(0)
+  consultationFeePence    Int          @default(0)
+  otherMandatoryFeesPence Int          @default(0)
+  deliveredTotalPence     Int
+  availability            Availability @default(UNKNOWN)
+  activeDiscountSnapshot  Json?
+  effectiveFrom           DateTime
+  recordedAt              DateTime     @default(now())
 
   @@index([offerId])
 }
@@ -293,4 +367,104 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([actorId])
   @@index([createdAt])
+}
+
+// One row per discovery data source, seeded once (prisma/seed.ts) — not staff-creatable, only
+// staff-editable (cadence/enabled). Admin-configurable cadence per client instruction: fetch
+// frequency is a setting, not a hardcoded cron.
+model DiscoverySource {
+  id                       String              @id @default(cuid())
+  type                     DiscoverySourceType @unique
+  enabled                  Boolean             @default(false)
+  cadence                  DiscoveryCadence
+  lastRunAt                DateTime?
+  nextRunAt                DateTime?
+  config                   Json?
+  // Encrypted credentials ("<iv>:<authTag>:<ciphertext>", all base64 via
+  // src/lib/discovery/credentials-crypto.ts) — never plaintext, never sent to the client.
+  // configuredCredentialKeys holds just the key *names* (e.g. "apiKey") kept in lockstep with the
+  // ciphertext, so the admin UI can show "configured"/"not set" per field without ever decrypting.
+  credentialsCiphertext    String?
+  configuredCredentialKeys String[]            @default([])
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+
+  runs       DiscoveryRun[]
+  candidates DiscoveryCandidate[]
+
+  @@index([enabled, nextRunAt])
+}
+
+// One row per adapter execution — system/cron activity, not a staff-driven entity mutation, so
+// kept separate from AuditLog. triggeredByStaffId is null for a cron-fired run, set for a manual
+// "Run now" click.
+model DiscoveryRun {
+  id                 String              @id @default(cuid())
+  sourceId           String
+  source             DiscoverySource     @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  startedAt          DateTime            @default(now())
+  finishedAt         DateTime?
+  status             DiscoveryRunStatus?
+  candidatesFound    Int                 @default(0)
+  errorMessage       String?
+  triggeredByStaffId String?
+  triggeredByStaff   StaffUser?          @relation("DiscoveryRunTrigger", fields: [triggeredByStaffId], references: [id], onDelete: SetNull)
+  createdAt          DateTime            @default(now())
+
+  touchedCandidates DiscoveryCandidate[]
+
+  @@index([sourceId, startedAt])
+}
+
+// One row per raw discovered record pending staff resolution. sourceRecordId is the source's own
+// key (company number / CQC location id / ODS code) so re-ingesting the same record upserts rather
+// than duplicating. Identifiers found on the raw record are copied out to their own columns so
+// identifier-match.ts can do a plain indexed lookup against ProviderIdentifier without touching
+// rawPayload.
+model DiscoveryCandidate {
+  id                String                   @id @default(cuid())
+  sourceId          String
+  source            DiscoverySource          @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  sourceRecordId    String
+  rawPayload        Json
+  name              String
+  postcode          String?
+  websiteDomain     String?
+  companyNumber     String?
+  cqcLocationId     String?
+  odsCode           String?
+  gphcNumber        String?
+  status            DiscoveryCandidateStatus @default(NEW)
+  matchedProviderId String?
+  matchedProvider   Provider?                @relation(fields: [matchedProviderId], references: [id], onDelete: SetNull)
+  reviewedByStaffId String?
+  reviewedByStaff   StaffUser?               @relation("DiscoveryCandidateReviewer", fields: [reviewedByStaffId], references: [id], onDelete: SetNull)
+  reviewedAt        DateTime?
+  // Which run most recently created/updated this candidate — lets a "Run now" click query exactly
+  // what that run found, rather than guessing from timestamps.
+  lastSeenRunId     String?
+  lastSeenRun       DiscoveryRun?            @relation(fields: [lastSeenRunId], references: [id], onDelete: SetNull)
+  discoveredAt      DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+
+  @@unique([sourceId, sourceRecordId])
+  @@index([status])
+  @@index([websiteDomain])
+}
+
+// The entire dedup mechanism: an exact match on (identifierType, value) is the whole "is this a
+// duplicate" check — no fuzzy/scored matching (research-review doc explicitly rejects that for
+// first publication). source is nullable since a staff member can also record an identifier by
+// hand, not only via a discovery run.
+model ProviderIdentifier {
+  id             String                 @id @default(cuid())
+  providerId     String
+  provider       Provider               @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  identifierType ProviderIdentifierType
+  value          String
+  source         DiscoverySourceType?
+  recordedAt     DateTime               @default(now())
+
+  @@unique([identifierType, value])
+  @@index([providerId])
 }

@@ -3,6 +3,7 @@ import { Outfit, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ConfirmDialogHost } from "@/components/common/ConfirmDialogHost";
 import { RouteProgressBar } from "@/components/RouteProgressBar";
+import { siteConfig } from "@/lib/site-config";
 import { siteUrl } from "@/lib/site-url";
 
 import type { Metadata } from "next";
@@ -20,8 +21,8 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl || "http://localhost:3000"),
   robots: { index: Boolean(siteUrl), follow: true },
-  title: { default: "PharmaCompare ED", template: "%s | PharmaCompare" },
-  description: "A UK erectile dysfunction pharmacy comparison platform in development.",
+  title: { default: siteConfig.brandName, template: `%s | ${siteConfig.brandShortName}` },
+  description: `A UK ${siteConfig.tagline.toLowerCase()} pharmacy comparison platform in development.`,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

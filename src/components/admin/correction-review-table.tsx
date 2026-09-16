@@ -6,6 +6,7 @@ import { assignCorrectionToSelf, updateCorrectionStatus } from "@/actions/correc
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/card";
+import { EmptyState } from "@/components/common/empty-state";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/common/table";
 import Link from "@/components/Link";
 import type { CorrectionStatus } from "@/generated/prisma/client";
@@ -84,7 +85,7 @@ export function CorrectionReviewTable({ items }: { items: CorrectionItem[] }) {
       </CardHeader>
       <CardContent className="px-0">
         {items.length === 0 ? (
-          <p className="px-4 py-8 text-center text-sm text-muted-foreground">No corrections reported.</p>
+          <EmptyState title="No corrections reported." />
         ) : (
           <Table>
             <TableHeader>

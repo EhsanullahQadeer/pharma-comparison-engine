@@ -1,4 +1,4 @@
-# M7 — External Referrals, Corrections & Commercial Reporting
+# M7 — Provider Links & Corrections; Optional Future Commercial Reporting
 
 **Status:** ⬜ Not started
 **Depends on:** M1, M3, M5
@@ -6,9 +6,11 @@
 
 ## What we're building
 
+**Confirmed scope (2026-09-16):** the product is an independent price-comparison engine for users, with no referral partners at launch. Plain provider links and corrections are core scope. Affiliate attribution and commercial reporting below are deferred options only, not launch gates or committed next steps. Any future commercial arrangement must leave inclusion, price ranking and visual prominence unchanged; no paid placement or partner promotion is part of this milestone.
+
 - Outbound "go to provider" links that are validated, and tracked where an approved affiliate agreement exists — but never allowed to influence ranking.
 - A public correction-report inbox with a named owner and an audit trail.
-- Commercial reporting: pending → approved → paid reconciliation, per roadmap §2.10.
+- Optional later commercial reporting, only if actual agreements justify it: pending → approved → paid reconciliation, per roadmap §2.10.
 
 ## How we're building it
 
@@ -31,14 +33,14 @@
 
 - [ ] `Referral` model + destination validation
 - [ ] Outbound click logging (aggregate, non-sensitive)
-- [ ] Affiliate attribution integration (first accepted programme)
-- [ ] Deduplication + reversal handling for commission events
+- [ ] Deferred, optional: affiliate attribution integration if an eligible programme is accepted
+- [ ] Deferred, optional: deduplication + reversal handling for commission events
 - [ ] Public correction-report form
 - [ ] Correction review queue with named owner + audit trail
-- [ ] Commercial reporting dashboard (pending / approved / paid)
+- [ ] Deferred, optional: commercial reporting dashboard (pending / approved / paid)
 - [ ] Verified: ranking is identical for partner vs. non-partner providers
 
 ## Open questions
 
-- Which affiliate network, if any, is the actual first target? (Awin was the roadmap's worked example, not a confirmed plan.)
+- No affiliate-network selection is needed for launch. Revisit only if a future agreement supports the independent comparison service without influencing results.
 - Who holds the "named escalation owner" role for credible safety/identity concerns (roadmap §2.11 service target)?
