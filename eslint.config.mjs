@@ -192,6 +192,9 @@ const eslintConfig = defineConfig([
     "prisma/seed*.ts",
     "prisma/verify*.ts",
     ".claude/worktrees/**",
+    // Utility scripts (console.log expected) and temp/browser profiles:
+    "scripts/**",
+    "tmp/**",
   ]),
 ]);
 
