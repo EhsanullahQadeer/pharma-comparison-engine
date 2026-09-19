@@ -3,14 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { Ingredient, ProductCategory, SupplyClassification } from "@/generated/prisma/client";
+import { Ingredient, SupplyClassification } from "@/generated/prisma/client";
 import { recordAuditLog } from "@/lib/audit-log";
 import { DEFAULT_PAGE_SIZE } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 import { requireStaffRole } from "@/lib/staff-auth";
 
 const productVariantSchema = z.object({
-  category: z.enum(ProductCategory),
   ingredient: z.enum(Ingredient),
   brandName: z.string().trim().optional(),
   strengthMg: z.coerce.number().int().min(1, "Enter the strength in mg."),
@@ -26,7 +25,6 @@ export type ProductVariantState = {
 
 function parseProductVariantFormData(formData: FormData) {
   return productVariantSchema.safeParse({
-    category: formData.get("category"),
     ingredient: formData.get("ingredient"),
     brandName: formData.get("brandName") || undefined,
     strengthMg: formData.get("strengthMg"),
@@ -99,7 +97,7 @@ export async function getProductVariants(search?: string, page = 1, pageSize: nu
   const [variants, total] = await Promise.all([
     prisma.productVariant.findMany({
       where,
-      orderBy: [{ category: "asc" }, { ingredient: "asc" }, { strengthMg: "asc" }],
+      orderBy: [{ ingredient: "asc" }, { strengthMg: "asc" }],
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
@@ -113,5 +111,5 @@ export async function getProductVariants(search?: string, page = 1, pageSize: nu
 // scope is sildenafil/tadalafil variants only), so a full list is fine here.
 export async function getAllProductVariants() {
   await requireStaffRole(["CATALOGUE_EDITOR", "CONTENT_REVIEWER", "ADMINISTRATOR", "COMMERCIAL_MANAGER"]);
-  return prisma.productVariant.findMany({ orderBy: [{ category: "asc" }, { ingredient: "asc" }, { strengthMg: "asc" }] });
+  return prisma.productVariant.findMany({ orderBy: [{ ingredient: "asc" }, { strengthMg: "asc" }] });
 }

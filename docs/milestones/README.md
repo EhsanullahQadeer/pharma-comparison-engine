@@ -1,6 +1,6 @@
 # Delivery Milestones
 
-**Start with [`00-platform-strategy.md`](00-platform-strategy.md).** As of 2026-09-16 this is no longer a single-product (ED) build — it's a multi-vertical pharmacy price-comparison engine deployed per brand/domain, with ED as vertical #1 and weight-loss (Mounjaro/tirzepatide) as vertical #2. That file records the pivot and what it changes underneath M1 and M3a; the rest of this index and the milestone files below still describe the ED vertical's own design and status, now read as "vertical #1" rather than "the product."
+**As of 2026-09-18 this is back to a single-product (ED) build.** The 2026-09-16 multi-vertical pivot recorded in [`00-platform-strategy.md`](00-platform-strategy.md) was reversed per client direction — see that file's status line and `docs/current-tasks.md`'s 2026-09-18 entry. `ProductCategory`/weight-loss framing anywhere below (including in `00-platform-strategy.md`'s own body) is a decision record of that period, not current scope — the schema, catalogue and site config are ED-only again.
 
 Working breakdown of the [main roadmap](../monj-functionality-and-ed-milestones.md) into one file per milestone. Each file states **what** is being built, **how**, the **alternatives** considered (custom / third-party / hybrid, per the roadmap's own tables), and a live **checklist** of done vs remaining work. Update the checklist in place as work lands — don't duplicate status into a separate summary.
 
@@ -10,7 +10,7 @@ Status legend: ⬜ Not started · 🟨 In progress · 🟩 Mostly complete · �
 
 | # | Milestone | Status | File |
 | --- | --- | --- | --- |
-| M0 | Platform strategy — multi-vertical, brand-per-domain | 🟨 | [00-platform-strategy.md](00-platform-strategy.md) |
+| M0 | Platform strategy — multi-vertical, brand-per-domain | ⛔ Superseded | [00-platform-strategy.md](00-platform-strategy.md) |
 | M1 | Scope, compliance & data-source feasibility | ✅ | [01-scope-and-compliance.md](01-scope-and-compliance.md) |
 | M2 | Layout, routes/pages, content & theme | 🟩 | [02-layout-theme-foundation.md](02-layout-theme-foundation.md) |
 | M3a | Admin dashboard, auth & data model | ✅ | [03-admin-dashboard-data-model.md](03-admin-dashboard-data-model.md) |

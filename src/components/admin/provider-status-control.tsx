@@ -1,10 +1,21 @@
 "use client";
 
+import { MoreHorizontal } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { transitionProviderStatus } from "@/actions/providers/providers";
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/common/dropdown-menu";
+import { TableCell } from "@/components/common/table";
 import type { ProviderStatus, StaffRole } from "@/generated/prisma/client";
 import { confirm } from "@/lib/confirm-store";
 import { providerStatusBadgeVariant, providerStatusLabels } from "@/lib/provider-labels";
@@ -16,10 +27,13 @@ export function ProviderStatusControl({
   providerId,
   status,
   role,
+  variant = "buttons",
 }: {
   providerId: string;
   status: ProviderStatus;
   role: StaffRole;
+  /** "buttons" (detail page — one button per transition) or "menu" (compact dropdown for a table row). */
+  variant?: "buttons" | "menu";
 }) {
   const [current, setCurrent] = useState(status);
   const [error, setError] = useState<string>();
@@ -50,6 +64,43 @@ export function ProviderStatusControl({
       }
       setCurrent(next);
     });
+  }
+
+  if (variant === "menu") {
+    return (
+      <>
+        <TableCell>
+          <Badge variant={providerStatusBadgeVariant[current]}>{providerStatusLabels[current]}</Badge>
+        </TableCell>
+        <TableCell className="text-right">
+          <div className="flex flex-col items-end gap-1">
+            {allowed.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger render={<Button type="button" size="icon" variant="ghost" disabled={isPending} aria-label="Change status" />}>
+                  <MoreHorizontal aria-hidden="true" className="size-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>Change status</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {allowed.map((next) => (
+                      <DropdownMenuItem
+                        key={next}
+                        variant={destructiveStatuses.includes(next) ? "destructive" : "default"}
+                        onClick={() => handleTransition(next)}
+                      >
+                        Move to {providerStatusLabels[next]}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            {error ? <p className="text-xs text-destructive">{error}</p> : null}
+          </div>
+        </TableCell>
+      </>
+    );
   }
 
   return (

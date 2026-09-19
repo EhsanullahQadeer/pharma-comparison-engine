@@ -36,20 +36,9 @@ enum RegulatorType {
   PSNI
 }
 
-// Which vertical a ProductVariant belongs to (platform pivot, 2026-09-16 — see
-// docs/milestones/00-platform-strategy.md). A variant belongs to exactly one category; a Provider
-// stays category-agnostic since one pharmacy can legitimately sell both (confirmed for real during
-// M1's feasibility exercise — Pharmica, Click Pharmacy, Foundry UK and Quick Meds all list both).
-enum ProductCategory {
-  ERECTILE_DYSFUNCTION
-  WEIGHT_LOSS
-}
-
 enum Ingredient {
   SILDENAFIL
   TADALAFIL
-  TIRZEPATIDE
-  SEMAGLUTIDE
 }
 
 enum SupplyClassification {
@@ -102,6 +91,7 @@ enum AuditAction {
 // raw source research against reality — GPHC and NHSBSA_CONTRACTOR_DETAILS have unconfirmed live
 // schemas as of 2026-09-16 and are registered slots only; their adapters are stubs until verified.
 enum DiscoverySourceType {
+  MANUAL_WEB
   COMPANIES_HOUSE
   CQC
   NHS_ODS
@@ -142,6 +132,24 @@ enum ProviderIdentifierType {
   GPHC_NUMBER
 }
 
+// Product-base filter pilot (2026-09-18, ED-only — see docs/current-tasks.md): which ProductVariant
+// a provider's website appears to sell, detected from its own public pages, always staff-confirmed
+// before an Offer is created — same never-auto-write rule as DiscoveryCandidate.
+enum ProductMatchStatus {
+  NEW
+  CONFIRMED
+  REJECTED
+}
+
+// HIGH: the matched ingredient token sits in the URL's final path segment (a specific product/
+// treatment page, e.g. /treatments/viagra-connect). MEDIUM: the token only appears in an earlier
+// path segment (a category/collection page, e.g. /treatments?condition=ed) — per the "dedicated
+// page = confirmed, category mention = probable" rule in docs/implementation-plan.md §6.
+enum ProductMatchConfidence {
+  HIGH
+  MEDIUM
+}
+
 model StaffUser {
   id           String    @id @default(cuid())
   email        String    @unique
@@ -160,6 +168,7 @@ model StaffUser {
   auditLogs                   AuditLog[]           @relation("AuditLogActor")
   triggeredDiscoveryRuns      DiscoveryRun[]       @relation("DiscoveryRunTrigger")
   reviewedDiscoveryCandidates DiscoveryCandidate[] @relation("DiscoveryCandidateReviewer")
+  reviewedProductMatches      ProductMatch[]       @relation("ProductMatchReviewer")
 }
 
 // Trading/legal names, website, regulator references, dispensing partner, service regions (roadmap §4).
@@ -185,6 +194,7 @@ model Provider {
   corrections         Correction[]
   identifiers         ProviderIdentifier[]
   discoveryCandidates DiscoveryCandidate[]
+  productMatches      ProductMatch[]
 
   @@index([status])
 }
@@ -193,7 +203,6 @@ model Provider {
 // Offer is what links a Provider to a ProductVariant with a price.
 model ProductVariant {
   id                   String               @id @default(cuid())
-  category             ProductCategory
   ingredient           Ingredient
   brandName            String?
   strengthMg           Int
@@ -203,9 +212,8 @@ model ProductVariant {
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
 
-  offers Offer[]
-
-  @@index([category])
+  offers         Offer[]
+  productMatches ProductMatch[]
 }
 
 // Money stored as integer pence per roadmap §4 "Fair price calculation" — never float.
@@ -236,6 +244,7 @@ model Offer {
   priceHistory PriceHistory[]
   evidence     Evidence[]
   referrals    Referral[]
+  productMatch ProductMatch?
 
   @@index([providerId])
   @@index([productVariantId])
@@ -407,6 +416,9 @@ model DiscoveryRun {
   status             DiscoveryRunStatus?
   candidatesFound    Int                 @default(0)
   errorMessage       String?
+  // The primary request the adapter made, secrets replaced with a "{name}" placeholder — never a
+  // real key/value. Kept even on failed runs ("here's exactly what we tried to call").
+  requestSummary     String?
   triggeredByStaffId String?
   triggeredByStaff   StaffUser?          @relation("DiscoveryRunTrigger", fields: [triggeredByStaffId], references: [id], onDelete: SetNull)
   createdAt          DateTime            @default(now())
@@ -467,4 +479,32 @@ model ProviderIdentifier {
 
   @@unique([identifierType, value])
   @@index([providerId])
+}
+
+// One row per candidate "this provider appears to sell this product" signal, found by
+// src/lib/product-detection scanning a provider's own public pages — never auto-written into an
+// Offer. Confirming picks the exact ProductVariant; the priced Offer itself is created later by the
+// price-collection pilot's first successful scrape (offerId links back once that happens), not at
+// confirm time — an Offer requires a real price and this step never has one yet.
+model ProductMatch {
+  id                String                 @id @default(cuid())
+  providerId        String
+  provider          Provider               @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  candidateUrl      String
+  matchedIngredient Ingredient
+  matchedTokens     String[]
+  confidence        ProductMatchConfidence
+  status            ProductMatchStatus     @default(NEW)
+  productVariantId  String?
+  productVariant    ProductVariant?        @relation(fields: [productVariantId], references: [id], onDelete: SetNull)
+  offerId           String?                @unique
+  offer             Offer?                 @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  reviewedByStaffId String?
+  reviewedByStaff   StaffUser?             @relation("ProductMatchReviewer", fields: [reviewedByStaffId], references: [id], onDelete: SetNull)
+  reviewedAt        DateTime?
+  detectedAt        DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  @@unique([providerId, candidateUrl])
+  @@index([status])
 }

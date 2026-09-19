@@ -1,9 +1,12 @@
 import { ArrowLeft, Globe, MapPin, ShieldCheck } from "lucide-react";
 
+import { getPendingPriceCollectionForProvider } from "@/actions/price-collection/price-collection";
 import { getAllProductVariants } from "@/actions/product-variants/product-variants";
 import { getProvider } from "@/actions/providers/providers";
 import { auth } from "@/auth";
+import { DetectProductsButton } from "@/components/admin/detect-products-button";
 import { EditPharmacyModal } from "@/components/admin/edit-pharmacy-modal";
+import { ProductMatchPricingSection } from "@/components/admin/product-match-pricing-section";
 import { ProviderOffersSection } from "@/components/admin/provider-offers-section";
 import { ProviderStatusControl } from "@/components/admin/provider-status-control";
 import { Badge } from "@/components/common/badge";
@@ -22,7 +25,12 @@ export async function generateMetadata(props: PageProps<"/admin/pharmacies/[id]"
 
 export default async function ProviderDetailPage(props: PageProps<"/admin/pharmacies/[id]">) {
   const { id } = await props.params;
-  const [provider, variants, session] = await Promise.all([getProvider(id), getAllProductVariants(), auth()]);
+  const [provider, variants, session, pendingMatches] = await Promise.all([
+    getProvider(id),
+    getAllProductVariants(),
+    auth(),
+    getPendingPriceCollectionForProvider(id),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -57,7 +65,13 @@ export default async function ProviderDetailPage(props: PageProps<"/admin/pharma
         </CardContent>
       </Card>
 
+      <div className="flex items-center justify-end">
+        <DetectProductsButton providerId={provider.id} />
+      </div>
+
       <ProviderOffersSection providerId={provider.id} offers={provider.offers} variants={variants} />
+
+      <ProductMatchPricingSection items={pendingMatches} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>

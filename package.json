@@ -4,10 +4,18 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:google-ai": "tsx scripts/dev-google-ai.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "db:seed": "tsx prisma/seed.ts",
+    "discovery:dump": "tsx scripts/dump-discovery-candidates.ts",
+    "discovery:google-ai-debug": "tsx scripts/debug-google-ai-cdp.ts",
+    "discovery:google-ai-probe": "tsx scripts/probe-google-ai-links.ts",
+    "discovery:google-ai-check": "tsx scripts/check-google-ai-cdp.ts",
+    "discovery:google-ai-login": "tsx scripts/open-google-ai-profile.ts",
+    "discovery:reset": "tsx scripts/reset-discovery.ts",
+    "discovery:ed-price-scrape": "tsx scripts/scrape-ed-prices.ts",
     "prepare": "husky"
   },
   "dependencies": {
@@ -23,13 +31,15 @@
     "next": "16.3.5",
     "next-auth": "^5.0.0-beta.32",
     "pg": "^8.23.0",
+    "playwright": "^1.63.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-hook-form": "^7.88.0",
     "recharts": "^3.10.1",
     "shadcn": "^4.21.0",
     "tailwind-merge": "^3.7.0",
-    "tw-animate-css": "^1.4.0"
+    "tw-animate-css": "^1.4.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@faker-js/faker": "^10.6.0",

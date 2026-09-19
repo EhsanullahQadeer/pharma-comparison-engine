@@ -82,17 +82,12 @@ async function seedProviders(count: number) {
 }
 
 const productVariantSeeds = [
-  { category: "ERECTILE_DYSFUNCTION", ingredient: "SILDENAFIL", brandName: "Viagra Connect", strengthMg: 50, formulation: "Film-coated tablet", packQuantity: 4, supplyClassification: "P" },
-  { category: "ERECTILE_DYSFUNCTION", ingredient: "SILDENAFIL", brandName: "Viagra", strengthMg: 100, formulation: "Film-coated tablet", packQuantity: 4, supplyClassification: "POM" },
-  { category: "ERECTILE_DYSFUNCTION", ingredient: "SILDENAFIL", brandName: undefined, strengthMg: 100, formulation: "Film-coated tablet (generic)", packQuantity: 8, supplyClassification: "POM" },
-  { category: "ERECTILE_DYSFUNCTION", ingredient: "TADALAFIL", brandName: "Cialis", strengthMg: 10, formulation: "Film-coated tablet", packQuantity: 4, supplyClassification: "POM" },
-  { category: "ERECTILE_DYSFUNCTION", ingredient: "TADALAFIL", brandName: "Cialis", strengthMg: 20, formulation: "Film-coated tablet", packQuantity: 4, supplyClassification: "POM" },
-  { category: "ERECTILE_DYSFUNCTION", ingredient: "TADALAFIL", brandName: undefined, strengthMg: 5, formulation: "Film-coated tablet (generic, daily dose)", packQuantity: 28, supplyClassification: "POM" },
-  // Weight-loss vertical (platform pivot, 2026-09-16) — both POM, no P-medicine tier exists for
-  // these ingredients in the UK (see docs/milestones/01-scope-and-compliance.md).
-  { category: "WEIGHT_LOSS", ingredient: "TIRZEPATIDE", brandName: "Mounjaro", strengthMg: 5, formulation: "Pre-filled pen", packQuantity: 4, supplyClassification: "POM" },
-  { category: "WEIGHT_LOSS", ingredient: "TIRZEPATIDE", brandName: "Mounjaro", strengthMg: 10, formulation: "Pre-filled pen", packQuantity: 4, supplyClassification: "POM" },
-  { category: "WEIGHT_LOSS", ingredient: "SEMAGLUTIDE", brandName: "Wegovy", strengthMg: 1, formulation: "Pre-filled pen", packQuantity: 4, supplyClassification: "POM" },
+  { ingredient: "SILDENAFIL", brandName: "Viagra Connect", strengthMg: 50, formulation: "Film-coated tablet", packQuantity: 4, supplyClassification: "P" },
+  { ingredient: "SILDENAFIL", brandName: "Viagra", strengthMg: 100, formulation: "Film-coated tablet", packQuantity: 4, supplyClassification: "POM" },
+  { ingredient: "SILDENAFIL", brandName: undefined, strengthMg: 100, formulation: "Film-coated tablet (generic)", packQuantity: 8, supplyClassification: "POM" },
+  { ingredient: "TADALAFIL", brandName: "Cialis", strengthMg: 10, formulation: "Film-coated tablet", packQuantity: 4, supplyClassification: "POM" },
+  { ingredient: "TADALAFIL", brandName: "Cialis", strengthMg: 20, formulation: "Film-coated tablet", packQuantity: 4, supplyClassification: "POM" },
+  { ingredient: "TADALAFIL", brandName: undefined, strengthMg: 5, formulation: "Film-coated tablet (generic, daily dose)", packQuantity: 28, supplyClassification: "POM" },
 ] as const;
 
 async function seedProductVariants() {

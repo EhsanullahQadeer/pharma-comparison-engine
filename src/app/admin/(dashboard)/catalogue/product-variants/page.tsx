@@ -8,7 +8,7 @@ import { EmptyState } from "@/components/common/empty-state";
 import { Input } from "@/components/common/input";
 import PaginationServer from "@/components/common/PaginationServer";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/common/table";
-import { ingredientLabels, productCategoryLabels, supplyClassificationLabels } from "@/lib/catalogue-labels";
+import { ingredientLabels, supplyClassificationLabels } from "@/lib/catalogue-labels";
 import { parsePageSize } from "@/lib/pagination";
 
 import type { Metadata } from "next";
@@ -47,7 +47,6 @@ export default async function ProductVariantsPage(props: PageProps<"/admin/catal
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Category</TableHead>
                   <TableHead>Ingredient</TableHead>
                   <TableHead>Brand</TableHead>
                   <TableHead>Strength</TableHead>
@@ -60,7 +59,6 @@ export default async function ProductVariantsPage(props: PageProps<"/admin/catal
               <TableBody>
                 {variants.map((variant) => (
                   <TableRow key={variant.id}>
-                    <TableCell className="text-muted-foreground">{productCategoryLabels[variant.category]}</TableCell>
                     <TableCell className="font-medium">{ingredientLabels[variant.ingredient]}</TableCell>
                     <TableCell className="text-muted-foreground">{variant.brandName || "—"}</TableCell>
                     <TableCell>{variant.strengthMg}mg</TableCell>

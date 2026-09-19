@@ -1,9 +1,9 @@
 # M4/M5 — Price Comparison Engine: Collection & Calculation
 
 **Status:** ⬜ Not started
-**Depends on:** M3a (including the reopened `ProductCategory`/history items), M3b (need providers before prices)
+**Depends on:** M3a (including the offer/discount history item), M3b (need providers before prices)
 **Roadmap:** [§ Milestone 4](../monj-functionality-and-ed-milestones.md#milestone-4--price-collection-and-freshness-monitoring), [§ Milestone 5](../monj-functionality-and-ed-milestones.md#milestone-5--comparison-calculations-filters-and-provider-pages)
-**Platform context:** [`00-platform-strategy.md`](00-platform-strategy.md) — this collection/calculation engine is the platform's core reusable asset per the 2026-09-16 pivot, deployed once per brand and never rebuilt per vertical. Nothing in this file's design was ED-specific; the only change is that comparisons must stay scoped within a single `ProductCategory` (never compare an ED variant against a weight-loss one) and offer/discount history (M3a item 2) should be written wherever price history already is.
+**Platform context:** the 2026-09-16 multi-vertical pivot ([`00-platform-strategy.md`](00-platform-strategy.md)) was reversed 2026-09-18 — this is an ED-only engine again, single database, no `ProductCategory` concept. First real pilot scoped to ED (sildenafil/tadalafil) only: product-detection (which providers sell which `ProductVariant`) then daily/12h price scraping on confirmed offers — see `docs/current-tasks.md`'s 2026-09-18 entry.
 
 ## What we're building
 
@@ -49,7 +49,7 @@ Two connected pieces, deliberately split from provider data (M3b) because they'r
   `deliveredTotal = itemPrice − applicableDiscount + delivery + mandatoryFees`
   `unitPrice = deliveredTotal / tabletCount`
 - Only subtract a discount when its conditions are actually satisfied; an unknown fee must stay unknown, never silently become £0 (roadmap §2.3, §4.7).
-- Compare strictly within matching product category + ingredient + strength + formulation + pack size + purchase conditions; show brand distinctions explicitly rather than conflating generics. Category is the outermost boundary — an ED variant and a weight-loss variant are never comparable, regardless of any other matching fields.
+- Compare strictly within matching ingredient + strength + formulation + pack size + purchase conditions; show brand distinctions explicitly rather than conflating generics.
 - Filters: medicine, brand/generic, strength, formulation, pack quantity, delivery coverage, purchase model (roadmap §2.2 ED adaptation).
 - Sorting must be deterministic — a stable tie-break (e.g. provider ID) so identically-priced offers don't reorder between identical queries.
 
@@ -85,16 +85,17 @@ Roadmap §4.6's 50 providers × 20 variant pages × 2 checks/day ≈ 2,000 check
 
 ### Collection
 
+- [x] Product-base filter (2026-09-18): `ProductMatch` model + detection adapter (`src/lib/product-detection/`) + staff review tab, ED-only, live-verified against the 13 real seeded providers — see `docs/current-tasks.md`. Determines *which* `ProductVariant` a provider sells; price collection itself (below) is separate.
 - [x] Scheduling approach decided: VPS Node.js worker + node-cron + Postgres jobs
+- [x] Public-page extraction adapter (first real provider) (2026-09-18): `src/lib/price-collection/scrape-price.ts`, schema.org `Product`/`Offer` JSON-LD only (rejects non-GBP rather than guess) — live-verified against clickpharmacy.co.uk. Manual "Collect price"/"Refresh price" trigger per confirmed match, not yet on a schedule (see below). No Playwright fallback yet for pages without JSON-LD.
+- [x] `PriceHistory` written on every accepted change — written on every collect right now (not yet distinguishing "changed" from "unchanged but successful", since there's no scheduled recheck loop generating repeat observations yet).
 - [ ] Worker implemented and supervised; durable claims, retries and overdue-work recovery verified
-- [ ] Per-provider source-adapter interface defined
+- [ ] Per-provider source-adapter interface defined (beyond the single JSON-LD adapter above)
 - [ ] Optional post-launch: direct/affiliate-feed adapter when real access and applicable rights exist (not a launch gate)
-- [ ] Public-page extraction adapter (first real provider)
 - [ ] Manual price-entry flow (staff)
 - [ ] Freshness (`nextDueAt`) tracking per source
 - [ ] 24h/48h staleness rule enforced at query time
-- [ ] Validation guardrails (>20% move, new mapping, etc.) routing to review
-- [ ] `PriceHistory` written on every accepted change
+- [ ] Validation guardrails (>20% move, new mapping, etc.) routing to review — deferred: nothing collected is published yet (`Offer.publishedAt` stays null until a staff member explicitly publishes), so there's no live page to protect yet
 - [ ] Retry/backoff for transient failures (5 / 15 / 60 min per roadmap §4.5)
 - [ ] Seven consecutive days of production-like runs with no data corruption (roadmap's M4 completion bar)
 

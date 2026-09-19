@@ -1,6 +1,7 @@
 import type { DiscoveryCadence, DiscoveryCandidateStatus, DiscoveryRunStatus, DiscoverySourceType } from "@/generated/prisma/client";
 
 export const discoverySourceTypeLabels: Record<DiscoverySourceType, string> = {
+  MANUAL_WEB: "Staff-submitted websites",
   COMPANIES_HOUSE: "Companies House",
   CQC: "CQC",
   NHS_ODS: "NHS ODS",

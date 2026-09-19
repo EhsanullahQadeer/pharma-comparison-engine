@@ -70,30 +70,47 @@ function normalize(record: ContractorRecord): NormalizedCandidate | null {
 
 export const nhsbsaContractorDetailsAdapter: DiscoveryAdapter = {
   type: "NHSBSA_CONTRACTOR_DETAILS",
-  async run() {
+  async run({ recordRequest }) {
     const resourceId = await findLatestResourceId();
 
-    const params = new URLSearchParams({
-      resource_id: resourceId,
-      limit: String(PAGE_LIMIT),
-      filters: JSON.stringify({ DISTANCE_SELLING_CONTRACTOR: "Y" }),
-    });
+    const allRecords: ContractorRecord[] = [];
+    let offset = 0;
+    // Live-confirmed (2026-09-17): datastore_search's own "total" reflects the unfiltered resource
+    // size (same quirk already noted above), so it's not a usable "keep going" signal — a page
+    // shorter than the requested limit is the only reliable end-of-results marker.
+    for (;;) {
+      const params = new URLSearchParams({
+        resource_id: resourceId,
+        limit: String(PAGE_LIMIT),
+        offset: String(offset),
+        filters: JSON.stringify({ DISTANCE_SELLING_CONTRACTOR: "Y" }),
+      });
 
-    const response = await fetch(`${DATASTORE_SEARCH_URL}?${params.toString()}`, {
-      headers: { Accept: "application/json" },
-    });
+      // The datastore_search query, not the earlier package_show lookup — this is the actual data
+      // request; no secret involved, this source needs no credentials.
+      const requestUrl = `${DATASTORE_SEARCH_URL}?${params.toString()}`;
+      if (offset === 0) recordRequest?.(`GET ${requestUrl}`);
 
-    if (!response.ok) {
-      const detail = await response.text().catch(() => "");
-      throw new Error(`NHSBSA Contractor Details datastore_search returned ${response.status} ${response.statusText}${detail ? ` — ${detail}` : ""}`);
+      const response = await fetch(requestUrl, {
+        headers: { Accept: "application/json" },
+      });
+
+      if (!response.ok) {
+        const detail = await response.text().catch(() => "");
+        throw new Error(`NHSBSA Contractor Details datastore_search returned ${response.status} ${response.statusText}${detail ? ` — ${detail}` : ""}`);
+      }
+
+      const body = (await response.json()) as DatastoreSearchResponse;
+      const page = body.result?.records ?? [];
+      allRecords.push(...page);
+
+      if (page.length < PAGE_LIMIT) break;
+      offset += PAGE_LIMIT;
     }
-
-    const body = (await response.json()) as DatastoreSearchResponse;
-    const records = body.result?.records ?? [];
 
     // Defensive re-check, not just trust in the API filter — belt-and-suspenders given the
     // `total`-field quirk noted above.
-    return records
+    return allRecords
       .filter((record) => readString(record, "DISTANCE_SELLING_CONTRACTOR") === "Y")
       .map(normalize)
       .filter((candidate): candidate is NormalizedCandidate => candidate !== null);

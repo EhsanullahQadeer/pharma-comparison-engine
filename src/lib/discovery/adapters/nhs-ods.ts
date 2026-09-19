@@ -45,23 +45,44 @@ function normalize(item: OdsOrganisation): NormalizedCandidate | null {
 
 export const nhsOdsAdapter: DiscoveryAdapter = {
   type: "NHS_ODS",
-  async run({ lastRunAt }) {
-    const params = new URLSearchParams({ Roles: PHARMACY_ROLE_CODE, Limit: String(PAGE_LIMIT) });
+  async run({ lastRunAt, recordRequest }) {
     const cutoff = new Date(Date.now() - MAX_LAST_CHANGE_LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
-    if (lastRunAt && lastRunAt > cutoff) {
-      params.set("LastChangeDate", `gt${lastRunAt.toISOString().slice(0, 10)}`);
+    const lastChangeDate = lastRunAt && lastRunAt > cutoff ? lastRunAt.toISOString().slice(0, 10) : undefined;
+
+    const organisations: OdsOrganisation[] = [];
+    let offset = 0;
+    // The list response carries no total-count field (live-confirmed 2026-09-17) — a page shorter
+    // than the requested Limit is the only reliable "no more pages" signal, same pattern the other
+    // adapters use rather than trusting a reported total.
+    for (;;) {
+      const params = new URLSearchParams({ Roles: PHARMACY_ROLE_CODE, Limit: String(PAGE_LIMIT) });
+      // Live-confirmed (2026-09-17): the API 406s on an explicit Offset=0 ("Suppied Offset must be
+      // greater than 1") — the first page must omit Offset entirely rather than pass 0.
+      if (offset > 0) params.set("Offset", String(offset));
+      // ORD accepts a bare YYYY-MM-DD and applies >= itself; FHIR's "gt" prefix
+      // produces a misleading 406 about the 185-day limit even for recent dates.
+      if (lastChangeDate) params.set("LastChangeDate", lastChangeDate);
+
+      const requestUrl = `${ORD_ORGANISATIONS_URL}?${params.toString()}`;
+      if (offset === 0) recordRequest?.(`GET ${requestUrl}`);
+
+      const response = await fetch(requestUrl, {
+        headers: { Accept: "application/json" },
+      });
+
+      if (!response.ok) {
+        const detail = await response.text().catch(() => "");
+        throw new Error(`NHS ODS ORD API returned ${response.status} ${response.statusText}${detail ? ` — ${detail}` : ""}`);
+      }
+
+      const body = (await response.json()) as OdsListResponse;
+      const page = body.Organisations ?? [];
+      organisations.push(...page);
+
+      if (page.length < PAGE_LIMIT) break;
+      offset += PAGE_LIMIT;
     }
 
-    const response = await fetch(`${ORD_ORGANISATIONS_URL}?${params.toString()}`, {
-      headers: { Accept: "application/json" },
-    });
-
-    if (!response.ok) {
-      const detail = await response.text().catch(() => "");
-      throw new Error(`NHS ODS ORD API returned ${response.status} ${response.statusText}${detail ? ` — ${detail}` : ""}`);
-    }
-
-    const body = (await response.json()) as OdsListResponse;
-    return (body.Organisations ?? []).map(normalize).filter((candidate): candidate is NormalizedCandidate => candidate !== null);
+    return organisations.map(normalize).filter((candidate): candidate is NormalizedCandidate => candidate !== null);
   },
 };

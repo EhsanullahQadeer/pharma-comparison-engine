@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { DiscoveryCadence, DiscoverySourceType } from "@/generated/prisma/client";
-import type { DiscoveryCandidateStatus, DiscoveryRunStatus } from "@/generated/prisma/client";
+import type { DiscoveryCandidateStatus, DiscoveryRunStatus, Prisma } from "@/generated/prisma/client";
 import { recordAuditLog } from "@/lib/audit-log";
 import { resolveCredentialUpdate } from "@/lib/discovery/merge-credentials";
 import { runSource } from "@/lib/discovery/run-source";
@@ -18,6 +18,7 @@ import { requireStaffRole } from "@/lib/staff-auth";
 export async function getDiscoverySources() {
   await requireStaffRole(["ADMINISTRATOR"]);
   return prisma.discoverySource.findMany({
+    where: { type: { not: "MANUAL_WEB" } },
     orderBy: { type: "asc" },
     select: {
       id: true,
@@ -41,7 +42,7 @@ export async function getAvailableDiscoverySourceTypesForCreate(): Promise<Disco
   await requireStaffRole(["ADMINISTRATOR"]);
   const existing = await prisma.discoverySource.findMany({ select: { type: true } });
   const existingTypes = new Set(existing.map((source) => source.type));
-  return Object.values(DiscoverySourceType).filter((type) => !existingTypes.has(type));
+  return Object.values(DiscoverySourceType).filter((type) => type !== "MANUAL_WEB" && !existingTypes.has(type));
 }
 
 const updateDiscoverySourceSchema = z.object({
@@ -155,6 +156,9 @@ export type DiscoveryRunResultCandidate = {
   odsCode: string | null;
   gphcNumber: string | null;
   status: DiscoveryCandidateStatus;
+  // The untouched source API response for this candidate, exactly as the adapter received it —
+  // lets staff inspect what the source actually sent back, not just our normalized columns.
+  rawPayload: Prisma.JsonValue;
 };
 
 export type RunDiscoverySourceNowState = {
@@ -164,6 +168,9 @@ export type RunDiscoverySourceNowState = {
     status: DiscoveryRunStatus | null;
     candidatesFound: number;
     errorMessage: string | null;
+    // The primary request the adapter made, secrets shown as "{name}" placeholders — never a real
+    // value. Absent when the run failed before making any request (e.g. no key configured).
+    requestSummary: string | null;
     candidates: DiscoveryRunResultCandidate[];
   };
 };
@@ -197,6 +204,7 @@ export async function runDiscoverySourceNow(sourceId: string): Promise<RunDiscov
       odsCode: true,
       gphcNumber: true,
       status: true,
+      rawPayload: true,
     },
   });
 
@@ -207,6 +215,7 @@ export async function runDiscoverySourceNow(sourceId: string): Promise<RunDiscov
       status: run.status,
       candidatesFound: run.candidatesFound,
       errorMessage: run.errorMessage,
+      requestSummary: run.requestSummary,
       candidates,
     },
   };

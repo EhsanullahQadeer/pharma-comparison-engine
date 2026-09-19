@@ -1,6 +1,14 @@
 # M0 — Platform Strategy: Multi-Vertical, Brand-Per-Domain
 
-**Status:** 🟨 Decision recorded; schema work not started
+**Status:** ⛔ Superseded 2026-09-18 — client redirected back to ED-only. "as we're target is ed med
+so remove weight loss from everwhere." The multi-vertical pivot recorded below is kept as a decision
+record, not current scope — see `docs/current-tasks.md`'s 2026-09-18 entry. `ProductCategory`,
+`ProductVariant.category`, and the `TIRZEPATIDE`/`SEMAGLUTIDE` `Ingredient` values were removed from
+the schema (migration `20260918095713_remove_weight_loss_vertical`); the brand/category config layer
+in `src/lib/site-config.ts` was collapsed back to a single fixed ED config (no more
+`NEXT_PUBLIC_DEPLOYMENT_VERTICAL` switching). Do not build against this file's "core same, content
+different" / weight-loss-as-vertical-#2 design below — it no longer reflects the schema or the
+client's current direction.
 **Depends on:** None — this reframes M1 and above
 **Recorded:** 2026-09-16, per client direction
 

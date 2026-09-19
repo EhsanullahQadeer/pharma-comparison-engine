@@ -68,7 +68,12 @@ export function DiscoverySourcesTable({ sources }: { sources: Source[] }) {
                               {lastRun.status ? discoveryRunStatusLabels[lastRun.status] : "Running…"}
                             </Badge>
                             <p className="text-xs">
-                              {new Date(lastRun.startedAt).toLocaleString("en-GB")} · {lastRun.candidatesFound} candidate{lastRun.candidatesFound === 1 ? "" : "s"}
+                              {new Date(lastRun.startedAt).toLocaleString("en-GB")}
+                              {lastRun.status ? (
+                                <> · {lastRun.candidatesFound} candidate{lastRun.candidatesFound === 1 ? "" : "s"}</>
+                              ) : (
+                                <> · Awaiting completion</>
+                              )}
                             </p>
                             {lastRun.errorMessage ? <p className="max-w-xs truncate text-xs text-destructive">{lastRun.errorMessage}</p> : null}
                           </div>

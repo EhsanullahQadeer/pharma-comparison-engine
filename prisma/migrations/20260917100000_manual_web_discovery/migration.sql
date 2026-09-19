@@ -1,0 +1,1 @@
+ALTER TYPE "DiscoverySourceType" ADD VALUE 'MANUAL_WEB';

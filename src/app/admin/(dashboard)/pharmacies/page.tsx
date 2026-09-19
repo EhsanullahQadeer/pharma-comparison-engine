@@ -1,7 +1,9 @@
 import { Search } from "lucide-react";
 
 import { getProviders } from "@/actions/providers/providers";
+import { auth } from "@/auth";
 import { AddPharmacyModal } from "@/components/admin/add-pharmacy-modal";
+import { ProviderStatusControl } from "@/components/admin/provider-status-control";
 import { Badge } from "@/components/common/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/card";
 import { EmptyState } from "@/components/common/empty-state";
@@ -17,7 +19,7 @@ export const metadata: Metadata = { title: "Pharmacies", robots: { index: false,
 export default async function AdminPharmaciesPage(props: PageProps<"/admin/pharmacies">) {
   const { q } = await props.searchParams;
   const query = typeof q === "string" ? q : undefined;
-  const providers = await getProviders(query);
+  const [providers, session] = await Promise.all([getProviders(query), auth()]);
 
   return (
     <div className="space-y-6">
@@ -48,22 +50,39 @@ export default async function AdminPharmaciesPage(props: PageProps<"/admin/pharm
                   <TableHead>Regulator</TableHead>
                   <TableHead>Service regions</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {providers.map((provider) => (
-                  <TableRow key={provider.id} className="cursor-pointer hover:bg-muted/50">
+                  <TableRow key={provider.id} className="hover:bg-muted/50">
                     <TableCell className="font-medium">
                       <Link href={`/admin/pharmacies/${provider.id}`} className="block hover:underline">
                         {provider.tradingName}
                       </Link>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{provider.websiteDomain}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      <a
+                        href={/^https?:\/\//.test(provider.websiteDomain) ? provider.websiteDomain : `https://${provider.websiteDomain}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline"
+                      >
+                        {provider.websiteDomain}
+                      </a>
+                    </TableCell>
                     <TableCell>{regulatorTypeLabels[provider.regulatorType]}</TableCell>
                     <TableCell className="text-muted-foreground">{provider.serviceRegions.join(", ") || "—"}</TableCell>
-                    <TableCell>
-                      <Badge variant={providerStatusBadgeVariant[provider.status]}>{providerStatusLabels[provider.status]}</Badge>
-                    </TableCell>
+                    {session?.user ? (
+                      <ProviderStatusControl providerId={provider.id} status={provider.status} role={session.user.role} variant="menu" />
+                    ) : (
+                      <>
+                        <TableCell>
+                          <Badge variant={providerStatusBadgeVariant[provider.status]}>{providerStatusLabels[provider.status]}</Badge>
+                        </TableCell>
+                        <TableCell />
+                      </>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>

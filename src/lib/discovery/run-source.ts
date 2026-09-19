@@ -1,9 +1,11 @@
 import type { DiscoveryRunStatus, DiscoverySource } from "@/generated/prisma/client";
 import { computeNextRunAt } from "@/lib/discovery/cadence";
 import { decryptCredentials } from "@/lib/discovery/credentials-crypto";
+import { enrichWithGoogleAi } from "@/lib/discovery/google-ai-enrichment";
 import { findMatchingProvider } from "@/lib/discovery/identifier-match";
 import { getAdapter } from "@/lib/discovery/registry";
 import { prisma } from "@/lib/prisma";
+import type { NormalizedCandidate } from "@/types/discovery";
 
 // Undecryptable/unset credentials degrade to null rather than aborting the run — the adapter's own
 // "not configured" error (env var fallback missing too) already produces a clear FAILURE message,
@@ -28,6 +30,7 @@ export async function runSource(source: DiscoverySource, options?: { triggeredBy
   let candidatesFound = 0;
   let status: DiscoveryRunStatus = "SUCCESS";
   let errorMessage: string | undefined;
+  let requestSummary: string | undefined;
 
   try {
     const adapter = getAdapter(source.type);
@@ -35,10 +38,14 @@ export async function runSource(source: DiscoverySource, options?: { triggeredBy
       config: source.config ?? null,
       lastRunAt: source.lastRunAt,
       credentials: decryptSourceCredentials(source),
+      recordRequest: (summary) => { requestSummary = summary; },
     });
 
     for (const record of records) {
-      await upsertCandidate(source.id, run.id, record);
+      if (await isDuplicate(source.id, record)) continue;
+      const enriched = await enrichWithGoogleAi(record);
+      if (!enriched || await isDuplicate(source.id, enriched)) continue;
+      await upsertCandidate(source.id, run.id, enriched);
       candidatesFound += 1;
     }
   } catch (error) {
@@ -50,15 +57,30 @@ export async function runSource(source: DiscoverySource, options?: { triggeredBy
   const [updatedRun] = await Promise.all([
     prisma.discoveryRun.update({
       where: { id: run.id },
-      data: { finishedAt, status, candidatesFound, errorMessage },
+      data: { finishedAt, status, candidatesFound, errorMessage, requestSummary },
     }),
     prisma.discoverySource.update({
       where: { id: source.id },
-      data: { lastRunAt: finishedAt, nextRunAt: computeNextRunAt(source.cadence, finishedAt) },
+      data: { nextRunAt: computeNextRunAt(source.cadence, finishedAt) },
     }),
   ]);
 
   return updatedRun;
+}
+
+// Keep the source cursor unchanged while enrichment can skip records that need manual review.
+// Advancing it would silently skip records that may qualify once AI/search evidence improves.
+async function isDuplicate(sourceId: string, record: NormalizedCandidate) {
+  if (await findMatchingProvider(record)) return true;
+  if (record.websiteDomain && await prisma.provider.findUnique({ where: { websiteDomain: record.websiteDomain }, select: { id: true } })) return true;
+  const identifiers = ["companyNumber", "cqcLocationId", "odsCode", "gphcNumber", "websiteDomain"] as const;
+  return Boolean(await prisma.discoveryCandidate.findFirst({
+    where: { OR: [
+      { sourceId, sourceRecordId: record.sourceRecordId },
+      ...identifiers.flatMap(field => record[field] ? [{ [field]: record[field] }] : []),
+    ] },
+    select: { id: true },
+  }));
 }
 
 async function upsertCandidate(sourceId: string, runId: string, record: Awaited<ReturnType<ReturnType<typeof getAdapter>["run"]>>[number]) {

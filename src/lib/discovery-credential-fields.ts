@@ -6,6 +6,7 @@ import type { DiscoverySourceType } from "@/generated/prisma/client";
 // provider-labels.ts/discovery-labels.ts: importing the Prisma client's enum object into a client
 // bundle pulls in Node-only driver code and breaks Turbopack).
 export const discoverySourceCredentialFields: Record<DiscoverySourceType, { key: string; label: string }[]> = {
+  MANUAL_WEB: [],
   COMPANIES_HOUSE: [{ key: "apiKey", label: "API key" }],
   CQC: [
     { key: "subscriptionKey", label: "Subscription key (primary or secondary)" },

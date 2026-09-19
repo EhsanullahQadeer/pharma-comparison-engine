@@ -7,7 +7,7 @@ const originalFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = originalFetch; });
 const context = { config: null, lastRunAt: null, credentials: { subscriptionKey: "test-key" } };
 
-test("reads all pages, enriches relevant providers and preserves identifier meaning", async () => {
+test("reads all pages of the full scan, enriches name-matched providers and preserves identifier meaning", async () => {
   const requests: string[] = [];
   globalThis.fetch = async (input, options) => {
     const url = new URL(String(input));
@@ -16,6 +16,8 @@ test("reads all pages, enriches relevant providers and preserves identifier mean
     assert.equal(new Headers(options?.headers).get("Ocp-Apim-Subscription-Key"), "test-key");
     assert.equal(url.searchParams.has("partnerCode"), false);
     if (url.pathname.endsWith("/providers")) {
+      assert.equal(url.searchParams.get("perPage"), "5000");
+      if (url.searchParams.has("primaryInspectionCategoryName")) return Response.json({ page: 1, totalPages: 0, providers: [] });
       const page = Number(url.searchParams.get("page"));
       const providers = {
         1: [{ providerId: "p1", providerName: "Example Pharmacy" }, { providerId: "other", providerName: "Care Home" }],
@@ -28,12 +30,30 @@ test("reads all pages, enriches relevant providers and preserves identifier mean
   };
   const records = await cqcAdapter.run(context);
   assert.equal(records.length, 2);
-  assert.equal(requests.length, 4);
+  assert.equal(requests.length, 5);
   assert.equal(records[0].websiteDomain, "www.example.com");
   assert.equal(records[0].companyNumber, "01234567");
   assert.equal(records[0].odsCode, "ABC12");
   assert.equal(records[0].sourceRecordId, "p1");
   assert.equal(records[0].cqcLocationId, undefined);
+});
+
+test("category-filtered pass keeps providers even when the name doesn't match, deduping against pass 1", async () => {
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith("/providers")) {
+      if (url.searchParams.has("primaryInspectionCategoryName")) {
+        const categories = url.searchParams.getAll("primaryInspectionCategoryName");
+        assert.deepEqual(categories, ["Independent consulting doctors", "Remote clinical advice", "Community health - NHS & Independent", "Slimming Clinics"]);
+        return Response.json({ page: 1, totalPages: 1, providers: [{ providerId: "p1", providerName: "Example Pharmacy" }, { providerId: "p3", providerName: "Wellness Clinic Ltd" }] });
+      }
+      return Response.json({ page: 1, totalPages: 1, providers: [{ providerId: "p1", providerName: "Example Pharmacy" }] });
+    }
+    const providerId = url.pathname.split("/").at(-1);
+    return Response.json({ providerId, name: providerId === "p3" ? "Wellness Clinic Ltd" : "Example Pharmacy" });
+  };
+  const records = await cqcAdapter.run(context);
+  assert.deepEqual(records.map((r) => r.sourceRecordId).sort(), ["p1", "p3"]);
 });
 
 test("malformed pages fail instead of reporting zero candidates", async () => {
