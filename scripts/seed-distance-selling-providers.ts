@@ -4,8 +4,8 @@ import { join } from "node:path";
 
 import { PrismaPg } from "@prisma/adapter-pg";
 
-import { createProviderRecord } from "../src/actions/providers/providers";
 import { createProviderSchema } from "../src/actions/providers/provider-schema";
+import { createProviderRecord } from "../src/actions/providers/providers";
 import { PrismaClient } from "../src/generated/prisma/client";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });

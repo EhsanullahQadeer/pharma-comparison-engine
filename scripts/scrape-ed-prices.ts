@@ -5,11 +5,12 @@ import { join } from "node:path";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { extractPriceSignals, type PriceSignalExtraction } from "./lib/price-signal-extraction";
-import type { Ingredient } from "../src/generated/prisma/client";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { collectPublicWebsite } from "../src/lib/discovery/public-web";
 import { collectCandidateUrls, type DetectedProductMatch } from "../src/lib/product-detection/detect-products";
 import { edCategoryRootSegments, edPageMentionsIngredient, matchEdProductPath, resolveIngredientFromTerm } from "../src/lib/product-detection/ed-tokens";
+
+import type { Ingredient } from "../src/generated/prisma/client";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
