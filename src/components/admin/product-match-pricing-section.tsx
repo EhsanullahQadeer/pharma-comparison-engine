@@ -2,34 +2,67 @@
 
 import { useState, useTransition } from "react";
 
-import { runPriceCollectionForMatch } from "@/actions/price-collection/price-collection";
+import { runPriceCollectionForMatch, updatePriceCollectionSchedule } from "@/actions/price-collection/price-collection";
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/card";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/common/table";
-import type { Ingredient } from "@/generated/prisma/client";
+import type { Ingredient, PriceScrapeCadence, PriceScrapeStatus } from "@/generated/prisma/client";
 import { ingredientLabels } from "@/lib/catalogue-labels";
 
 type MatchItem = {
   id: string;
   candidateUrl: string;
   offerId: string | null;
+  scrapeEnabled: boolean;
+  scrapeCadence: PriceScrapeCadence;
+  nextScrapeAt: Date | null;
+  lastScrapedAt: Date | null;
+  lastScrapeStatus: PriceScrapeStatus;
+  lastScrapeError: string | null;
+  requiresHumanAssist: boolean;
   productVariant: { ingredient: Ingredient; brandName: string | null; strengthMg: number; packQuantity: number; formulation: string } | null;
+  offer: { itemPricePence: number; deliveryFeePence: number; retrievedAt: Date; updatedAt: Date; publishedAt: Date | null } | null;
+};
+
+const scrapeStatusLabels: Record<PriceScrapeStatus, string> = {
+  NOT_CONFIGURED: "Not configured",
+  READY: "Ready",
+  SCRAPED: "Scraped",
+  NEEDS_REVIEW: "Needs review",
+  HUMAN_VERIFICATION_REQUIRED: "Human verification",
+  FAILED: "Failed",
+};
+
+const scrapeStatusVariants: Record<PriceScrapeStatus, "default" | "secondary" | "destructive" | "outline"> = {
+  NOT_CONFIGURED: "secondary",
+  READY: "outline",
+  SCRAPED: "default",
+  NEEDS_REVIEW: "outline",
+  HUMAN_VERIFICATION_REQUIRED: "destructive",
+  FAILED: "destructive",
 };
 
 function formatPence(pence: number): string {
   return `£${(pence / 100).toFixed(2)}`;
 }
 
-function MatchRow({ item }: { item: MatchItem }) {
-  const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string>();
-  const [result, setResult] = useState<{ itemPricePence: number; deliveryFeePence: number; created: boolean }>();
+function formatDate(value: Date | null): string {
+  return value ? new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "Not set";
+}
 
-  function handleCollect() {
+function MatchRow({ item }: { item: MatchItem }) {
+  const [isCollecting, startCollecting] = useTransition();
+  const [isSavingSchedule, startSavingSchedule] = useTransition();
+  const [error, setError] = useState<string>();
+  const [result, setResult] = useState<{ itemPricePence: number; deliveryFeePence: number; created: boolean; updatedAt: Date }>();
+  const [cadence, setCadence] = useState<PriceScrapeCadence>(item.scrapeCadence);
+  const [enabled, setEnabled] = useState(item.scrapeEnabled);
+
+  function handleCollect(humanAssist: boolean) {
     setError(undefined);
-    startTransition(async () => {
-      const state = await runPriceCollectionForMatch(item.id);
+    startCollecting(async () => {
+      const state = await runPriceCollectionForMatch(item.id, humanAssist);
       if (state.error) {
         setError(state.error);
         return;
@@ -38,30 +71,97 @@ function MatchRow({ item }: { item: MatchItem }) {
     });
   }
 
+  function handleScheduleSubmit(formData: FormData) {
+    setError(undefined);
+    startSavingSchedule(async () => {
+      const state = await updatePriceCollectionSchedule(item.id, formData);
+      if (state.error) setError(state.error);
+    });
+  }
+
   const variant = item.productVariant;
-  let buttonLabel = item.offerId ? "Refresh price" : "Collect price";
-  if (isPending) buttonLabel = "Collecting…";
+  const price = result ?? item.offer;
+  const status = item.requiresHumanAssist ? "HUMAN_VERIFICATION_REQUIRED" : item.lastScrapeStatus;
+  let collectButtonLabel = item.offerId ? "Refresh price" : "Collect price";
+  if (isCollecting) collectButtonLabel = "Collecting...";
 
   return (
     <TableRow>
-      <TableCell className="text-muted-foreground">
-        {variant ? `${ingredientLabels[variant.ingredient]} ${variant.strengthMg}mg × ${variant.packQuantity} (${variant.formulation})` : "—"}
+      <TableCell className="align-top">
+        <div className="space-y-1">
+          <p className="font-medium">
+            {variant ? `${ingredientLabels[variant.ingredient]} ${variant.strengthMg}mg × ${variant.packQuantity} (${variant.formulation})` : "No variant selected"}
+          </p>
+          {variant?.brandName ? <p className="text-xs text-muted-foreground">{variant.brandName}</p> : null}
+          <a href={item.candidateUrl} target="_blank" rel="noopener noreferrer" className="block max-w-sm truncate text-xs text-muted-foreground hover:underline">
+            {item.candidateUrl}
+          </a>
+        </div>
       </TableCell>
-      <TableCell className="max-w-xs truncate text-xs text-muted-foreground">
-        <a href={item.candidateUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">{item.candidateUrl}</a>
+      <TableCell className="align-top">
+        <div className="space-y-1">
+          <Badge variant={scrapeStatusVariants[status]}>{scrapeStatusLabels[status]}</Badge>
+          <p className="text-xs text-muted-foreground">Last: {formatDate(item.lastScrapedAt)}</p>
+          <p className="text-xs text-muted-foreground">Next: {formatDate(item.nextScrapeAt)}</p>
+          {item.lastScrapeError ? <p className="max-w-xs text-xs text-destructive">{item.lastScrapeError}</p> : null}
+        </div>
       </TableCell>
-      <TableCell>
-        {item.offerId ? <Badge variant="default">Priced</Badge> : <Badge variant="secondary">Awaiting price</Badge>}
+      <TableCell className="align-top">
+        {price ? (
+          <div className="space-y-1 text-sm">
+            <p>{formatPence(price.itemPricePence)} + {formatPence(price.deliveryFeePence)} delivery</p>
+            <p className="text-xs text-muted-foreground">Offer {item.offer?.publishedAt ? "published" : "draft"} · retrieved {formatDate(item.offer?.retrievedAt ?? null)}</p>
+            <p className="text-xs text-muted-foreground">Updated {formatDate("updatedAt" in price ? price.updatedAt : item.offer?.updatedAt ?? null)}</p>
+          </div>
+        ) : (
+          <Badge variant="secondary">Awaiting price</Badge>
+        )}
       </TableCell>
-      <TableCell className="text-right">
-        <div className="flex flex-col items-end gap-1">
-          <Button type="button" size="sm" variant="outline" disabled={isPending} onClick={handleCollect}>
-            {buttonLabel}
+      <TableCell className="align-top">
+        <form action={handleScheduleSubmit} className="flex flex-wrap items-center justify-end gap-2">
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <input
+              name="scrapeEnabled"
+              type="checkbox"
+              checked={enabled}
+              onChange={(event) => setEnabled(event.target.checked)}
+              className="size-4"
+            />
+            Schedule
+          </label>
+          <select
+            name="scrapeCadence"
+            value={cadence}
+            onChange={(event) => {
+              const value = event.target.value as PriceScrapeCadence;
+              setCadence(value);
+              if (value === "MANUAL") setEnabled(false);
+            }}
+            className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+          >
+            <option value="MANUAL">Manual</option>
+            <option value="DAILY">Daily</option>
+            <option value="WEEKLY">Weekly</option>
+            <option value="MONTHLY">Monthly</option>
+          </select>
+          <Button type="submit" size="sm" variant="outline" disabled={isSavingSchedule}>
+            {isSavingSchedule ? "Saving..." : "Save"}
+          </Button>
+        </form>
+      </TableCell>
+      <TableCell className="align-top">
+        <div className="flex flex-col items-end gap-2">
+          <Button type="button" size="sm" variant="outline" disabled={isCollecting} onClick={() => handleCollect(false)}>
+            {collectButtonLabel}
+          </Button>
+          <Button type="button" size="sm" variant="outline" disabled={isCollecting} onClick={() => handleCollect(true)}>
+            Human-assisted
           </Button>
           {error ? <p className="max-w-xs text-right text-xs text-destructive">{error}</p> : null}
           {result ? (
             <p className="text-right text-xs text-muted-foreground">
-              {formatPence(result.itemPricePence)} + {formatPence(result.deliveryFeePence)} delivery
+              Saved {formatPence(result.itemPricePence)} + {formatPence(result.deliveryFeePence)} delivery
+              {" "}· updated {formatDate(result.updatedAt)}
             </p>
           ) : null}
         </div>
@@ -76,15 +176,16 @@ export function ProductMatchPricingSection({ items }: { items: MatchItem[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Confirmed product matches ({items.length})</CardTitle>
+        <CardTitle>Price collection ({items.length})</CardTitle>
       </CardHeader>
       <CardContent className="px-0">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Product variant</TableHead>
-              <TableHead>Matched page</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>Confirmed variant</TableHead>
+              <TableHead>Scrape status</TableHead>
+              <TableHead>Latest draft price</TableHead>
+              <TableHead className="text-right">Schedule</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>

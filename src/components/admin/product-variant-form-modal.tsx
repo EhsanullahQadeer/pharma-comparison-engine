@@ -27,6 +27,12 @@ function FieldError({ messages }: { messages?: string[] }) {
 function ProductVariantForm({ variant, onClose }: { variant?: ProductVariant; onClose: () => void }) {
   const action = variant ? updateProductVariant.bind(null, variant.id) : createProductVariant;
   const [state, formAction, pending] = useActionState(action, initialState);
+  const [ingredient, setIngredient] = useState(variant?.ingredient ?? ingredientValues[0]);
+  const [brandName, setBrandName] = useState(variant?.brandName ?? "");
+  const [strengthMg, setStrengthMg] = useState(String(variant?.strengthMg ?? ""));
+  const [packQuantity, setPackQuantity] = useState(String(variant?.packQuantity ?? ""));
+  const [formulation, setFormulation] = useState(variant?.formulation ?? "");
+  const [supplyClassification, setSupplyClassification] = useState(variant?.supplyClassification ?? supplyClassificationValues[0]);
   useCloseModalOnSuccess(state, pending, onClose);
 
   let submitLabel = variant ? "Save changes" : "Add variant";
@@ -41,7 +47,8 @@ function ProductVariantForm({ variant, onClose }: { variant?: ProductVariant; on
             id="ingredient"
             name="ingredient"
             required
-            defaultValue={variant?.ingredient ?? ingredientValues[0]}
+            value={ingredient}
+            onChange={(event) => setIngredient(event.target.value as typeof ingredient)}
             className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
           >
             {ingredientValues.map((value) => (
@@ -52,26 +59,26 @@ function ProductVariantForm({ variant, onClose }: { variant?: ProductVariant; on
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="brandName">Brand name (if any)</Label>
-          <Input id="brandName" name="brandName" defaultValue={variant?.brandName ?? undefined} />
+          <Input id="brandName" name="brandName" value={brandName} onChange={(event) => setBrandName(event.target.value)} />
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="strengthMg">Strength (mg)</Label>
-          <Input id="strengthMg" name="strengthMg" type="number" min={1} defaultValue={variant?.strengthMg} required />
+          <Input id="strengthMg" name="strengthMg" type="number" min={1} value={strengthMg} onChange={(event) => setStrengthMg(event.target.value)} required />
           <FieldError messages={state.fieldErrors?.strengthMg} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="packQuantity">Pack quantity</Label>
-          <Input id="packQuantity" name="packQuantity" type="number" min={1} defaultValue={variant?.packQuantity} required />
+          <Input id="packQuantity" name="packQuantity" type="number" min={1} value={packQuantity} onChange={(event) => setPackQuantity(event.target.value)} required />
           <FieldError messages={state.fieldErrors?.packQuantity} />
         </div>
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="formulation">Formulation</Label>
-        <Input id="formulation" name="formulation" placeholder="Film-coated tablet" defaultValue={variant?.formulation} required />
+        <Input id="formulation" name="formulation" placeholder="Film-coated tablet" value={formulation} onChange={(event) => setFormulation(event.target.value)} required />
         <FieldError messages={state.fieldErrors?.formulation} />
       </div>
 
@@ -81,7 +88,8 @@ function ProductVariantForm({ variant, onClose }: { variant?: ProductVariant; on
           id="supplyClassification"
           name="supplyClassification"
           required
-          defaultValue={variant?.supplyClassification ?? supplyClassificationValues[0]}
+          value={supplyClassification}
+          onChange={(event) => setSupplyClassification(event.target.value as typeof supplyClassification)}
           className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
         >
           {supplyClassificationValues.map((value) => (

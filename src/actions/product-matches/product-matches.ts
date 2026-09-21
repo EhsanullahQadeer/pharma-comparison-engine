@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { collectPriceForMatch } from "@/actions/price-collection/price-collection";
 import { recordAuditLog } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 import { detectEdProductMatches } from "@/lib/product-detection/detect-products";
@@ -101,6 +102,33 @@ export async function confirmProductMatch(matchId: string, productVariantId: str
 
   revalidatePath("/admin/reviews");
   return {};
+}
+
+export type ConfirmAndCollectProductMatchState = {
+  error?: string;
+  result?: { itemPricePence: number; deliveryFeePence: number; updatedAt: Date };
+};
+
+export async function confirmAndCollectProductMatch(matchId: string, productVariantId: string, humanAssist = false): Promise<ConfirmAndCollectProductMatchState> {
+  let staffUser;
+  try {
+    staffUser = await requireStaffRole(["CATALOGUE_EDITOR", "ADMINISTRATOR"]);
+  } catch {
+    return { error: "You are not authorized to review product matches." };
+  }
+
+  const confirmResult = await confirmProductMatch(matchId, productVariantId);
+  if (confirmResult.error) return confirmResult;
+
+  try {
+    const result = await collectPriceForMatch(matchId, { actorId: staffUser.id, humanAssist });
+    const match = await prisma.productMatch.findUnique({ where: { id: matchId }, select: { providerId: true } });
+    if (match) revalidatePath(`/admin/pharmacies/${match.providerId}`);
+    revalidatePath("/admin/reviews");
+    return { result: { itemPricePence: result.itemPricePence, deliveryFeePence: result.deliveryFeePence, updatedAt: result.updatedAt } };
+  } catch (error) {
+    return { error: error instanceof Error ? `Match confirmed, but price scraping failed: ${error.message}` : "Match confirmed, but price scraping failed." };
+  }
 }
 
 export type RejectProductMatchState = { error?: string };

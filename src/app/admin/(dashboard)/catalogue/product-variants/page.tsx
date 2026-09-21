@@ -3,6 +3,7 @@ import { Search } from "lucide-react";
 import { getProductVariants } from "@/actions/product-variants/product-variants";
 import { ProductVariantDeleteButton } from "@/components/admin/product-variant-delete-button";
 import { AddProductVariantModal, EditProductVariantModal } from "@/components/admin/product-variant-form-modal";
+import { ProductVariantPriceActions } from "@/components/admin/product-variant-price-actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/card";
 import { EmptyState } from "@/components/common/empty-state";
 import { Input } from "@/components/common/input";
@@ -22,7 +23,6 @@ export default async function ProductVariantsPage(props: PageProps<"/admin/catal
   const pageSize = parsePageSize(typeof pageSizeParam === "string" ? pageSizeParam : undefined);
 
   const { variants, total, pages } = await getProductVariants(query, page, pageSize);
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -62,11 +62,12 @@ export default async function ProductVariantsPage(props: PageProps<"/admin/catal
                     <TableCell className="font-medium">{ingredientLabels[variant.ingredient]}</TableCell>
                     <TableCell className="text-muted-foreground">{variant.brandName || "—"}</TableCell>
                     <TableCell>{variant.strengthMg}mg</TableCell>
-                    <TableCell className="text-muted-foreground">{variant.formulation}</TableCell>
+                    <TableCell className="text-muted-foreground whitespace-normal!">{variant.formulation}</TableCell>
                     <TableCell>{variant.packQuantity}</TableCell>
                     <TableCell className="text-muted-foreground">{supplyClassificationLabels[variant.supplyClassification]}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
+                        <ProductVariantPriceActions id={variant.id} />
                         <EditProductVariantModal variant={variant} />
                         <ProductVariantDeleteButton id={variant.id} label={`${ingredientLabels[variant.ingredient]} ${variant.strengthMg}mg`} />
                       </div>

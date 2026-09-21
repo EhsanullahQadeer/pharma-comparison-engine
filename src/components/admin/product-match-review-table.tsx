@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 
-import { confirmProductMatch, rejectProductMatch } from "@/actions/product-matches/product-matches";
+import { confirmAndCollectProductMatch, confirmProductMatch, rejectProductMatch } from "@/actions/product-matches/product-matches";
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/card";
@@ -27,6 +27,7 @@ function MatchRow({ item, variants }: { item: MatchItem; variants: VariantOption
   const [productVariantId, setProductVariantId] = useState(matchingVariants[0]?.id ?? variants[0]?.id ?? "");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string>();
+  const [savedResult, setSavedResult] = useState<{ itemPricePence: number; deliveryFeePence: number; updatedAt: Date }>();
 
   function handleConfirm() {
     if (!productVariantId) return;
@@ -34,6 +35,20 @@ function MatchRow({ item, variants }: { item: MatchItem; variants: VariantOption
     startTransition(async () => {
       const result = await confirmProductMatch(item.id, productVariantId);
       if (result.error) setError(result.error);
+    });
+  }
+
+  function handleConfirmAndScrape(humanAssist: boolean) {
+    if (!productVariantId) return;
+    setError(undefined);
+    setSavedResult(undefined);
+    startTransition(async () => {
+      const result = await confirmAndCollectProductMatch(item.id, productVariantId, humanAssist);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      if (result.result) setSavedResult(result.result);
     });
   }
 
@@ -71,9 +86,16 @@ function MatchRow({ item, variants }: { item: MatchItem; variants: VariantOption
       </TableCell>
       <TableCell className="text-right">
         <div className="flex flex-wrap justify-end gap-1">
+          <Button type="button" size="sm" variant="default" disabled={isPending || !productVariantId} onClick={() => handleConfirmAndScrape(false)}>Confirm & scrape</Button>
           <Button type="button" size="sm" variant="outline" disabled={isPending || !productVariantId} onClick={handleConfirm}>Confirm</Button>
+          <Button type="button" size="sm" variant="outline" disabled={isPending || !productVariantId} onClick={() => handleConfirmAndScrape(true)}>Human scrape</Button>
           <Button type="button" size="sm" variant="ghost" disabled={isPending} onClick={handleReject}>Reject</Button>
         </div>
+        {savedResult ? (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Saved £{(savedResult.itemPricePence / 100).toFixed(2)} + £{(savedResult.deliveryFeePence / 100).toFixed(2)} delivery · updated {new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }).format(new Date(savedResult.updatedAt))}
+          </p>
+        ) : null}
         {error ? <p className="mt-1 text-xs text-destructive">{error}</p> : null}
       </TableCell>
     </TableRow>

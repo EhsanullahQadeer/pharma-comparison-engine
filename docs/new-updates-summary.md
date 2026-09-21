@@ -1,5 +1,14 @@
 # Product updates
 
+## 2026-09-21
+
+- Pharmacy pages now have a full price-collection panel: staff can see the chosen product variant, collect or refresh the latest draft price, set daily/weekly/monthly checks, and see when a page needs human verification.
+- The product-match review queue now has a "Confirm & scrape" action, so staff can choose the exact variant and save the scraped draft price in one click, with the saved update time shown afterward.
+- The product-variant list now has actions to scrape prices for that exact variant and open a variant price page showing each pharmacy's price, delivery charge, total, last update, and price history.
+- Price reports now have a staff-assisted browser mode for pages that ask for human verification, so staff can clear the check once and let the report continue reading public price details.
+- Price reports now try a rendered browser check for public pharmacy pages when the simpler page read is blocked, so more provider prices and discounts can be reviewed in the saved report.
+- Price reports now read dynamically loaded product prices and keep delivery fees separate. Medy Viagra correctly shows from ?4.99 per pill, with ?3.99 postage.
+
 ## 2026-09-18, later same day (5)
 
 - Ran the product detection for real against the three pharmacies we've confirmed have working online product pages (Click Pharmacy, The Independent Pharmacy, Treated.com). 18 real product matches are now waiting in the Reviews page for staff to check and confirm — including three separately-priced Viagra/Sildenafil products found on Click Pharmacy alone (branded Viagra, generic Sildenafil, and Viagra Connect, each at a different real price).

@@ -150,6 +150,30 @@ enum ProductMatchConfidence {
   MEDIUM
 }
 
+enum PriceScrapeCadence {
+  MANUAL
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum PriceScrapeStatus {
+  NOT_CONFIGURED
+  READY
+  SCRAPED
+  NEEDS_REVIEW
+  HUMAN_VERIFICATION_REQUIRED
+  FAILED
+}
+
+enum PriceCollectionJobStatus {
+  QUEUED
+  RUNNING
+  SUCCESS
+  FAILED
+  HUMAN_VERIFICATION_REQUIRED
+}
+
 model StaffUser {
   id           String    @id @default(cuid())
   email        String    @unique
@@ -499,12 +523,38 @@ model ProductMatch {
   productVariant    ProductVariant?        @relation(fields: [productVariantId], references: [id], onDelete: SetNull)
   offerId           String?                @unique
   offer             Offer?                 @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  priceCollectionJobs PriceCollectionJob[]
   reviewedByStaffId String?
   reviewedByStaff   StaffUser?             @relation("ProductMatchReviewer", fields: [reviewedByStaffId], references: [id], onDelete: SetNull)
   reviewedAt        DateTime?
+  scrapeEnabled     Boolean                @default(false)
+  scrapeCadence     PriceScrapeCadence     @default(MANUAL)
+  nextScrapeAt      DateTime?
+  lastScrapedAt     DateTime?
+  lastScrapeStatus  PriceScrapeStatus      @default(NOT_CONFIGURED)
+  lastScrapeError   String?
+  requiresHumanAssist Boolean              @default(false)
   detectedAt        DateTime               @default(now())
   updatedAt         DateTime               @updatedAt
 
   @@unique([providerId, candidateUrl])
   @@index([status])
+  @@index([scrapeEnabled, nextScrapeAt])
+}
+
+model PriceCollectionJob {
+  id             String                   @id @default(cuid())
+  productMatchId String
+  productMatch   ProductMatch             @relation(fields: [productMatchId], references: [id], onDelete: Cascade)
+  status         PriceCollectionJobStatus @default(QUEUED)
+  scheduledFor   DateTime
+  startedAt      DateTime?
+  finishedAt     DateTime?
+  errorMessage   String?
+  humanAssist    Boolean                  @default(false)
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  @@index([status, scheduledFor])
+  @@index([productMatchId])
 }

@@ -4,7 +4,8 @@ import { join } from "node:path";
 
 import { PrismaPg } from "@prisma/adapter-pg";
 
-import { extractPriceSignals, type PriceSignalExtraction } from "./lib/price-signal-extraction";
+import { extractPriceSignals } from "./lib/price-signal-extraction";
+import { collectRenderedPageSignals, collectRenderedPrice, pickStructuredPrice } from "./lib/product-price";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { collectPublicWebsite } from "../src/lib/discovery/public-web";
 import { collectCandidateUrls, type DetectedProductMatch } from "../src/lib/product-detection/detect-products";
@@ -19,35 +20,12 @@ const prisma = new PrismaClient({ adapter });
 // (MEDIUM confidence) can surface several listing pages on one site; this keeps a single run
 // polite and fast rather than exhaustively hitting every one of them.
 const MAX_PRODUCT_PAGES_PER_PHARMACY = 3;
+const strictCollectionStopPattern = /robots rules|human-verification|captcha|review (?:it|the page) manually|only public html pages|unexpected content type/i;
+const humanAssist = process.argv.includes("--human") || process.env.ED_PRICE_HUMAN_ASSIST === "1";
 
 type ScrapedProduct =
-  | { candidateUrl: string; ingredient: Ingredient; matchedTokens: string[]; confidence: "HIGH" | "MEDIUM"; scrapedAt: string; latestPrice: string | null; discountsFound: string[]; variants: unknown[]; jsonLdOffers: unknown[] }
+  | { candidateUrl: string; ingredient: Ingredient; matchedTokens: string[]; confidence: "HIGH" | "MEDIUM"; scrapedAt: string; latestPrice: string | null; priceSource: string | null; priceBasis: string | null; priceEvidence: string | null; deliveryPrice: string | null; priceWarning?: string; discountsFound: string[]; variants: unknown[]; jsonLdOffers: unknown[] }
   | { candidateUrl: string; ingredient: Ingredient; matchedTokens: string[]; confidence: "HIGH" | "MEDIUM"; scrapedAt: string; error: string };
-
-// A page's JSON-LD Offer price (when present) is the site's own structured price data — far more
-// reliable than any regex match, so it's always preferred. Otherwise, only trust a "£X" figure
-// found close to one of the matched drug tokens in the page's own text — never just the first
-// price found anywhere on the page, which can be an unrelated delivery fee, a different product's
-// price on a shared multi-drug page, or other promo text. Returns null (never a guess) when
-// neither source ties a price to this specific drug — e.g. a site that renders its real price via
-// client-side JavaScript, so it's simply absent from the static HTML this script fetches.
-function pickLatestPrice(html: string, signals: PriceSignalExtraction, matchedTokens: string[]): string | null {
-  for (const offer of signals.jsonLdOffers) {
-    if (!offer || typeof offer !== "object" || !("price" in offer)) continue;
-    const price = Number((offer as { price: unknown }).price);
-    if (!Number.isNaN(price)) return `£${price.toFixed(2)}`;
-  }
-
-  const lowerHtml = html.toLowerCase();
-  for (const token of matchedTokens) {
-    const tokenIndex = lowerHtml.indexOf(token.toLowerCase());
-    if (tokenIndex === -1) continue;
-    const window = html.slice(Math.max(0, tokenIndex - 400), Math.min(html.length, tokenIndex + 400));
-    const price = window.match(/£\s?\d{1,4}(?:\.\d{2})?/);
-    if (price) return price[0];
-  }
-  return null;
-}
 
 // Some sites put every drug on one combined "/erectile-dysfunction" page instead of a dedicated
 // URL per drug (e.g. medy.uk) — matchEdProductPath alone never surfaces those since there's no
@@ -69,12 +47,33 @@ async function findCategoryPageMatches(candidateUrls: string[], alreadyMatched: 
         htmlCache.set(url, html);
         matches.push({ candidateUrl: url, ingredient, matchedTokens: [drugTerm.toLowerCase()], confidence: "MEDIUM" });
       }
-    } catch {
-      // A category-root page failing to fetch isn't reported as an error here — the URL-based pass
-      // already surfaces real per-page fetch failures for the matches it actually found.
+    } catch (error) {
+      if (!(error instanceof Error) || !strictCollectionStopPattern.test(error.message)) continue;
+      try {
+        const rendered = await collectRenderedPageSignals(url, [drugTerm], { humanAssist });
+        if (edPageMentionsIngredient(rendered.html, ingredient)) {
+          htmlCache.set(url, rendered.html);
+          matches.push({ candidateUrl: url, ingredient, matchedTokens: [drugTerm.toLowerCase()], confidence: "MEDIUM" });
+        }
+      } catch {
+        // A category-root page failing to fetch is not reported here; matched product pages report their own failures below.
+      }
     }
   }
   return matches;
+}
+
+async function collectCandidateUrlsForAudit(websiteDomain: string, drugTerm: string) {
+  try {
+    return { candidateUrls: await collectCandidateUrls(websiteDomain), note: undefined as string | undefined };
+  } catch (error) {
+    if (!(error instanceof Error) || !strictCollectionStopPattern.test(error.message)) throw error;
+    const rendered = await collectRenderedPageSignals(`https://${websiteDomain}`, [drugTerm], { humanAssist });
+    return {
+      candidateUrls: rendered.candidateUrls,
+      note: `Used Playwright rendered-page fallback after strict collection stopped: ${error.message}`,
+    };
+  }
 }
 
 // Shared per-site flow reused for both DiscoveryCandidate leads and already-promoted Providers:
@@ -83,8 +82,11 @@ async function findCategoryPageMatches(candidateUrls: string[], alreadyMatched: 
 // one website at a time.
 async function scrapeDrugOnSite(websiteDomain: string, ingredient: Ingredient, drugTerm: string): Promise<{ note?: string; products: ScrapedProduct[] }> {
   let candidateUrls: string[];
+  let siteNote: string | undefined;
   try {
-    candidateUrls = await collectCandidateUrls(websiteDomain);
+    const discovery = await collectCandidateUrlsForAudit(websiteDomain, drugTerm);
+    candidateUrls = discovery.candidateUrls;
+    siteNote = discovery.note;
   } catch (error) {
     return { note: error instanceof Error ? error.message : "Could not inspect this website.", products: [] };
   }
@@ -108,21 +110,46 @@ async function scrapeDrugOnSite(websiteDomain: string, ingredient: Ingredient, d
     ? directMatches.slice(0, MAX_PRODUCT_PAGES_PER_PHARMACY)
     : (await findCategoryPageMatches(candidateUrls, new Set(urlMatches.map((match) => match.candidateUrl)), ingredient, drugTerm, htmlCache)).slice(0, MAX_PRODUCT_PAGES_PER_PHARMACY);
 
-  if (matches.length === 0) return { note: `No ${drugTerm} product page found on this site.`, products: [] };
+  if (matches.length === 0) return { note: siteNote ?? `No ${drugTerm} product page found on this site.`, products: [] };
 
   const products: ScrapedProduct[] = [];
   for (const match of matches) {
     const scrapedAt = new Date().toISOString();
     try {
-      const html = htmlCache.get(match.candidateUrl) ?? (await collectPublicWebsite(match.candidateUrl)).html;
+      let pageWarning: string | undefined;
+      let renderedPricing: Awaited<ReturnType<typeof collectRenderedPrice>> | undefined;
+      let html = htmlCache.get(match.candidateUrl);
+      if (!html) {
+        try {
+          html = (await collectPublicWebsite(match.candidateUrl)).html;
+        } catch (error) {
+          if (!(error instanceof Error) || !strictCollectionStopPattern.test(error.message)) throw error;
+          const rendered = await collectRenderedPageSignals(match.candidateUrl, match.matchedTokens, { humanAssist });
+          html = rendered.html;
+          renderedPricing = rendered.pricing;
+          pageWarning = `Used Playwright rendered-page fallback after strict collection stopped: ${error.message}`;
+        }
+      }
       const signals = extractPriceSignals(html);
+      const structuredPrice = pickStructuredPrice(signals.jsonLdOffers, match.matchedTokens);
+      let pricing = { latestPrice: structuredPrice, priceSource: structuredPrice ? "json-ld-product-offer" : null,
+        priceBasis: structuredPrice ? "offer (unit unspecified)" : null, priceEvidence: null as string | null,
+        deliveryPrice: null as string | null, priceWarning: pageWarning };
+      if (!structuredPrice) {
+        try {
+          pricing = { ...pricing, ...(renderedPricing ?? await collectRenderedPrice(match.candidateUrl, match.matchedTokens, { humanAssist })) };
+          if (!pricing.latestPrice) pricing.priceWarning = "No unambiguous price found in the matching product card.";
+        } catch (error) {
+          pricing.priceWarning = error instanceof Error ? error.message : "Rendered price collection failed.";
+        }
+      }
       products.push({
         candidateUrl: match.candidateUrl,
         ingredient: match.ingredient,
         matchedTokens: match.matchedTokens,
         confidence: match.confidence,
         scrapedAt,
-        latestPrice: pickLatestPrice(html, signals, match.matchedTokens),
+        ...pricing,
         discountsFound: signals.discountsFound,
         variants: signals.variants,
         jsonLdOffers: signals.jsonLdOffers,
@@ -138,7 +165,7 @@ async function scrapeDrugOnSite(websiteDomain: string, ingredient: Ingredient, d
       });
     }
   }
-  return { products };
+  return { note: siteNote, products };
 }
 
 function countOutcomes(products: ScrapedProduct[]) {
@@ -147,9 +174,9 @@ function countOutcomes(products: ScrapedProduct[]) {
 }
 
 async function main() {
-  const drugTerm = process.argv[2];
+  const drugTerm = process.argv.slice(2).find((arg) => !arg.startsWith("--"));
   if (!drugTerm) {
-    console.error("Usage: npm run discovery:ed-price-scrape -- <drug name, e.g. viagra>");
+    console.error("Usage: npm run discovery:ed-price-scrape -- <drug name, e.g. viagra> [--human]");
     process.exitCode = 1;
     return;
   }
