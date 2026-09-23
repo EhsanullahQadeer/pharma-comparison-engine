@@ -34,3 +34,30 @@ test("product cards separate postage, generic references, and dynamic prices", a
     await browser.close();
   }
 });
+
+test("rendered product tables expose strength and quantity rows", async () => {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    await page.setContent(`<section>
+      <h2>Viagra</h2>
+      <div>
+        <div>Dose Usage Qty Price</div>
+        <div>25mg On-Demand 4 \u00a319.99</div>
+        <div>50mg On-Demand 8 \u00a345.00</div>
+        <div>100mg On-Demand 16 \u00a398.99</div>
+      </div>
+    </section>`);
+    const result = await readProductCard(page, ["viagra"]);
+    assert.equal(result.latestPrice, "\u00a319.99");
+    assert.equal(result.priceBasis, "variant table lowest listed pack price");
+    assert.deepEqual(result.variantRows.map(row => ({ strength: row.strength, quantity: row.quantity, price: row.price })), [
+      { strength: "25mg", quantity: "4", price: "\u00a319.99" },
+      { strength: "50mg", quantity: "8", price: "\u00a345.00" },
+      { strength: "100mg", quantity: "16", price: "\u00a398.99" },
+    ]);
+  } finally {
+    await browser.close();
+  }
+});
+

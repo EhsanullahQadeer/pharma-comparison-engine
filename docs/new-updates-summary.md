@@ -1,6 +1,62 @@
 # Product updates
 
+## 2026-09-23
+
+- Pharmacy discovery now starts by requiring Google AI to cite a direct public product or treatment listing from the pharmacy’s official site. This filters out consultation-only, prescription-request-only and no-catalogue results before review, while saving the cited listing and supporting evidence with eligible pharmacies.
+
+## 2026-09-22
+
+- The pharmacy review process can now promote audited product-listing pharmacies in a batch when their regulator registration is available, keeping uncertain records for staff review.
+
+- Discovery now continues when a suggested pharmacy website points to a private or otherwise restricted network address, while keeping that unsafe website blocked.
+
+- GPhC discovery now checks every currently registered pharmacy instead of excluding registrations based on a previous run date.
+
+- The pharmacy discovery review list now lets staff select multiple candidates with checkboxes and promote or reject them all at once, instead of one at a time. For new candidates, the same details the full "add pharmacy" form asks for — trading name, legal name, website, regulator, regulator reference, dispensing partner and service regions — can now be edited directly in the list before promoting. Every one of those fields shows as plain text (or a link, for the website) with a small edit icon on hover; clicking switches it to an editable box, dropdown, or region checklist. Service regions can now have more than one selected at once, matching the full "add pharmacy" form, and website addresses are clickable links that open in a new tab. The list now also has page controls (25/50/100/200 rows per page) and scrolls sideways instead of squashing every column, now that it shows more fields per row.
+
+- The "Promote" button on a new discovery candidate now saves the pharmacy right there in the review list, using whatever was typed into that row, instead of opening a separate "add pharmacy" page.
+
+- Discovery now continues when a suggested pharmacy website has an expired security certificate, recording the homepage verification issue for review.
+
+- Discovery now saves GPhC registration numbers found in Google AI answers when the original source did not include one.
+
+- Discovery now continues when a suggested website gets stuck in redirect loops, instead of failing the whole source run.
+
+- Human scraping now uses the same Chrome session as Google AI when that browser is already open, so staff can clear website checks in that familiar window.
+
+- Human scraping now stops when a website keeps bouncing the browser through security-check pages, so staff see a clear blocked-site message instead of a stuck browser loop.
+
+- Human scraping now remembers its browser session, waits for verification to remain cleared, and reports repeated security challenges instead of continuing through more pages.
+
+- Product variants now offer “Human scrape”: complete website verification in the opened browser and scraping continues automatically in the same session.
+- Human-assisted price collection no longer requires pressing Enter in a terminal after completing verification.
+
+- Variant scraping now checks pharmacy websites even when no product matches have been confirmed yet.
+- Product discovery now recognizes medication links such as those used by Peak Pharmacy.
+
+- Adding or editing a pharmacy now lets staff select multiple service regions from a dropdown, with existing selections preserved.
+
+- Website addresses in the discovery review list are now clickable and open the pharmacy website in a new tab.
+
+- Pharmacy discovery now stops with a clear message when Google reaches its AI request limit, keeping saved candidates so staff can retry later.
+
+- Pharmacy discovery now waits for usable website links and continues past candidates with no suitable result, rather than failing the whole run.
+
+- Pharmacy discovery now retries slow homepage checks once, then continues using the existing review fallback instead of stopping the whole run on a timeout.
+
 ## 2026-09-21
+
+- The Google AI dev command now opens the Chrome debugging browser again when one is not already running, then starts the dev server with the correct browser connection.
+
+- Product-variant scraping now also checks active pharmacy websites when there is no confirmed match yet, so providers like Medy can appear in variant price results after scraping.
+
+- The product-variant scrape icon now spins while a scrape is running, so staff can see the row action is in progress.
+
+- The product-variant scrape button now works for pharmacy pages that list many strengths and pack sizes together, saving the exact row for the selected variant instead of requiring a separate confirmed match for each row.
+
+- Price reports now include strength-and-quantity price tables from pharmacy pages like Medy, so Viagra rows such as 25mg, 50mg and 100mg packs are visible in the saved report.
+
+- Fixed the product-variant edit form so switching between variants no longer causes a browser console warning.
 
 - Pharmacy pages now have a full price-collection panel: staff can see the chosen product variant, collect or refresh the latest draft price, set daily/weekly/monthly checks, and see when a page needs human verification.
 - The product-match review queue now has a "Confirm & scrape" action, so staff can choose the exact variant and save the scraped draft price in one click, with the saved update time shown afterward.
@@ -80,3 +136,6 @@
 - Added a build-progress page showing manual pharmacy listings and automatic discovery as the first priority.
 - Added persistent preview labels so visitors can distinguish the page preview from working pharmacy and price services.
 - Updated the homepage to describe the planned ED service and removed sample customer-savings claims.
+
+
+

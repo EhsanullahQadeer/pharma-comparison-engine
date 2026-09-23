@@ -16,7 +16,7 @@ const edIngredientTokens: [string, Ingredient][] = [
 // generic e-commerce words alone — both are kept since either is a legitimate site structure.
 const allowedPathSegments = new Set([
   "product", "products", "treatment", "treatments", "shop", "collections",
-  "online-doctor", "consultation", "medicine", "medicines",
+  "online-doctor", "consultation", "medicine", "medicines", "medication", "medications",
   "erectile-dysfunction", "erectile-dysfunction-ed", "ed",
 ]);
 

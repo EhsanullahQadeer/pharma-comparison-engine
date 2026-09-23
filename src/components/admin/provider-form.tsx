@@ -1,14 +1,15 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useMemo, useState } from "react";
 
 import { promoteDiscoveryCandidate } from "@/actions/discovery/discovery-candidates";
 import { createProvider, updateProvider, type CreateProviderState } from "@/actions/providers/providers";
 import { Button } from "@/components/common/button";
 import { Input } from "@/components/common/input";
 import { Label } from "@/components/common/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/common/select";
 import type { Provider } from "@/generated/prisma/client";
-import { regulatorTypeLabels, regulatorTypeValues } from "@/lib/provider-labels";
+import { regulatorTypeLabels, regulatorTypeValues, serviceRegionOptions } from "@/lib/provider-labels";
 
 const initialState: CreateProviderState = {};
 
@@ -37,6 +38,16 @@ function resolveFormAction(provider: ProviderFormProps["provider"], fromCandidat
 export function ProviderForm({ provider, fromCandidateId, defaultValues }: ProviderFormProps) {
   const action = resolveFormAction(provider, fromCandidateId);
   const [state, formAction, pending] = useActionState(action, initialState);
+  const [serviceRegions, setServiceRegions] = useState(() => [...new Set(
+    (provider?.serviceRegions ?? []).map(region => {
+      const trimmed = region.trim();
+      return serviceRegionOptions.find(option => option.toLowerCase() === trimmed.toLowerCase()) ?? trimmed;
+    }).filter(Boolean),
+  )]);
+  const regionOptions = useMemo(
+    () => [...new Set([...serviceRegionOptions, ...serviceRegions])],
+    [serviceRegions],
+  );
 
   let submitLabel = provider ? "Save changes" : "Add pharmacy as discovered";
   if (pending) submitLabel = "Saving…";
@@ -98,14 +109,23 @@ export function ProviderForm({ provider, fromCandidateId, defaultValues }: Provi
 
       <div className="space-y-1.5">
         <Label htmlFor="serviceRegions">Service regions</Label>
-        <Input
-          id="serviceRegions"
-          name="serviceRegions"
-          placeholder="England, Scotland, Wales"
-          defaultValue={provider?.serviceRegions.join(", ")}
-          required
-        />
-        <p className="text-xs text-muted-foreground">Comma-separated.</p>
+        <Select multiple value={serviceRegions} onValueChange={setServiceRegions} disabled={pending}>
+          <SelectTrigger
+            id="serviceRegions"
+            className="h-auto min-h-8 w-full whitespace-normal"
+            aria-invalid={!!state.fieldErrors?.serviceRegions?.length}
+            aria-describedby="serviceRegions-help"
+          >
+            <SelectValue className="min-w-0">
+              {serviceRegions.length ? serviceRegions.join(", ") : "Select service regions"}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {regionOptions.map(region => <SelectItem key={region} value={region}>{region}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <input type="hidden" name="serviceRegions" value={serviceRegions.join(", ")} />
+        <p id="serviceRegions-help" className="text-xs text-muted-foreground">Select all regions this pharmacy serves.</p>
         <FieldError messages={state.fieldErrors?.serviceRegions} />
       </div>
 

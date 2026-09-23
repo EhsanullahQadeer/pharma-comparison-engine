@@ -1,0 +1,210 @@
+[
+  {
+    "id": "cmu6mgemm0001akuyqph6r0f2",
+    "providerId": "cmu6mgelx0000akuy6997jzem",
+    "identifierType": "ODS_CODE",
+    "value": "FW367",
+    "source": "NHSBSA_CONTRACTOR_DETAILS",
+    "recordedAt": "2026-09-18T07:13:14.254Z"
+  },
+  {
+    "id": "cmu6mgemm0002akuykypupffx",
+    "providerId": "cmu6mgelx0000akuy6997jzem",
+    "identifierType": "GPHC_NUMBER",
+    "value": "9010946",
+    "source": null,
+    "recordedAt": "2026-09-18T07:13:14.254Z"
+  },
+  {
+    "id": "cmu6mgenn0005akuydw4x94zl",
+    "providerId": "cmu6mgeni0004akuybbd3dk28",
+    "identifierType": "ODS_CODE",
+    "value": "FA396",
+    "source": "NHSBSA_CONTRACTOR_DETAILS",
+    "recordedAt": "2026-09-18T07:13:14.291Z"
+  },
+  {
+    "id": "cmu6mgenn0006akuyx2yjz6gd",
+    "providerId": "cmu6mgeni0004akuybbd3dk28",
+    "identifierType": "GPHC_NUMBER",
+    "value": "9012559",
+    "source": null,
+    "recordedAt": "2026-09-18T07:13:14.291Z"
+  },
+  {
+    "id": "cmu6mgeom0009akuyjbzazjcr",
+    "providerId": "cmu6mgeo90008akuy1qtjqyzj",
+    "identifierType": "ODS_CODE",
+    "value": "FQF90",
+    "source": "NHSBSA_CONTRACTOR_DETAILS",
+    "recordedAt": "2026-09-18T07:13:14.326Z"
+  },
+  {
+    "id": "cmu6mgeom000aakuyvh9iyn7u",
+    "providerId": "cmu6mgeo90008akuy1qtjqyzj",
+    "identifierType": "GPHC_NUMBER",
+    "value": "9011921",
+    "source": null,
+    "recordedAt": "2026-09-18T07:13:14.326Z"
+  },
+  {
+    "id": "cmu6mgepn000dakuytpdmnavc",
+    "providerId": "cmu6mgepg000cakuyo7na2786",
+    "identifierType": "ODS_CODE",
+    "value": "FEW08",
+    "source": "NHSBSA_CONTRACTOR_DETAILS",
+    "recordedAt": "2026-09-18T07:13:14.363Z"
+  },
+  {
+    "id": "cmu6mgepn000eakuy2iyua2ev",
+    "providerId": "cmu6mgepg000cakuyo7na2786",
+    "identifierType": "GPHC_NUMBER",
+    "value": "9010807",
+    "source": null,
+    "recordedAt": "2026-09-18T07:13:14.363Z"
+  },
+  {
+    "id": "cmu6mgeq9000hakuyipntx0qe",
+    "providerId": "cmu6mgeq3000gakuyiqq4l4hq",
+    "identifierType": "ODS_CODE",
+    "value": "FPQ59",
+    "source": "NHSBSA_CONTRACTOR_DETAILS",
+    "recordedAt": "2026-09-18T07:13:14.385Z"
+  },
+  {
+    "id": "cmu6mgeq9000iakuytupqnup6",
+    "providerId": "cmu6mgeq3000gakuyiqq4l4hq",
+    "identifierType": "GPHC_NUMBER",
+    "value": "9012464",
+    "source": null,
+    "recordedAt": "2026-09-18T07:13:14.385Z"
+  },
+  {
+    "id": "cmu6mgeqv000lakuy17t9d0pe",
+    "providerId": "cmu6mgeqq000kakuyy4caqlsv",
+    "identifierType": "ODS_CODE",
+    "value": "FLM49",
+    "source": "NHSBSA_CONTRACTOR_DETAILS",
+    "recordedAt": "2026-09-18T07:13:14.407Z"
+  },
+  {
+    "id": "cmu6mgeqv000makuyl5ikrido",
+    "providerId": "cmu6mgeqq000kakuyy4caqlsv",
+    "identifierType": "GPHC_NUMBER",
+    "value": "9010146",
+    "source": null,
+    "recordedAt": "2026-09-18T07:13:14.407Z"
+  },
+  {
+    "id": "cmu6mgerk000pakuyfvxfyb2s",
+    "providerId": "cmu6mgerc000oakuyug6ugopw",
+    "identifierType": "ODS_CODE",
+    "value": "FN869",
+    "source": "NHSBSA_CONTRACTOR_DETAILS",
+    "recordedAt": "2026-09-18T07:13:14.432Z"
+  },
+  {
+    "id": "cmu6mgerk000qakuyl7ou1yw7",
+    "providerId": "cmu6mgerc000oakuyug6ugopw",
+    "identifierType": "GPHC_NUMBER",
+    "value": "9011460",
+    "source": null,
+    "recordedAt": "2026-09-18T07:13:14.432Z"
+  },
+  {
+    "id": "cmu6mgesl000takuyefdixhr8",
+    "providerId": "cmu6mgesg000sakuyjlvk1wld",
+    "identifierType": "ODS_CODE",
+    "value": "FDV23",
+    "source": "NHSBSA_CONTRACTOR_DETAILS",
+    "recordedAt": "2026-09-18T07:13:14.469Z"
+  },
+  {
+    "id": "cmu6mgesl000uakuyykqem6yc",
+    "providerId": "cmu6mgesg000sakuyjlvk1wld",
+    "identifierType": "GPHC_NUMBER",
+    "value": "9012796",
+    "source": null,
+    "recordedAt": "2026-09-18T07:13:14.469Z"
+  },
+  {
+    "id": "cmu6mvsjf0009p4uy7l92iqp6",
+    "providerId": "cmu6mvsj50008p4uy4raupogr",
+    "identifierType": "ODS_CODE",
+    "value": "FX730",
+    "source": "NHSBSA_CONTRACTOR_DETAILS",
+    "recordedAt": "2026-09-18T07:25:12.123Z"
+  },
+  {
+    "id": "cmu6mvsjf000ap4uy3x8o69ky",
+    "providerId": "cmu6mvsj50008p4uy4raupogr",
+    "identifierType": "GPHC_NUMBER",
+    "value": "9010764",
+    "source": null,
+    "recordedAt": "2026-09-18T07:25:12.123Z"
+  },
+  {
+    "id": "cmu6mvskm000dp4uyph3l3fa0",
+    "providerId": "cmu6mvskg000cp4uybnr1bfjh",
+    "identifierType": "ODS_CODE",
+    "value": "FVX33",
+    "source": "NHSBSA_CONTRACTOR_DETAILS",
+    "recordedAt": "2026-09-18T07:25:12.166Z"
+  },
+  {
+    "id": "cmu6mvskm000ep4uyx5gbe83m",
+    "providerId": "cmu6mvskg000cp4uybnr1bfjh",
+    "identifierType": "GPHC_NUMBER",
+    "value": "9010475",
+    "source": null,
+    "recordedAt": "2026-09-18T07:25:12.166Z"
+  },
+  {
+    "id": "cmu6mvslc000hp4uy1v341qmo",
+    "providerId": "cmu6mvsl6000gp4uyls6rsls2",
+    "identifierType": "ODS_CODE",
+    "value": "FGF70",
+    "source": "NHSBSA_CONTRACTOR_DETAILS",
+    "recordedAt": "2026-09-18T07:25:12.192Z"
+  },
+  {
+    "id": "cmu6mvslc000ip4uy427xcsqq",
+    "providerId": "cmu6mvsl6000gp4uyls6rsls2",
+    "identifierType": "GPHC_NUMBER",
+    "value": "9011159",
+    "source": null,
+    "recordedAt": "2026-09-18T07:25:12.192Z"
+  },
+  {
+    "id": "cmu6mvslx000lp4uyty0lj8io",
+    "providerId": "cmu6mvsls000kp4uyz9m2d2ow",
+    "identifierType": "ODS_CODE",
+    "value": "FKL27",
+    "source": "NHSBSA_CONTRACTOR_DETAILS",
+    "recordedAt": "2026-09-18T07:25:12.213Z"
+  },
+  {
+    "id": "cmu6mvslx000mp4uyjhm0za1m",
+    "providerId": "cmu6mvsls000kp4uyz9m2d2ow",
+    "identifierType": "GPHC_NUMBER",
+    "value": "1091717",
+    "source": null,
+    "recordedAt": "2026-09-18T07:25:12.213Z"
+  },
+  {
+    "id": "cmu6mvsml000pp4uyf4vlfxh9",
+    "providerId": "cmu6mvsmg000op4uyq762yesh",
+    "identifierType": "ODS_CODE",
+    "value": "FAX35",
+    "source": "NHSBSA_CONTRACTOR_DETAILS",
+    "recordedAt": "2026-09-18T07:25:12.237Z"
+  },
+  {
+    "id": "cmu6mvsml000qp4uydc95sw7p",
+    "providerId": "cmu6mvsmg000op4uyq762yesh",
+    "identifierType": "GPHC_NUMBER",
+    "value": "9011830",
+    "source": null,
+    "recordedAt": "2026-09-18T07:25:12.237Z"
+  }
+]

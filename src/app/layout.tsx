@@ -34,7 +34,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
       className={`${fontSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <script
           // Runs before paint to avoid a flash of the wrong theme; keep this in sync with ThemeToggle.
           dangerouslySetInnerHTML={{

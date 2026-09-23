@@ -9,6 +9,14 @@ type RenderOptions = {
   humanAssist?: boolean;
 };
 
+export type RenderedVariantPrice = {
+  strength: string | null;
+  quantity: string | null;
+  price: string;
+  usage: string | null;
+  evidence: string;
+};
+
 type RenderedSession = {
   page: Page;
   close: () => Promise<void>;
@@ -43,6 +51,29 @@ export async function readProductCard(page: Page, tokens: string[]) {
     const fee = /postage|packaging|delivery|shipping/i;
     const headings = [...document.querySelectorAll("h1,h2,h3,h4,h5,h6")];
     const matches: { latestPrice: string; priceBasis: string; priceEvidence: string }[] = [];
+    const variantRows: RenderedVariantPrice[] = [];
+    const variantKeys = new Set<string>();
+    const strengthPattern = /\b(\d{1,3}(?:\.\d+)?)\s*mg\b/i;
+    const quantityPatterns = [/\bqty\s*[:#-]?\s*(\d{1,3})\b/i, /\b(?:quantity|pack(?:\s*size)?)\s*[:#-]?\s*(\d{1,3})\b/i, /\b(\d{1,3})\s*(?:tablets?|pills?|capsules?|caps)\b/i];
+    const usagePattern = /\b(on[-\s]?demand|daily|once\s+daily|as\s+needed)\b/i;
+    const helpers = {
+      addVariantRow(text: string) {
+      const normalized = text.replace(/\s+/g, " ").trim();
+      if (normalized.length < 6 || normalized.length > 220 || fee.test(normalized)) return;
+      const prices = [...new Set(normalized.match(money) ?? [])].map(price => price.replace(/\s/g, ""));
+      if (prices.length !== 1) return;
+      const strength = normalized.match(strengthPattern)?.[0].replace(/\s+/g, "") ?? null;
+      const quantityMatch = quantityPatterns.map(pattern => normalized.match(pattern)).find(Boolean);
+      const gridQuantity = normalized.match(/\b\d{1,3}(?:\.\d+)?\s*mg\b.*?\b(\d{1,3})\b(?=\s*[Â££])/i)?.[1] ?? null;
+      const quantity = quantityMatch?.[1] ?? gridQuantity;
+      if (!strength && !quantity) return;
+      const usage = normalized.match(usagePattern)?.[0].replace(/\s+/g, "-") ?? null;
+      const key = `${strength ?? ""}|${quantity ?? ""}|${prices[0]}`;
+      if (variantKeys.has(key)) return;
+      variantKeys.add(key);
+      variantRows.push({ strength, quantity, price: prices[0], usage, evidence: normalized });
+      },
+    };
     for (const heading of headings) {
       if (!names.includes((heading.textContent ?? "").replace(/\s+/g, " ").trim().toLowerCase())) continue;
       let card = heading.parentElement;
@@ -59,6 +90,21 @@ export async function readProductCard(page: Page, tokens: string[]) {
         matches.push({ latestPrice: prices[0].replace(/\s/g, ""), priceBasis, priceEvidence: text });
         break;
       }
+      let scope = heading.parentElement;
+      for (let depth = 0; scope && depth < 8; depth++, scope = scope.parentElement) {
+        const scopeText = scope.innerText.replace(/\s+/g, " ").trim();
+        if ((scopeText.match(money)?.length ?? 0) > 0 && scopeText.length < 6000) {
+          for (const row of scope.querySelectorAll("tr,[role='row'],li,div")) {
+            helpers.addVariantRow((row as HTMLElement).innerText ?? "");
+          }
+          break;
+        }
+      }
+    }
+    if (variantRows.length === 0) {
+      for (const row of document.querySelectorAll("tr,[role='row'],li,div")) {
+        helpers.addVariantRow((row as HTMLElement).innerText ?? "");
+      }
     }
     const delivery = new Set<string>();
     for (const element of document.querySelectorAll("p,span,div")) {
@@ -70,9 +116,11 @@ export async function readProductCard(page: Page, tokens: string[]) {
     }
     const uniquePrices = new Set(matches.map(match => match.latestPrice));
     const result = uniquePrices.size === 1 ? matches[0] : null;
-    return { latestPrice: result?.latestPrice ?? null, priceBasis: result?.priceBasis ?? null,
-      priceEvidence: result?.priceEvidence ?? null,
-      deliveryPrice: delivery.size === 1 ? [...delivery][0] : null };
+    const sortedVariantRows = variantRows.sort((a, b) => Number(a.price.replace(/[^\d.]/g, "")) - Number(b.price.replace(/[^\d.]/g, "")));
+    const fallbackPrice = sortedVariantRows[0]?.price ?? null;
+    return { latestPrice: result?.latestPrice ?? fallbackPrice, priceBasis: result?.priceBasis ?? (fallbackPrice ? "variant table lowest listed pack price" : null),
+      priceEvidence: result?.priceEvidence ?? sortedVariantRows[0]?.evidence ?? null,
+      deliveryPrice: delivery.size === 1 ? [...delivery][0] : null, variantRows: sortedVariantRows };
   }, tokens.map(token => token.toLowerCase()));
 }
 

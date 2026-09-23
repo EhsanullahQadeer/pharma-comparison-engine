@@ -1,16 +1,17 @@
 import { chromium, type Browser, type Page } from "playwright";
 
+import { assertGoogleAiRequestLimit, waitForGoogleAiCitationUrls } from "@/lib/discovery/google-ai-citations";
+import { collectDiscoveryHomepage } from "@/lib/discovery/homepage-collection";
 import { homepageEvidence } from "@/lib/discovery/homepage-evidence";
-import { collectPublicWebsite } from "@/lib/discovery/public-web";
 import type { NormalizedCandidate } from "@/types/discovery";
 
 const AI_MODE_URL = "https://www.google.com/ai";
 const GOOGLE_AI_CDP_URL = process.env.GOOGLE_AI_CDP_URL ?? "http://127.0.0.1:9222";
 const GOOGLE_AI_PROFILE_DIR = process.env.GOOGLE_AI_PROFILE_DIR ?? "tmp/playwright-google-profile";
 const GOOGLE_AI_BROWSER_CHANNEL = process.env.GOOGLE_AI_BROWSER_CHANNEL ?? "chrome";
-const excludedHosts = /(^|\.)(google\.[a-z.]+|googleusercontent\.com|gstatic\.com|nhs\.uk|pharmacyregulation\.org|cqc\.org\.uk|facebook\.com|instagram\.com|yell\.com|yelp\.[a-z.]+|trustpilot\.com)$/i;
 const unavailablePattern = /not (?:currently )?available|unusual traffic|captcha|verify you are human|couldn.t sign you in|this browser or app may not be secure/i;
 const signedOutPattern = /\bsign in\b|to continue|choose an account|use your google account/i;
+const productListingPathPattern = /\/(?:products?|shop|treatments?|medicines?|medications?|collections?|erectile-dysfunction|sildenafil|tadalafil|viagra|cialis)(?:\/|$)/i;
 
 type GoogleAiSession = {
   close: () => Promise<void>;
@@ -87,6 +88,7 @@ async function openGoogleAiSession(): Promise<GoogleAiSession> {
 
 async function assertGoogleAiReady(page: Page) {
   const body = await page.locator("body").innerText();
+  assertGoogleAiRequestLimit(body);
   if (unavailablePattern.test(body)) {
     throw new Error("Google AI Mode is unavailable or blocked in this browser. Enrichment was not completed; retry with AI Mode access.");
   }
@@ -97,34 +99,46 @@ async function assertGoogleAiReady(page: Page) {
   }
 }
 
-async function waitForGoogleAiCitations(page: Page) {
-  try {
-    await page.waitForFunction(() => [...document.querySelectorAll("a[href]")]
-      .some(element => element.getAttribute("href")?.startsWith("https://") && !element.getAttribute("href")?.includes("google.")), undefined, { timeout: 30_000 });
-  } catch (error) {
-    await assertGoogleAiReady(page);
-    throw new Error(`Google AI Mode did not return usable website citations within 30 seconds. ${error instanceof Error ? error.message : String(error)}`);
+export function isManualReviewCollectionStop(error: unknown) {
+  return error instanceof Error && /robots rules|restricted network address|review (?:it|the page|this website) manually|too many redirects|human-verification|captcha|only public html pages/i.test(error.message);
+}
+
+export function extractGoogleAiGphcNumber(text: string): string | undefined {
+  const normalized = text.replace(/\s+/g, " ");
+  const labelledPatterns = [
+    /(?:gphc|general pharmaceutical council|pharmacy registration(?: number)?|premises registration(?: number)?|registration number)[^\d]{0,80}(\d{7})/i,
+    /(\d{7})[^\d]{0,80}(?:gphc|general pharmaceutical council|pharmacy registration|premises registration)/i,
+  ];
+  for (const pattern of labelledPatterns) {
+    const match = normalized.match(pattern);
+    if (match?.[1]) return match[1];
   }
+  return undefined;
 }
 
-function normalizeGoogleAiLink(link: string): string | null {
-  try {
-    const url = new URL(link);
-    const redirected = url.hostname.includes("google.") ? url.searchParams.get("q") ?? url.searchParams.get("url") : null;
-    if (redirected?.startsWith("https://")) return redirected;
-    if (url.protocol === "https:") return url.href;
-  } catch { /* Ignore invalid links. */ }
-  return null;
-}
-
-function isManualReviewCollectionStop(error: unknown) {
-  return error instanceof Error && /robots rules|review (?:it|the page) manually|human-verification|captcha|only public html pages/i.test(error.message);
-}
-
-async function googleAiDeliveryEvidence(page: Page) {
+async function googleAiBody(page: Page) {
   const body = await page.locator("body").innerText();
+  return body.replace(/\s+/g, " ");
+}
+
+function googleAiDeliveryEvidence(body: string) {
   const normalized = body.replace(/\s+/g, " ");
   const snippets = normalized.match(/[^.?!]*(?:deliver|delivery|delivered|shipping|postage|courier|royal mail|online pharmacy|distance selling)[^.?!]*[.?!]?/gi) ?? [];
+  return [...new Set(snippets.map(snippet => snippet.trim()).filter(Boolean))].slice(0, 8);
+}
+
+export function googleAiProductListingUrls(urls: Iterable<string>) {
+  return [...new Set([...urls].filter((url) => {
+    try {
+      return productListingPathPattern.test(new URL(url).pathname);
+    } catch {
+      return false;
+    }
+  }))];
+}
+
+function googleAiProductListingEvidence(body: string) {
+  const snippets = body.match(/[^.?!]*(?:product list|products?|treatments?|medicines?|medications?|sildenafil|tadalafil|viagra|cialis)[^.?!]*[.?!]?/gi) ?? [];
   return [...new Set(snippets.map(snippet => snippet.trim()).filter(Boolean))].slice(0, 8);
 }
 
@@ -134,36 +148,46 @@ export async function enrichWithGoogleAi(candidate: NormalizedCandidate): Promis
     page.setDefaultTimeout(30_000);
     await page.goto(AI_MODE_URL, { waitUntil: "domcontentloaded" });
     await assertGoogleAiReady(page);
-    const query = `Find the official pharmacy website for ${candidate.name}, ${candidate.postcode ?? "UK"}, GPhC ${candidate.gphcNumber ?? "unknown"}. Give the official website link, phone number and delivery options. Exclude directories.`;
+    const query = "For " + candidate.name + ", " + (candidate.postcode ?? "UK") + (candidate.gphcNumber ? ", GPhC " + candidate.gphcNumber : "") + ", return results only if its official website publicly lists pharmacy products or treatments. Cite the direct official product, treatment, medicine, shop, or ED listing URL and name the listed product/treatment. Also give the GPhC pharmacy registration number, phone number and delivery options. Exclude directories, consultation-only sites, prescription-request-only sites, and pharmacies without a public product listing.";
     const input = page.locator('textarea:visible, input[name="q"]:visible, [contenteditable="true"]:visible').first();
     await input.fill(query);
     await input.press("Enter");
-    await waitForGoogleAiCitations(page);
-    const links = await page.locator("a[href]").evaluateAll(elements => elements.map(element => (element as HTMLAnchorElement).href));
-    const origins = new Set<string>();
-    for (const link of links) {
-      try {
-        const normalizedLink = normalizeGoogleAiLink(link);
-        if (!normalizedLink) continue;
-        const url = new URL(normalizedLink);
-        if (url.protocol === "https:" && !excludedHosts.test(url.hostname)) origins.add(url.origin);
-      } catch { /* Ignore non-web citations. */ }
+    const citationUrls = await waitForGoogleAiCitationUrls(
+      async () => {
+        assertGoogleAiRequestLimit(await page.locator("body").innerText());
+        return page.locator("a[href]").evaluateAll(elements => elements.map(element => (element as HTMLAnchorElement).href));
+      },
+      () => page.waitForTimeout(500),
+    );
+    if (!citationUrls.size) {
+      // Missing citations are a candidate-level no-match, but a broken session
+      // must still stop the run so staff can restore access.
+      await assertGoogleAiReady(page);
+      return null;
     }
-    if (!origins.size) throw new Error("Google AI Mode returned no usable website citations; enrichment could not be verified.");
-    const aiDeliveryEvidence = await googleAiDeliveryEvidence(page);
+    const aiBody = await googleAiBody(page);
+    const productListingUrls = googleAiProductListingUrls(citationUrls);
+    if (!productListingUrls.length) return null;
+    const origins = new Set(productListingUrls.map(url => new URL(url).origin));
+    const aiGphcNumber = candidate.gphcNumber ?? extractGoogleAiGphcNumber(aiBody);
+    const enrichedCandidate = aiGphcNumber ? { ...candidate, gphcNumber: aiGphcNumber } : candidate;
+    const aiDeliveryEvidence = googleAiDeliveryEvidence(aiBody);
+    const aiProductEvidence = googleAiProductListingEvidence(aiBody);
     const failures: string[] = [];
     const manualReviewStops: string[] = [];
     for (const origin of [...origins].slice(0, 5)) {
       try {
-        const homepage = await collectPublicWebsite(origin);
-        const evidence = homepageEvidence(homepage.html, candidate);
+        const homepage = await collectDiscoveryHomepage(origin);
+        const evidence = homepageEvidence(homepage.html, enrichedCandidate);
         if (!evidence.verifiedIdentity || !evidence.deliveryEvidence.length) continue;
         return {
-          ...candidate,
+          ...enrichedCandidate,
           websiteDomain: new URL(homepage.finalUrl).hostname.replace(/^www\./, ""),
           rawPayload: { source: candidate.rawPayload, enrichment: {
             method: "GOOGLE_AI_MODE", query, searchUrl: page.url(), websiteUrl: homepage.finalUrl,
+            gphcNumber: aiGphcNumber,
             phoneNumbers: evidence.phones, deliveryEvidence: evidence.deliveryEvidence,
+            productListingUrls, productListingEvidence: aiProductEvidence,
             checkedAt: new Date().toISOString(),
           } },
         };
@@ -178,17 +202,20 @@ export async function enrichWithGoogleAi(candidate: NormalizedCandidate): Promis
     }
     if (failures.length) throw new Error(`Homepage verification incomplete: ${failures.join("; ")}`);
     if (aiDeliveryEvidence.length) {
-      const websiteUrl = [...origins][0];
+      const websiteUrl = productListingUrls[0];
       return {
-        ...candidate,
+        ...enrichedCandidate,
         websiteDomain: new URL(websiteUrl).hostname.replace(/^www\./, ""),
         rawPayload: { source: candidate.rawPayload, enrichment: {
           method: "GOOGLE_AI_MODE",
           query,
           searchUrl: page.url(),
           websiteUrl,
+          gphcNumber: aiGphcNumber,
           phoneNumbers: [],
           deliveryEvidence: aiDeliveryEvidence,
+          productListingUrls,
+          productListingEvidence: aiProductEvidence,
           homepageVerificationSkipped: manualReviewStops,
           checkedAt: new Date().toISOString(),
         } },

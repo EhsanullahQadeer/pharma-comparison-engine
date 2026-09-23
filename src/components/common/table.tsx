@@ -170,6 +170,7 @@ interface TableHeadProps extends React.ComponentProps<"th"> {
   onSort?: () => void;
   /** Defaults to the parent `Table`'s `resizable` setting; set to override per column. */
   resizable?: boolean;
+  /** Floor for manual resizing. Also applied as the column's initial CSS min-width (unset by default) — pass this to force a sensible width on a dense, many-column table instead of letting `table-layout: fixed` squeeze every column equally. */
   minWidth?: number;
   maxWidth?: number;
 }
@@ -182,7 +183,7 @@ function TableHead({
   sortDirection = false,
   onSort,
   resizable,
-  minWidth = 60,
+  minWidth,
   maxWidth,
   ...props
 }: TableHeadProps) {
@@ -216,7 +217,7 @@ function TableHead({
     const drag = dragRef.current;
     if (!drag) return;
     let next = drag.startWidth + (event.clientX - drag.startX) * drag.dir;
-    next = Math.max(minWidth, next);
+    next = Math.max(minWidth ?? 60, next);
     if (maxWidth != null) next = Math.min(maxWidth, next);
     setWidth(next);
   };
@@ -233,6 +234,10 @@ function TableHead({
     SortIcon = ArrowDown;
   }
 
+  let thStyle = style;
+  if (width != null) thStyle = { ...style, width, minWidth: width, maxWidth: width };
+  else if (minWidth != null) thStyle = { ...style, minWidth };
+
   return (
     <th
       ref={thRef}
@@ -243,11 +248,7 @@ function TableHead({
         isResizable && "overflow-hidden whitespace-nowrap",
         className,
       )}
-      style={
-        width != null
-          ? { ...style, width, minWidth: width, maxWidth: width }
-          : style
-      }
+      style={thStyle}
       {...props}
     >
       {sortable ? (

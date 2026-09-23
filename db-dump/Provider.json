@@ -1,0 +1,452 @@
+[
+  {
+    "id": "cmu29y36a0001u0uyz3k9omxv",
+    "legalName": "O'Reilly-Conn, Harris and Padberg Pharmacy Ltd",
+    "tradingName": "O'Reilly-Conn, Harris and Padberg Pharmacy",
+    "websiteDomain": "glittering-fedora.net",
+    "regulatorType": "PSNI",
+    "regulatorReference": "61YN18AK",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "Scotland",
+      "England"
+    ],
+    "status": "DISCOVERED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-15T06:11:59.506Z",
+    "updatedAt": "2026-09-15T06:11:59.506Z"
+  },
+  {
+    "id": "cmu29y36z0002u0uyjw0qgoqt",
+    "legalName": "Hoppe Group Pharmacy Ltd",
+    "tradingName": "Hoppe Group Pharmacy",
+    "websiteDomain": "orderly-simple.info",
+    "regulatorType": "GPHC",
+    "regulatorReference": "MQSUKBOJ",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "England"
+    ],
+    "status": "DISCOVERED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-15T06:11:59.531Z",
+    "updatedAt": "2026-09-15T06:11:59.531Z"
+  },
+  {
+    "id": "cmu29y3740003u0uyen6af1br",
+    "legalName": "Shanahan, Pollich and Wiza Pharmacy Ltd",
+    "tradingName": "Shanahan, Pollich and Wiza Pharmacy",
+    "websiteDomain": "pricey-platypus.biz",
+    "regulatorType": "PSNI",
+    "regulatorReference": "ROFQDJHM",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "Wales",
+      "Northern Ireland"
+    ],
+    "status": "IDENTITY_VERIFIED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-15T06:11:59.536Z",
+    "updatedAt": "2026-09-15T06:11:59.536Z"
+  },
+  {
+    "id": "cmu29y3790004u0uyij4vc660",
+    "legalName": "Kovacek - Koelpin Pharmacy Ltd",
+    "tradingName": "Kovacek - Koelpin Pharmacy",
+    "websiteDomain": "inferior-role.info",
+    "regulatorType": "GPHC",
+    "regulatorReference": "DTR5D9EM",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "England",
+      "Wales",
+      "Northern Ireland"
+    ],
+    "status": "DISCOVERED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-15T06:11:59.541Z",
+    "updatedAt": "2026-09-15T06:11:59.541Z"
+  },
+  {
+    "id": "cmu29y37d0005u0uyuzjmgwh1",
+    "legalName": "Leuschke - Lehner Pharmacy Ltd",
+    "tradingName": "Leuschke - Lehner Pharmacy",
+    "websiteDomain": "superb-bog.net",
+    "regulatorType": "GPHC",
+    "regulatorReference": "MU5DVUQD",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "Scotland",
+      "Northern Ireland",
+      "England"
+    ],
+    "status": "PUBLISHED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-15T06:11:59.545Z",
+    "updatedAt": "2026-09-15T06:11:59.545Z"
+  },
+  {
+    "id": "cmu29y37j0006u0uyud8x8y4f",
+    "legalName": "Witting Group Pharmacy Ltd",
+    "tradingName": "Witting Group Pharmacy",
+    "websiteDomain": "antique-cemetery.name",
+    "regulatorType": "GPHC",
+    "regulatorReference": "SK8ZE51U",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "Northern Ireland",
+      "Scotland"
+    ],
+    "status": "IDENTITY_VERIFIED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-15T06:11:59.551Z",
+    "updatedAt": "2026-09-15T06:11:59.551Z"
+  },
+  {
+    "id": "cmu29y37s0007u0uy1worh8xr",
+    "legalName": "Romaguera, Hartmann and Mosciski Pharmacy Ltd",
+    "tradingName": "Romaguera, Hartmann and Mosciski Pharmacy",
+    "websiteDomain": "crooked-scorn.org",
+    "regulatorType": "PSNI",
+    "regulatorReference": "ECN1CZMP",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "Scotland",
+      "Northern Ireland"
+    ],
+    "status": "DISCOVERED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-15T06:11:59.560Z",
+    "updatedAt": "2026-09-15T06:11:59.560Z"
+  },
+  {
+    "id": "cmu29y37y0008u0uy84q216fd",
+    "legalName": "Heaney - Littel Pharmacy Ltd",
+    "tradingName": "Heaney - Littel Pharmacy",
+    "websiteDomain": "unselfish-scarification.org",
+    "regulatorType": "PSNI",
+    "regulatorReference": "QVEQ7VYO",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "Northern Ireland"
+    ],
+    "status": "PUBLISHED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-15T06:11:59.566Z",
+    "updatedAt": "2026-09-15T06:11:59.566Z"
+  },
+  {
+    "id": "cmu29y3830009u0uywmwg7thk",
+    "legalName": "Jacobs, Aufderhar and Schowalter Pharmacy Ltd",
+    "tradingName": "Jacobs, Aufderhar and Schowalter Pharmacy",
+    "websiteDomain": "common-lamp.org",
+    "regulatorType": "PSNI",
+    "regulatorReference": "SSHR0WKF",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "Scotland",
+      "Wales",
+      "England"
+    ],
+    "status": "DISCOVERED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-15T06:11:59.571Z",
+    "updatedAt": "2026-09-15T06:11:59.571Z"
+  },
+  {
+    "id": "cmu29y38c000au0uyykmthlba",
+    "legalName": "Kihn - Smitham Pharmacy Ltd",
+    "tradingName": "Kihn - Smitham Pharmacy",
+    "websiteDomain": "oval-nephew.name",
+    "regulatorType": "GPHC",
+    "regulatorReference": "4QK1U3KA",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "England",
+      "Scotland",
+      "Northern Ireland"
+    ],
+    "status": "IDENTITY_VERIFIED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-15T06:11:59.580Z",
+    "updatedAt": "2026-09-15T06:11:59.580Z"
+  },
+  {
+    "id": "cmu29y38m000bu0uy60ef2na1",
+    "legalName": "Champlin LLC Pharmacy Ltd",
+    "tradingName": "Champlin LLC Pharmacy",
+    "websiteDomain": "happy-go-lucky-boulevard.info",
+    "regulatorType": "GPHC",
+    "regulatorReference": "VDADUO5W",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "Northern Ireland"
+    ],
+    "status": "DISCOVERED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-15T06:11:59.590Z",
+    "updatedAt": "2026-09-15T06:11:59.590Z"
+  },
+  {
+    "id": "cmu29y38q000cu0uy19783xsj",
+    "legalName": "Huel LLC Pharmacy Ltd",
+    "tradingName": "Huel LLC Pharmacy",
+    "websiteDomain": "putrid-pigpen.info",
+    "regulatorType": "GPHC",
+    "regulatorReference": "W9HBDBOH",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "England",
+      "Scotland",
+      "Wales"
+    ],
+    "status": "PUBLISHED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-15T06:11:59.594Z",
+    "updatedAt": "2026-09-15T06:11:59.594Z"
+  },
+  {
+    "id": "cmu2a43340000rwuyscy6hmes",
+    "legalName": "Test Pharmacy Limited",
+    "tradingName": "Test Pharmacy Ltd",
+    "websiteDomain": "test-pharmacy.co.uk",
+    "regulatorType": "GPHC",
+    "regulatorReference": "GPHC-9988776",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "England",
+      "Scotland",
+      "Wales",
+      "Northern Ireland"
+    ],
+    "status": "TEMPORARILY_WITHHELD",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-15T06:16:39.328Z",
+    "updatedAt": "2026-09-15T12:34:27.099Z"
+  },
+  {
+    "id": "cmu6mgelx0000akuy6997jzem",
+    "legalName": "HR Healthcare Limited",
+    "tradingName": "Treated.com",
+    "websiteDomain": "treated.com",
+    "regulatorType": "GPHC",
+    "regulatorReference": "9010946",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "England"
+    ],
+    "status": "DISCOVERED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-18T07:13:14.229Z",
+    "updatedAt": "2026-09-18T07:13:14.229Z"
+  },
+  {
+    "id": "cmu6mgeni0004akuybbd3dk28",
+    "legalName": "ABSM Healthcare Ltd",
+    "tradingName": "The Independent Pharmacy",
+    "websiteDomain": "theindependentpharmacy.co.uk",
+    "regulatorType": "GPHC",
+    "regulatorReference": "9012559",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "England"
+    ],
+    "status": "DISCOVERED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-18T07:13:14.286Z",
+    "updatedAt": "2026-09-18T07:13:14.286Z"
+  },
+  {
+    "id": "cmu6mgeo90008akuy1qtjqyzj",
+    "legalName": "Medino Online Ltd",
+    "tradingName": "Medino",
+    "websiteDomain": "medino.com",
+    "regulatorType": "GPHC",
+    "regulatorReference": "9011921",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "England"
+    ],
+    "status": "DISCOVERED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-18T07:13:14.313Z",
+    "updatedAt": "2026-09-18T07:13:14.313Z"
+  },
+  {
+    "id": "cmu6mgepg000cakuyo7na2786",
+    "legalName": "Pharmica Ltd",
+    "tradingName": "Pharmica",
+    "websiteDomain": "pharmica.co.uk",
+    "regulatorType": "GPHC",
+    "regulatorReference": "9010807",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "England"
+    ],
+    "status": "DISCOVERED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-18T07:13:14.356Z",
+    "updatedAt": "2026-09-18T07:13:14.356Z"
+  },
+  {
+    "id": "cmu6mgeq3000gakuyiqq4l4hq",
+    "legalName": "Innox Trading Limited",
+    "tradingName": "Chemist4U",
+    "websiteDomain": "chemist-4-u.com",
+    "regulatorType": "GPHC",
+    "regulatorReference": "9012464",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "England"
+    ],
+    "status": "DISCOVERED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-18T07:13:14.379Z",
+    "updatedAt": "2026-09-18T07:13:14.379Z"
+  },
+  {
+    "id": "cmu6mgeqq000kakuyy4caqlsv",
+    "legalName": "Pharmacy2U Ltd",
+    "tradingName": "Pharmacy2U",
+    "websiteDomain": "pharmacy2u.co.uk",
+    "regulatorType": "GPHC",
+    "regulatorReference": "9010146",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "England"
+    ],
+    "status": "DISCOVERED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-18T07:13:14.402Z",
+    "updatedAt": "2026-09-18T07:13:14.402Z"
+  },
+  {
+    "id": "cmu6mgerc000oakuyug6ugopw",
+    "legalName": "Varioline Health Ltd",
+    "tradingName": "Click Pharmacy",
+    "websiteDomain": "clickpharmacy.co.uk",
+    "regulatorType": "GPHC",
+    "regulatorReference": "9011460",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "England"
+    ],
+    "status": "DISCOVERED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-18T07:13:14.424Z",
+    "updatedAt": "2026-09-18T07:13:14.424Z"
+  },
+  {
+    "id": "cmu6mgesg000sakuyjlvk1wld",
+    "legalName": "Frosts (Online) Limited",
+    "tradingName": "Oxford Online Pharmacy",
+    "websiteDomain": "oxfordonlinepharmacy.co.uk",
+    "regulatorType": "GPHC",
+    "regulatorReference": "9012796",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "England"
+    ],
+    "status": "DISCOVERED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-18T07:13:14.464Z",
+    "updatedAt": "2026-09-18T07:13:14.464Z"
+  },
+  {
+    "id": "cmu6mvsj50008p4uy4raupogr",
+    "legalName": "Online Express Medicines Ltd",
+    "tradingName": "SimplyMeds Online",
+    "websiteDomain": "simplymedsonline.co.uk",
+    "regulatorType": "GPHC",
+    "regulatorReference": "9010764",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "England"
+    ],
+    "status": "DISCOVERED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-18T07:25:12.113Z",
+    "updatedAt": "2026-09-18T07:25:12.113Z"
+  },
+  {
+    "id": "cmu6mvskg000cp4uybnr1bfjh",
+    "legalName": "HKK Consultancy Services Limited",
+    "tradingName": "myPharmacy Direct",
+    "websiteDomain": "mypharmacydirect.co.uk",
+    "regulatorType": "GPHC",
+    "regulatorReference": "9010475",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "England"
+    ],
+    "status": "DISCOVERED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-18T07:25:12.160Z",
+    "updatedAt": "2026-09-18T07:25:12.160Z"
+  },
+  {
+    "id": "cmu6mvsl6000gp4uyls6rsls2",
+    "legalName": "Nomaz Limited",
+    "tradingName": "Online Chemist",
+    "websiteDomain": "onlinechemistuk.net",
+    "regulatorType": "GPHC",
+    "regulatorReference": "9011159",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "England"
+    ],
+    "status": "DISCOVERED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-18T07:25:12.186Z",
+    "updatedAt": "2026-09-18T07:25:12.186Z"
+  },
+  {
+    "id": "cmu6mvsls000kp4uyz9m2d2ow",
+    "legalName": "Lloyds Clinical Limited",
+    "tradingName": "Lloyds Clinical",
+    "websiteDomain": "lpclinicalhomecare.co.uk",
+    "regulatorType": "GPHC",
+    "regulatorReference": "1091717",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "England"
+    ],
+    "status": "DISCOVERED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-18T07:25:12.208Z",
+    "updatedAt": "2026-09-18T07:25:12.208Z"
+  },
+  {
+    "id": "cmu6mvsmg000op4uyq762yesh",
+    "legalName": "My Pharmacy Online UK Ltd",
+    "tradingName": "My Pharmacy Online",
+    "websiteDomain": "mypharmacyonline.co.uk",
+    "regulatorType": "GPHC",
+    "regulatorReference": "9011830",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "England"
+    ],
+    "status": "DISCOVERED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-18T07:25:12.232Z",
+    "updatedAt": "2026-09-18T07:25:12.232Z"
+  },
+  {
+    "id": "cmu6ujym300026ouy05a7o3iq",
+    "legalName": "16777383",
+    "tradingName": "medy",
+    "websiteDomain": "www.medy.uk",
+    "regulatorType": "GPHC",
+    "regulatorReference": "2082431",
+    "dispensingPartnerName": null,
+    "serviceRegions": [
+      "England",
+      "wales"
+    ],
+    "status": "ED_CATALOGUE_VERIFIED",
+    "affiliateApproved": false,
+    "createdAt": "2026-09-18T10:59:57.051Z",
+    "updatedAt": "2026-09-18T11:00:15.054Z"
+  }
+]

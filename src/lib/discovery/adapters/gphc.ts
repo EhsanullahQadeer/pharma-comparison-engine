@@ -51,10 +51,6 @@ function readCell(row: RegisterRow, key: string): string | undefined {
   return undefined;
 }
 
-function toDate(value: unknown): Date | null {
-  return value instanceof Date && !Number.isNaN(value.getTime()) ? value : null;
-}
-
 // Finds the real header row by content, not a hardcoded row index — the title/count preamble rows
 // above it are a GPhC export-template detail that could shift between releases.
 function findHeaderRowIndex(rows: unknown[][]): number {
@@ -84,7 +80,7 @@ function normalize(row: RegisterRow): NormalizedCandidate | null {
 
 export const gphcAdapter: DiscoveryAdapter = {
   type: "GPHC",
-  async run({ lastRunAt, recordRequest }) {
+  async run({ recordRequest }) {
     const browser = await chromium.launch();
     try {
       const page = await browser.newPage({ userAgent: BROWSER_USER_AGENT });
@@ -113,17 +109,8 @@ export const gphcAdapter: DiscoveryAdapter = {
       const headerIndex = findHeaderRowIndex(rawRows);
       const dataRows = sheetUtils.sheet_to_json<RegisterRow>(sheet, { range: headerIndex, defval: null });
 
-      // No lastRunAt means this source has never completed a run before — do a full scan of every
-      // Registered premises rather than a lookback window (DiscoveryAdapterContext.lastRunAt), since
-      // almost every existing pharmacy was registered long before discovery started running and a
-      // lookback filter would otherwise exclude nearly the entire population on the first run.
       return dataRows
         .filter((row) => readCell(row, "Current Status") === "Registered")
-        .filter((row) => {
-          if (!lastRunAt) return true;
-          const registeredOn = toDate(row["PHA Initial Registration Date"]);
-          return registeredOn !== null && registeredOn >= lastRunAt;
-        })
         .map(normalize)
         .filter((candidate): candidate is NormalizedCandidate => candidate !== null);
     } finally {

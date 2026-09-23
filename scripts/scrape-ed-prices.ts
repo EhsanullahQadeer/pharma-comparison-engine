@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { extractPriceSignals } from "./lib/price-signal-extraction";
-import { collectRenderedPageSignals, collectRenderedPrice, pickStructuredPrice } from "./lib/product-price";
+import { collectRenderedPageSignals, collectRenderedPrice, pickStructuredPrice, type RenderedVariantPrice } from "./lib/product-price";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { collectPublicWebsite } from "../src/lib/discovery/public-web";
 import { collectCandidateUrls, type DetectedProductMatch } from "../src/lib/product-detection/detect-products";
@@ -24,8 +24,13 @@ const strictCollectionStopPattern = /robots rules|human-verification|captcha|rev
 const humanAssist = process.argv.includes("--human") || process.env.ED_PRICE_HUMAN_ASSIST === "1";
 
 type ScrapedProduct =
-  | { candidateUrl: string; ingredient: Ingredient; matchedTokens: string[]; confidence: "HIGH" | "MEDIUM"; scrapedAt: string; latestPrice: string | null; priceSource: string | null; priceBasis: string | null; priceEvidence: string | null; deliveryPrice: string | null; priceWarning?: string; discountsFound: string[]; variants: unknown[]; jsonLdOffers: unknown[] }
+  | { candidateUrl: string; ingredient: Ingredient; matchedTokens: string[]; confidence: "HIGH" | "MEDIUM"; scrapedAt: string; latestPrice: string | null; priceSource: string | null; priceBasis: string | null; priceEvidence: string | null; deliveryPrice: string | null; priceWarning?: string; discountsFound: string[]; variants: unknown[]; renderedVariantRows: RenderedVariantPrice[]; jsonLdOffers: unknown[] }
   | { candidateUrl: string; ingredient: Ingredient; matchedTokens: string[]; confidence: "HIGH" | "MEDIUM"; scrapedAt: string; error: string };
+
+function compareConfidence(a: DetectedProductMatch, b: DetectedProductMatch): number {
+  const rank = { HIGH: 0, MEDIUM: 1 } satisfies Record<DetectedProductMatch["confidence"], number>;
+  return rank[a.confidence] - rank[b.confidence];
+}
 
 // Some sites put every drug on one combined "/erectile-dysfunction" page instead of a dedicated
 // URL per drug (e.g. medy.uk) — matchEdProductPath alone never surfaces those since there's no
@@ -61,6 +66,17 @@ async function findCategoryPageMatches(candidateUrls: string[], alreadyMatched: 
     }
   }
   return matches;
+}
+
+function dedupeMatches(matches: DetectedProductMatch[]): DetectedProductMatch[] {
+  const byUrl = new Map<string, DetectedProductMatch>();
+  for (const match of matches) {
+    const existing = byUrl.get(match.candidateUrl);
+    if (!existing || (existing.confidence === "MEDIUM" && match.confidence === "HIGH")) {
+      byUrl.set(match.candidateUrl, match);
+    }
+  }
+  return [...byUrl.values()].sort(compareConfidence);
 }
 
 async function collectCandidateUrlsForAudit(websiteDomain: string, drugTerm: string) {
@@ -100,15 +116,13 @@ async function scrapeDrugOnSite(websiteDomain: string, ingredient: Ingredient, d
   const htmlCache = new Map<string, string>();
   const directMatches = urlMatches
     .filter((match) => match.ingredient === ingredient)
-    .sort((a, b) => (a.confidence === b.confidence ? 0 : a.confidence === "HIGH" ? -1 : 1));
+    .sort(compareConfidence);
 
-  // The category-page fallback only runs when the URL-based pass found nothing dedicated to this
-  // drug — a site with a real per-drug page (higher-confidence, and its price is tied to that one
-  // product) shouldn't also get a shakier extra guess from a shared page that just happens to
-  // mention the drug's name somewhere (e.g. a nav menu), which can attribute an unrelated price.
-  const matches = directMatches.length > 0
-    ? directMatches.slice(0, MAX_PRODUCT_PAGES_PER_PHARMACY)
-    : (await findCategoryPageMatches(candidateUrls, new Set(urlMatches.map((match) => match.candidateUrl)), ingredient, drugTerm, htmlCache)).slice(0, MAX_PRODUCT_PAGES_PER_PHARMACY);
+  // Some pharmacies expose the real strength/quantity matrix on a shared ED condition page even
+  // when their navigation also contains weaker direct URL matches. Keep direct pages first, but add
+  // confirmed category-root pages too so Medy-style tables are not dropped.
+  const categoryMatches = await findCategoryPageMatches(candidateUrls, new Set(directMatches.map((match) => match.candidateUrl)), ingredient, drugTerm, htmlCache);
+  const matches = dedupeMatches([...directMatches, ...categoryMatches]).slice(0, MAX_PRODUCT_PAGES_PER_PHARMACY);
 
   if (matches.length === 0) return { note: siteNote ?? `No ${drugTerm} product page found on this site.`, products: [] };
 
@@ -134,10 +148,11 @@ async function scrapeDrugOnSite(websiteDomain: string, ingredient: Ingredient, d
       const structuredPrice = pickStructuredPrice(signals.jsonLdOffers, match.matchedTokens);
       let pricing = { latestPrice: structuredPrice, priceSource: structuredPrice ? "json-ld-product-offer" : null,
         priceBasis: structuredPrice ? "offer (unit unspecified)" : null, priceEvidence: null as string | null,
-        deliveryPrice: null as string | null, priceWarning: pageWarning };
-      if (!structuredPrice) {
+        deliveryPrice: null as string | null, priceWarning: pageWarning, variantRows: [] as RenderedVariantPrice[] };
+      if (!structuredPrice || signals.variants.length === 0) {
         try {
-          pricing = { ...pricing, ...(renderedPricing ?? await collectRenderedPrice(match.candidateUrl, match.matchedTokens, { humanAssist })) };
+          const rendered = renderedPricing ?? await collectRenderedPrice(match.candidateUrl, match.matchedTokens, { humanAssist });
+          pricing = { ...pricing, ...rendered };
           if (!pricing.latestPrice) pricing.priceWarning = "No unambiguous price found in the matching product card.";
         } catch (error) {
           pricing.priceWarning = error instanceof Error ? error.message : "Rendered price collection failed.";
@@ -149,9 +164,15 @@ async function scrapeDrugOnSite(websiteDomain: string, ingredient: Ingredient, d
         matchedTokens: match.matchedTokens,
         confidence: match.confidence,
         scrapedAt,
-        ...pricing,
+        latestPrice: pricing.latestPrice,
+        priceSource: pricing.priceSource,
+        priceBasis: pricing.priceBasis,
+        priceEvidence: pricing.priceEvidence,
+        deliveryPrice: pricing.deliveryPrice,
+        priceWarning: pricing.priceWarning,
         discountsFound: signals.discountsFound,
         variants: signals.variants,
+        renderedVariantRows: pricing.variantRows,
         jsonLdOffers: signals.jsonLdOffers,
       });
     } catch (error) {

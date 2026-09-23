@@ -1,0 +1,79 @@
+[
+  {
+    "id": "cmu2m9m830003gouyw9yyqubq",
+    "ingredient": "SILDENAFIL",
+    "brandName": "Viagra",
+    "strengthMg": 50,
+    "formulation": "Film-coated tablet",
+    "packQuantity": 4,
+    "supplyClassification": "POM",
+    "createdAt": "2026-09-15T11:56:52.803Z",
+    "updatedAt": "2026-09-15T11:56:52.803Z"
+  },
+  {
+    "id": "cmu2m9m870004gouykiqg6plc",
+    "ingredient": "SILDENAFIL",
+    "brandName": "Viagra",
+    "strengthMg": 100,
+    "formulation": "Film-coated tablet",
+    "packQuantity": 4,
+    "supplyClassification": "POM",
+    "createdAt": "2026-09-15T11:56:52.807Z",
+    "updatedAt": "2026-09-15T11:56:52.807Z"
+  },
+  {
+    "id": "cmu2m9m8o0006gouycidoe15u",
+    "ingredient": "TADALAFIL",
+    "brandName": "Cialis",
+    "strengthMg": 10,
+    "formulation": "Film-coated tablet",
+    "packQuantity": 4,
+    "supplyClassification": "POM",
+    "createdAt": "2026-09-15T11:56:52.824Z",
+    "updatedAt": "2026-09-15T11:56:52.824Z"
+  },
+  {
+    "id": "cmu2m9m8s0007gouy6how6jrj",
+    "ingredient": "TADALAFIL",
+    "brandName": "Cialis",
+    "strengthMg": 20,
+    "formulation": "Film-coated tablet",
+    "packQuantity": 4,
+    "supplyClassification": "POM",
+    "createdAt": "2026-09-15T11:56:52.828Z",
+    "updatedAt": "2026-09-15T11:56:52.828Z"
+  },
+  {
+    "id": "cmu2nhowx000hqouypjdfrpdl",
+    "ingredient": "SILDENAFIL",
+    "brandName": "Viagra",
+    "strengthMg": 25,
+    "formulation": "Orodispersible tablet",
+    "packQuantity": 4,
+    "supplyClassification": "POM",
+    "createdAt": "2026-09-15T12:31:09.153Z",
+    "updatedAt": "2026-09-21T09:23:17.280Z"
+  },
+  {
+    "id": "cmu2m9m8w0008gouydfjkni2p",
+    "ingredient": "TADALAFIL",
+    "brandName": "Cialis",
+    "strengthMg": 5,
+    "formulation": "Film-coated tablet (generic, daily dose)",
+    "packQuantity": 28,
+    "supplyClassification": "POM",
+    "createdAt": "2026-09-15T11:56:52.832Z",
+    "updatedAt": "2026-09-21T09:23:52.143Z"
+  },
+  {
+    "id": "cmu2m9m8k0005gouy48jgxn8x",
+    "ingredient": "SILDENAFIL",
+    "brandName": "Viagra",
+    "strengthMg": 100,
+    "formulation": "Film-coated tablet (generic)",
+    "packQuantity": 8,
+    "supplyClassification": "POM",
+    "createdAt": "2026-09-15T11:56:52.820Z",
+    "updatedAt": "2026-09-21T09:29:19.010Z"
+  }
+]

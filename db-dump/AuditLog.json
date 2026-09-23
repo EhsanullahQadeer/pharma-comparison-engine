@@ -1,0 +1,1127 @@
+[
+  {
+    "id": "cmu2ndhra0000qouymo288kb2",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Provider",
+    "entityId": "cmu2a43340000rwuyscy6hmes",
+    "changes": {
+      "legalName": "Test Pharmacy Limited",
+      "tradingName": "Test Pharmacy Ltd",
+      "websiteDomain": "test-pharmacy.co.uk"
+    },
+    "createdAt": "2026-09-15T12:27:53.254Z"
+  },
+  {
+    "id": "cmu2ndid70001qouyuvn16huj",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Provider",
+    "entityId": "cmu2a43340000rwuyscy6hmes",
+    "changes": {
+      "status": {
+        "to": "IDENTITY_VERIFIED",
+        "from": "DISCOVERED"
+      }
+    },
+    "createdAt": "2026-09-15T12:27:54.043Z"
+  },
+  {
+    "id": "cmu2nfbdh0002qouy8fi5r3vq",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Provider",
+    "entityId": "cmu2a43340000rwuyscy6hmes",
+    "changes": {
+      "legalName": "Test Pharmacy Limited",
+      "tradingName": "Test Pharmacy Ltd",
+      "websiteDomain": "test-pharmacy.co.uk"
+    },
+    "createdAt": "2026-09-15T12:29:18.293Z"
+  },
+  {
+    "id": "cmu2nfbvb0003qouyb77kclag",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Provider",
+    "entityId": "cmu2a43340000rwuyscy6hmes",
+    "changes": {
+      "status": {
+        "to": "ED_CATALOGUE_VERIFIED",
+        "from": "IDENTITY_VERIFIED"
+      }
+    },
+    "createdAt": "2026-09-15T12:29:18.935Z"
+  },
+  {
+    "id": "cmu2nfdj60006qouy55c4hw88",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "CREATE",
+    "entityType": "Offer",
+    "entityId": "cmu2nfdhg0004qouy18sde6on",
+    "changes": {
+      "providerId": "cmu2a43340000rwuyscy6hmes",
+      "itemPricePence": 2999
+    },
+    "createdAt": "2026-09-15T12:29:21.090Z"
+  },
+  {
+    "id": "cmu2nff150008qouyclzguf31",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "CREATE",
+    "entityType": "Discount",
+    "entityId": "cmu2nfezh0007qouy5gjtqxtq",
+    "changes": {
+      "offerId": "cmu2nfdhg0004qouy18sde6on"
+    },
+    "createdAt": "2026-09-15T12:29:23.033Z"
+  },
+  {
+    "id": "cmu2ngtj40009qouy1co2bev7",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Provider",
+    "entityId": "cmu2a43340000rwuyscy6hmes",
+    "changes": {
+      "legalName": "Test Pharmacy Limited",
+      "tradingName": "Test Pharmacy Ltd",
+      "websiteDomain": "test-pharmacy.co.uk"
+    },
+    "createdAt": "2026-09-15T12:30:28.480Z"
+  },
+  {
+    "id": "cmu2ngtz0000aqouyr29r6jdo",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Provider",
+    "entityId": "cmu2a43340000rwuyscy6hmes",
+    "changes": {
+      "status": {
+        "to": "PUBLISHED",
+        "from": "ED_CATALOGUE_VERIFIED"
+      }
+    },
+    "createdAt": "2026-09-15T12:30:29.052Z"
+  },
+  {
+    "id": "cmu2ngvvv000dqouyq9r9dwyx",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "CREATE",
+    "entityType": "Offer",
+    "entityId": "cmu2ngvvd000bqouyoe6b97m3",
+    "changes": {
+      "providerId": "cmu2a43340000rwuyscy6hmes",
+      "itemPricePence": 2999
+    },
+    "createdAt": "2026-09-15T12:30:31.531Z"
+  },
+  {
+    "id": "cmu2ngxg1000fqouyedko8yw0",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "CREATE",
+    "entityType": "Discount",
+    "entityId": "cmu2ngxfs000eqouyjn7f6xef",
+    "changes": {
+      "offerId": "cmu2ngvvd000bqouyoe6b97m3"
+    },
+    "createdAt": "2026-09-15T12:30:33.553Z"
+  },
+  {
+    "id": "cmu2nhmwe000gqouym7ieuzvq",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "DELETE",
+    "entityType": "Offer",
+    "entityId": "cmu2ngvvd000bqouyoe6b97m3",
+    "changes": {
+      "providerId": "cmu2a43340000rwuyscy6hmes"
+    },
+    "createdAt": "2026-09-15T12:31:06.542Z"
+  },
+  {
+    "id": "cmu2nhox4000iqouy4okgodcl",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "CREATE",
+    "entityType": "ProductVariant",
+    "entityId": "cmu2nhowx000hqouypjdfrpdl",
+    "changes": {
+      "ingredient": "SILDENAFIL",
+      "strengthMg": 25,
+      "formulation": "Orodispersible tablet",
+      "packQuantity": 4,
+      "supplyClassification": "POM"
+    },
+    "createdAt": "2026-09-15T12:31:09.160Z"
+  },
+  {
+    "id": "cmu2nhqhv000jqouytwe107yn",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Evidence",
+    "entityId": "cmu2m9mmq001zgouyvslulfxe",
+    "changes": {
+      "approvedStatus": "APPROVED"
+    },
+    "createdAt": "2026-09-15T12:31:11.203Z"
+  },
+  {
+    "id": "cmu2nhrs8000kqouyaj3xa6af",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Correction",
+    "entityId": "cmu2m9mnt0025gouyob3fq5wo",
+    "changes": {
+      "assignedOwnerId": "cmu29y3570000u0uy6a8wkocj"
+    },
+    "createdAt": "2026-09-15T12:31:12.872Z"
+  },
+  {
+    "id": "cmu2nhsl9000lqouymrlbqhom",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Correction",
+    "entityId": "cmu2m9mnt0025gouyob3fq5wo",
+    "changes": {
+      "status": "RESOLVED"
+    },
+    "createdAt": "2026-09-15T12:31:13.917Z"
+  },
+  {
+    "id": "cmu2nhuqr000nqouyr4hwyil5",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "CREATE",
+    "entityType": "StaffUser",
+    "entityId": "cmu2nhuql000mqouyd0gadrh9",
+    "changes": {
+      "role": "CATALOGUE_EDITOR",
+      "email": "verify-1789475476069@pharmacompare.local"
+    },
+    "createdAt": "2026-09-15T12:31:16.708Z"
+  },
+  {
+    "id": "cmu2nkkmd000oqouybu9llm59",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Provider",
+    "entityId": "cmu2a43340000rwuyscy6hmes",
+    "changes": {
+      "legalName": "Test Pharmacy Limited",
+      "tradingName": "Test Pharmacy Ltd",
+      "websiteDomain": "test-pharmacy.co.uk"
+    },
+    "createdAt": "2026-09-15T12:33:23.557Z"
+  },
+  {
+    "id": "cmu2nlwon000pqouymbqiizff",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Provider",
+    "entityId": "cmu2a43340000rwuyscy6hmes",
+    "changes": {
+      "legalName": "Test Pharmacy Limited",
+      "tradingName": "Test Pharmacy Ltd",
+      "websiteDomain": "test-pharmacy.co.uk"
+    },
+    "createdAt": "2026-09-15T12:34:25.847Z"
+  },
+  {
+    "id": "cmu2nlxoa000qqouy1na16v03",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Provider",
+    "entityId": "cmu2a43340000rwuyscy6hmes",
+    "changes": {
+      "status": {
+        "to": "TEMPORARILY_WITHHELD",
+        "from": "PUBLISHED"
+      }
+    },
+    "createdAt": "2026-09-15T12:34:27.130Z"
+  },
+  {
+    "id": "cmu2nlzck000tqouy3h1sb3qv",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "CREATE",
+    "entityType": "Offer",
+    "entityId": "cmu2nlzc6000rqouyifdaj2sj",
+    "changes": {
+      "providerId": "cmu2a43340000rwuyscy6hmes",
+      "itemPricePence": 2999
+    },
+    "createdAt": "2026-09-15T12:34:29.300Z"
+  },
+  {
+    "id": "cmu2nm0v8000vqouy8prqzdrw",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "CREATE",
+    "entityType": "Discount",
+    "entityId": "cmu2nm0uo000uqouyl1f7x4j7",
+    "changes": {
+      "offerId": "cmu2nlzc6000rqouyifdaj2sj"
+    },
+    "createdAt": "2026-09-15T12:34:31.268Z"
+  },
+  {
+    "id": "cmu2nmqeo000wqouyu3417frq",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "DELETE",
+    "entityType": "Offer",
+    "entityId": "cmu2nlzc6000rqouyifdaj2sj",
+    "changes": {
+      "providerId": "cmu2a43340000rwuyscy6hmes"
+    },
+    "createdAt": "2026-09-15T12:35:04.368Z"
+  },
+  {
+    "id": "cmu2nmrm6000yqouyy8mt6lsp",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "CREATE",
+    "entityType": "ProductVariant",
+    "entityId": "cmu2nmrls000xqouyy99lpwro",
+    "changes": {
+      "ingredient": "SILDENAFIL",
+      "strengthMg": 25,
+      "formulation": "Orodispersible tablet",
+      "packQuantity": 4,
+      "supplyClassification": "POM"
+    },
+    "createdAt": "2026-09-15T12:35:05.934Z"
+  },
+  {
+    "id": "cmu2nmsxn000zqouykoaf0xde",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Evidence",
+    "entityId": "cmu2m9mmv0020gouyx0yrl69r",
+    "changes": {
+      "approvedStatus": "APPROVED"
+    },
+    "createdAt": "2026-09-15T12:35:07.643Z"
+  },
+  {
+    "id": "cmu2nmu790010qouy7vob2ycn",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Correction",
+    "entityId": "cmu2m9mnp0024gouypga1uwi9",
+    "changes": {
+      "assignedOwnerId": "cmu29y3570000u0uy6a8wkocj"
+    },
+    "createdAt": "2026-09-15T12:35:09.285Z"
+  },
+  {
+    "id": "cmu2nmv190011qouypkwd8e1t",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Correction",
+    "entityId": "cmu2m9mnt0025gouyob3fq5wo",
+    "changes": {
+      "status": "RESOLVED"
+    },
+    "createdAt": "2026-09-15T12:35:10.365Z"
+  },
+  {
+    "id": "cmu2nmwoh0013qouydcsyjvv9",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "CREATE",
+    "entityType": "StaffUser",
+    "entityId": "cmu2nmwo40012qouy3zumu5ra",
+    "changes": {
+      "role": "CATALOGUE_EDITOR",
+      "email": "verify-1789475711923@pharmacompare.local"
+    },
+    "createdAt": "2026-09-15T12:35:12.497Z"
+  },
+  {
+    "id": "cmu3s75xa00020kuy7o7jji95",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "CREATE",
+    "entityType": "Offer",
+    "entityId": "cmu3s75w700000kuyxexiqy12",
+    "changes": {
+      "providerId": "cmu2a43340000rwuyscy6hmes",
+      "itemPricePence": 2500
+    },
+    "createdAt": "2026-09-16T07:30:42.238Z"
+  },
+  {
+    "id": "cmu3s77j400050kuy07k43s2s",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "CREATE",
+    "entityType": "Discount",
+    "entityId": "cmu3s77i400030kuy3qxiazj1",
+    "changes": {
+      "offerId": "cmu3s75w700000kuyxexiqy12"
+    },
+    "createdAt": "2026-09-16T07:30:44.320Z"
+  },
+  {
+    "id": "cmu3w6fvh000098uykzvxe0wm",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "DiscoverySource",
+    "entityId": "cmu3vhx1l00034ouyofv8z5bg",
+    "changes": {
+      "cadence": "WEEKLY",
+      "enabled": true
+    },
+    "createdAt": "2026-09-16T09:22:06.941Z"
+  },
+  {
+    "id": "cmu3w6yfl000198uymkbsztz5",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "DiscoverySource",
+    "entityId": "cmu3vhx1l00034ouyofv8z5bg",
+    "changes": {
+      "cadence": "WEEKLY",
+      "enabled": true
+    },
+    "createdAt": "2026-09-16T09:22:30.993Z"
+  },
+  {
+    "id": "cmu3w8lu1000498uynt7qahm0",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "DiscoveryCandidate",
+    "entityId": "cmu3w83ce00010suyxewjrj39",
+    "changes": {
+      "linkedProviderId": "cmu29y36a0001u0uyz3k9omxv"
+    },
+    "createdAt": "2026-09-16T09:23:47.977Z"
+  },
+  {
+    "id": "cmu3w9a6p000898uyu2yezkdd",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "CREATE",
+    "entityType": "Provider",
+    "entityId": "cmu3w9a5k000598uyktrysukd",
+    "changes": {
+      "fromDiscoveryCandidateId": "cmu3w83cz00020suyyakp95mo"
+    },
+    "createdAt": "2026-09-16T09:24:19.537Z"
+  },
+  {
+    "id": "cmu3w9a6w000998uyao7w10l7",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "DiscoveryCandidate",
+    "entityId": "cmu3w83cz00020suyyakp95mo",
+    "changes": {
+      "status": "PROMOTED",
+      "providerId": "cmu3w9a5k000598uyktrysukd"
+    },
+    "createdAt": "2026-09-16T09:24:19.544Z"
+  },
+  {
+    "id": "cmu3wcjfv000d98uywymnl1gv",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "CREATE",
+    "entityType": "Provider",
+    "entityId": "cmu3wcjf0000a98uypfycxky4",
+    "changes": {
+      "fromDiscoveryCandidateId": "cmu3w9xhz0000vguyllsoa7t5"
+    },
+    "createdAt": "2026-09-16T09:26:51.499Z"
+  },
+  {
+    "id": "cmu3wcjg1000e98uysf8zvvl5",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "DiscoveryCandidate",
+    "entityId": "cmu3w9xhz0000vguyllsoa7t5",
+    "changes": {
+      "status": "PROMOTED",
+      "providerId": "cmu3wcjf0000a98uypfycxky4"
+    },
+    "createdAt": "2026-09-16T09:26:51.505Z"
+  },
+  {
+    "id": "cmu3xcm340000rguyv0ar1ptc",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "DiscoverySource",
+    "entityId": "cmu3vhwzp00004ouywhjjj5uf",
+    "changes": {
+      "cadence": "WEEKLY",
+      "enabled": false,
+      "credentialsUpdated": true
+    },
+    "createdAt": "2026-09-16T09:54:54.544Z"
+  },
+  {
+    "id": "cmu3xcney0001rguydno0ojqk",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "DiscoverySource",
+    "entityId": "cmu3vhwzp00004ouywhjjj5uf",
+    "changes": {
+      "cadence": "DAILY",
+      "enabled": false,
+      "credentialsUpdated": false
+    },
+    "createdAt": "2026-09-16T09:54:56.266Z"
+  },
+  {
+    "id": "cmu3xdj030002rguywfydv0o5",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "DiscoverySource",
+    "entityId": "cmu3vhwzp00004ouywhjjj5uf",
+    "changes": {
+      "cadence": "DAILY",
+      "enabled": true,
+      "credentialsUpdated": false
+    },
+    "createdAt": "2026-09-16T09:55:37.203Z"
+  },
+  {
+    "id": "cmu3xe9jy0005rguy6khh8rx5",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "CREATE",
+    "entityType": "DiscoverySource",
+    "entityId": "cmu3xe9jg0004rguyodfgkuir",
+    "changes": {
+      "type": "CQC",
+      "cadence": "WEEKLY",
+      "enabled": true,
+      "credentialsUpdated": true
+    },
+    "createdAt": "2026-09-16T09:56:11.614Z"
+  },
+  {
+    "id": "cmu4043en005pgkuy5q4h37fe",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "DiscoverySource",
+    "entityId": "cmu3vhwzp00004ouywhjjj5uf",
+    "changes": {
+      "cadence": "WEEKLY",
+      "enabled": true,
+      "credentialsUpdated": true
+    },
+    "createdAt": "2026-09-16T11:12:15.935Z"
+  },
+  {
+    "id": "cmu40enxv005sgkuyc3hlqj06",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "DiscoverySource",
+    "entityId": "cmu3vhwzp00004ouywhjjj5uf",
+    "changes": {
+      "cadence": "WEEKLY",
+      "enabled": true,
+      "credentialsUpdated": false
+    },
+    "createdAt": "2026-09-16T11:20:29.107Z"
+  },
+  {
+    "id": "cmu40jqy90000zsuy0hgfxd3o",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "DiscoverySource",
+    "entityId": "cmu3vhwzp00004ouywhjjj5uf",
+    "changes": {
+      "cadence": "WEEKLY",
+      "enabled": true,
+      "credentialsUpdated": true
+    },
+    "createdAt": "2026-09-16T11:24:26.289Z"
+  },
+  {
+    "id": "cmu40ndz60000m4uyijmynxnt",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "DiscoverySource",
+    "entityId": "cmu3vhwzp00004ouywhjjj5uf",
+    "changes": {
+      "cadence": "WEEKLY",
+      "enabled": true,
+      "credentialsUpdated": false
+    },
+    "createdAt": "2026-09-16T11:27:16.098Z"
+  },
+  {
+    "id": "cmu40t24s0000dguyubjrvqew",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "DiscoverySource",
+    "entityId": "cmu3vhwzp00004ouywhjjj5uf",
+    "changes": {
+      "cadence": "WEEKLY",
+      "enabled": true,
+      "credentialsUpdated": true
+    },
+    "createdAt": "2026-09-16T11:31:40.684Z"
+  },
+  {
+    "id": "cmu40t7mi0001dguyu8u8gbdo",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "DiscoverySource",
+    "entityId": "cmu3vhwzp00004ouywhjjj5uf",
+    "changes": {
+      "cadence": "WEEKLY",
+      "enabled": false,
+      "credentialsUpdated": false
+    },
+    "createdAt": "2026-09-16T11:31:47.802Z"
+  },
+  {
+    "id": "cmu41gm3j0005dguyi38s4axg",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "DiscoverySource",
+    "entityId": "cmu3xe9jg0004rguyodfgkuir",
+    "changes": {
+      "cadence": "WEEKLY",
+      "enabled": false,
+      "credentialsUpdated": true
+    },
+    "createdAt": "2026-09-16T11:49:59.647Z"
+  },
+  {
+    "id": "cmu41jr960006dguy691iydnw",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "DiscoverySource",
+    "entityId": "cmu3xe9jg0004rguyodfgkuir",
+    "changes": {
+      "cadence": "WEEKLY",
+      "enabled": false,
+      "credentialsUpdated": true
+    },
+    "createdAt": "2026-09-16T11:52:26.298Z"
+  },
+  {
+    "id": "cmu4300120000nkuyu1xi5mwg",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "DiscoverySource",
+    "entityId": "cmu3xe9jg0004rguyodfgkuir",
+    "changes": {
+      "cadence": "WEEKLY",
+      "enabled": false,
+      "credentialsUpdated": true
+    },
+    "createdAt": "2026-09-16T12:33:03.782Z"
+  },
+  {
+    "id": "cmu54utx10004ssuyoyzgxwyk",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "DiscoverySource",
+    "entityId": "cmu3vhwzp00004ouywhjjj5uf",
+    "changes": {
+      "cadence": "WEEKLY",
+      "enabled": true,
+      "credentialsUpdated": true
+    },
+    "createdAt": "2026-09-17T06:12:47.989Z"
+  },
+  {
+    "id": "cmu56te0k005o4kuydjlmeny9",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "DiscoverySource",
+    "entityId": "cmu3vhwzp00004ouywhjjj5uf",
+    "changes": {
+      "cadence": "WEEKLY",
+      "enabled": false,
+      "credentialsUpdated": true
+    },
+    "createdAt": "2026-09-17T07:07:39.956Z"
+  },
+  {
+    "id": "cmu6ubay800006ouya8593tfc",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Evidence",
+    "entityId": "cmu6mvsmp000rp4uym6b1fo12",
+    "changes": {
+      "approvedStatus": "REJECTED"
+    },
+    "createdAt": "2026-09-18T10:53:13.136Z"
+  },
+  {
+    "id": "cmu6ubqdc00016ouylnxp4vw3",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Evidence",
+    "entityId": "cmu6mgemy0003akuy82pqqo7q",
+    "changes": {
+      "approvedStatus": "APPROVED"
+    },
+    "createdAt": "2026-09-18T10:53:33.120Z"
+  },
+  {
+    "id": "cmu6ujynn00036ouypsf6o5wo",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "CREATE",
+    "entityType": "Provider",
+    "entityId": "cmu6ujym300026ouy05a7o3iq",
+    "changes": {
+      "legalName": "16777383",
+      "tradingName": "medy",
+      "websiteDomain": "www.medy.uk"
+    },
+    "createdAt": "2026-09-18T10:59:57.107Z"
+  },
+  {
+    "id": "cmu6uk92i00046ouy2srxp2b9",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Provider",
+    "entityId": "cmu6ujym300026ouy05a7o3iq",
+    "changes": {
+      "status": {
+        "to": "IDENTITY_VERIFIED",
+        "from": "DISCOVERED"
+      }
+    },
+    "createdAt": "2026-09-18T11:00:10.602Z"
+  },
+  {
+    "id": "cmu6ukcib00056ouy0xo52j81",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Provider",
+    "entityId": "cmu6ujym300026ouy05a7o3iq",
+    "changes": {
+      "status": {
+        "to": "ED_CATALOGUE_VERIFIED",
+        "from": "IDENTITY_VERIFIED"
+      }
+    },
+    "createdAt": "2026-09-18T11:00:15.059Z"
+  },
+  {
+    "id": "cmuazy2lx0000ekuybl8syzit",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "ProductMatch",
+    "entityId": "cmu6u6cpu000hesuyx5eqe9hq",
+    "changes": {
+      "status": "CONFIRMED",
+      "productVariantId": "cmu2m9m8w0008gouydfjkni2p"
+    },
+    "createdAt": "2026-09-21T08:41:58.198Z"
+  },
+  {
+    "id": "cmub04r5p0001ekuy2js8k88c",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "ProductMatch",
+    "entityId": "cmu6u688p0009esuy6mmibu07",
+    "changes": {
+      "status": "CONFIRMED",
+      "productVariantId": "cmu2m9m8w0008gouydfjkni2p"
+    },
+    "createdAt": "2026-09-21T08:47:09.949Z"
+  },
+  {
+    "id": "cmub04utd0003ekuy72q7hxr4",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "ProductMatch",
+    "entityId": "cmu6u689c000aesuyxz1o3bcx",
+    "changes": {
+      "status": "CONFIRMED",
+      "productVariantId": "cmu2m9m8w0008gouydfjkni2p"
+    },
+    "createdAt": "2026-09-21T08:47:14.689Z"
+  },
+  {
+    "id": "cmub052m20005ekuyzajamyth",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "ProductMatch",
+    "entityId": "cmu6u689w000besuyjqh0aa0j",
+    "changes": {
+      "status": "CONFIRMED",
+      "productVariantId": "cmu2nhowx000hqouypjdfrpdl"
+    },
+    "createdAt": "2026-09-21T08:47:24.794Z"
+  },
+  {
+    "id": "cmub1ej990008ekuyeh7mbhls",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "ProductVariant",
+    "entityId": "cmu2nhowx000hqouypjdfrpdl",
+    "changes": {
+      "priceScrape": {
+        "failed": 1,
+        "scraped": 0,
+        "attempted": 1
+      }
+    },
+    "createdAt": "2026-09-21T09:22:45.885Z"
+  },
+  {
+    "id": "cmub1f7kf0009ekuyk0zjzafb",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "ProductVariant",
+    "entityId": "cmu2nhowx000hqouypjdfrpdl",
+    "changes": {
+      "brandName": "Viagra",
+      "ingredient": "SILDENAFIL",
+      "strengthMg": 25,
+      "formulation": "Orodispersible tablet",
+      "packQuantity": 4,
+      "supplyClassification": "POM"
+    },
+    "createdAt": "2026-09-21T09:23:17.391Z"
+  },
+  {
+    "id": "cmub1fygt000aekuytwhgm574",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "ProductVariant",
+    "entityId": "cmu2m9m8w0008gouydfjkni2p",
+    "changes": {
+      "brandName": "Cialis",
+      "ingredient": "TADALAFIL",
+      "strengthMg": 5,
+      "formulation": "Film-coated tablet (generic, daily dose)",
+      "packQuantity": 28,
+      "supplyClassification": "POM"
+    },
+    "createdAt": "2026-09-21T09:23:52.253Z"
+  },
+  {
+    "id": "cmub1myob000bekuy5y73x2ut",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "ProductVariant",
+    "entityId": "cmu2m9m8k0005gouy48jgxn8x",
+    "changes": {
+      "brandName": "Viagra",
+      "ingredient": "SILDENAFIL",
+      "strengthMg": 100,
+      "formulation": "Film-coated tablet (generic)",
+      "packQuantity": 8,
+      "supplyClassification": "POM"
+    },
+    "createdAt": "2026-09-21T09:29:19.115Z"
+  },
+  {
+    "id": "cmub1n2fr000cekuycw9kle98",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "DELETE",
+    "entityType": "ProductVariant",
+    "entityId": "cmu2nmrls000xqouyy99lpwro",
+    "changes": {},
+    "createdAt": "2026-09-21T09:29:23.991Z"
+  },
+  {
+    "id": "cmub2girx000eekuyr8r7lt1c",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "ProductVariant",
+    "entityId": "cmu2nhowx000hqouypjdfrpdl",
+    "changes": {
+      "priceScrape": {
+        "failed": 1,
+        "scraped": 0,
+        "attempted": 1
+      }
+    },
+    "createdAt": "2026-09-21T09:52:18.189Z"
+  },
+  {
+    "id": "cmub2isev000hekuyx4lx9eiz",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "ProductVariant",
+    "entityId": "cmu2m9m8w0008gouydfjkni2p",
+    "changes": {
+      "priceScrape": {
+        "failed": 3,
+        "scraped": 0,
+        "attempted": 3
+      }
+    },
+    "createdAt": "2026-09-21T09:54:03.991Z"
+  },
+  {
+    "id": "cmub5827q0004vouyhwm0vm73",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "CREATE",
+    "entityType": "Offer",
+    "entityId": "cmub5826c0002vouy7owhk8ge",
+    "changes": {
+      "source": "json-ld-product-offer",
+      "collection": "automatic",
+      "itemPricePence": 8799,
+      "deliveryFeePence": 0
+    },
+    "createdAt": "2026-09-21T11:09:42.326Z"
+  },
+  {
+    "id": "cmub583aa0007vouy66jopwao",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "CREATE",
+    "entityType": "Offer",
+    "entityId": "cmub5839j0005vouywr8mg8pu",
+    "changes": {
+      "source": "json-ld-product-offer",
+      "collection": "automatic",
+      "itemPricePence": 879,
+      "deliveryFeePence": 0
+    },
+    "createdAt": "2026-09-21T11:09:43.714Z"
+  },
+  {
+    "id": "cmub583ah0008vouyeewt5ww6",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "ProductVariant",
+    "entityId": "cmu2m9m8w0008gouydfjkni2p",
+    "changes": {
+      "priceScrape": {
+        "failed": 1,
+        "scraped": 2,
+        "attempted": 3
+      }
+    },
+    "createdAt": "2026-09-21T11:09:43.721Z"
+  },
+  {
+    "id": "cmub58kfz000avouybqw6rghf",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Offer",
+    "entityId": "cmub5826c0002vouy7owhk8ge",
+    "changes": {
+      "source": "json-ld-product-offer",
+      "collection": "automatic",
+      "itemPricePence": 8799,
+      "deliveryFeePence": 0
+    },
+    "createdAt": "2026-09-21T11:10:05.951Z"
+  },
+  {
+    "id": "cmub58li9000cvouycwwyl2um",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Offer",
+    "entityId": "cmub5839j0005vouywr8mg8pu",
+    "changes": {
+      "source": "json-ld-product-offer",
+      "collection": "automatic",
+      "itemPricePence": 879,
+      "deliveryFeePence": 0
+    },
+    "createdAt": "2026-09-21T11:10:07.329Z"
+  },
+  {
+    "id": "cmub58lij000dvouyfxlmnb5c",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "ProductVariant",
+    "entityId": "cmu2m9m8w0008gouydfjkni2p",
+    "changes": {
+      "priceScrape": {
+        "failed": 1,
+        "scraped": 2,
+        "attempted": 3
+      }
+    },
+    "createdAt": "2026-09-21T11:10:07.339Z"
+  },
+  {
+    "id": "cmub64w1m000gvouyzhpwpbsj",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "CREATE",
+    "entityType": "Offer",
+    "entityId": "cmub64w0e000evouywli54wlw",
+    "changes": {
+      "source": "json-ld-product-offer",
+      "collection": "automatic",
+      "itemPricePence": 2199,
+      "deliveryFeePence": 0
+    },
+    "createdAt": "2026-09-21T11:35:13.978Z"
+  },
+  {
+    "id": "cmub64w21000hvouywjk01u1p",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "ProductVariant",
+    "entityId": "cmu2nhowx000hqouypjdfrpdl",
+    "changes": {
+      "priceScrape": {
+        "failed": 0,
+        "scraped": 1,
+        "attempted": 1
+      }
+    },
+    "createdAt": "2026-09-21T11:35:13.993Z"
+  },
+  {
+    "id": "cmub65iwd000jvouy6i43wfuw",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Offer",
+    "entityId": "cmub5826c0002vouy7owhk8ge",
+    "changes": {
+      "source": "json-ld-product-offer",
+      "collection": "automatic",
+      "itemPricePence": 8799,
+      "deliveryFeePence": 0
+    },
+    "createdAt": "2026-09-21T11:35:43.597Z"
+  },
+  {
+    "id": "cmub65jwq000lvouyjdmwi1bm",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Offer",
+    "entityId": "cmub5839j0005vouywr8mg8pu",
+    "changes": {
+      "source": "json-ld-product-offer",
+      "collection": "automatic",
+      "itemPricePence": 879,
+      "deliveryFeePence": 0
+    },
+    "createdAt": "2026-09-21T11:35:44.906Z"
+  },
+  {
+    "id": "cmub65jwv000mvouyjyn8ye4n",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "ProductVariant",
+    "entityId": "cmu2m9m8w0008gouydfjkni2p",
+    "changes": {
+      "priceScrape": {
+        "failed": 1,
+        "scraped": 2,
+        "attempted": 3
+      }
+    },
+    "createdAt": "2026-09-21T11:35:44.911Z"
+  },
+  {
+    "id": "cmub6e3sg000nvouyt15vpdv2",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "ProductVariant",
+    "entityId": "cmu2nhowx000hqouypjdfrpdl",
+    "changes": {
+      "priceScrape": {
+        "failed": 1,
+        "scraped": 0,
+        "attempted": 1
+      }
+    },
+    "createdAt": "2026-09-21T11:42:23.920Z"
+  },
+  {
+    "id": "cmub6ekxh000ovouy5atyvvpm",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "ProductVariant",
+    "entityId": "cmu2m9m830003gouyw9yyqubq",
+    "changes": {
+      "priceScrape": {
+        "failed": 1,
+        "scraped": 0,
+        "attempted": 1
+      }
+    },
+    "createdAt": "2026-09-21T11:42:46.134Z"
+  },
+  {
+    "id": "cmub6fjhe000pvouylqjstsim",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "ProductVariant",
+    "entityId": "cmu2m9m870004gouykiqg6plc",
+    "changes": {
+      "priceScrape": {
+        "failed": 1,
+        "scraped": 0,
+        "attempted": 1
+      }
+    },
+    "createdAt": "2026-09-21T11:43:30.914Z"
+  },
+  {
+    "id": "cmub6im3m000qvouyncr94iu3",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "ProductVariant",
+    "entityId": "cmu2m9m8w0008gouydfjkni2p",
+    "changes": {
+      "priceScrape": {
+        "failed": 2,
+        "scraped": 0,
+        "attempted": 2
+      }
+    },
+    "createdAt": "2026-09-21T11:45:54.274Z"
+  },
+  {
+    "id": "cmub74dq4000tvouy00cs2j8s",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Offer",
+    "entityId": "cmub74dpm000rvouydlthrjnp",
+    "changes": {
+      "source": "rendered-product-card",
+      "collection": "provider-fallback-variant-row",
+      "providerId": "cmu6ujym300026ouy05a7o3iq",
+      "itemPricePence": 1999,
+      "deliveryFeePence": 399,
+      "productVariantId": "cmu2nhowx000hqouypjdfrpdl"
+    },
+    "createdAt": "2026-09-21T12:02:49.852Z"
+  },
+  {
+    "id": "cmub74dqa000uvouyx64uw2j9",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "ProductVariant",
+    "entityId": "cmu2nhowx000hqouypjdfrpdl",
+    "changes": {
+      "priceScrape": {
+        "failed": 26,
+        "scraped": 1,
+        "attempted": 27
+      }
+    },
+    "createdAt": "2026-09-21T12:02:49.858Z"
+  },
+  {
+    "id": "cmub8qi6v0006gcuysaqtrffd",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "Offer",
+    "entityId": "cmub8qhtp0004gcuyfdnnmx0z",
+    "changes": {
+      "source": "rendered-product-card",
+      "collection": "provider-fallback-variant-row",
+      "providerId": "cmu6ujym300026ouy05a7o3iq",
+      "itemPricePence": 2250,
+      "deliveryFeePence": 399,
+      "productVariantId": "cmu2m9m830003gouyw9yyqubq"
+    },
+    "createdAt": "2026-09-21T12:48:01.688Z"
+  },
+  {
+    "id": "cmub8qibl0007gcuyp0k47r0z",
+    "actorId": "cmu29y3570000u0uy6a8wkocj",
+    "action": "UPDATE",
+    "entityType": "ProductVariant",
+    "entityId": "cmu2m9m830003gouyw9yyqubq",
+    "changes": {
+      "priceScrape": {
+        "failed": 26,
+        "scraped": 1,
+        "attempted": 27
+      }
+    },
+    "createdAt": "2026-09-21T12:48:01.857Z"
+  }
+]

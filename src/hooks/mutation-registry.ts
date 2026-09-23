@@ -1,3 +1,4 @@
-export type MutationKey = string & {};
+import { scrapePricesForVariant } from "@/actions/product-variants/product-variants";
 
-export const mutationRegistry: Record<MutationKey, (...args: unknown[]) => Promise<unknown>> = {};
+export const mutationRegistry = { scrapePricesForVariant };
+export type MutationKey = keyof typeof mutationRegistry;

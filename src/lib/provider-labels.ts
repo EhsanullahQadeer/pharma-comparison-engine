@@ -27,3 +27,9 @@ export const regulatorTypeLabels: Record<RegulatorType, string> = {
 // adapter code into client bundles (Turbopack: "chunking context does not support external
 // modules (request: node:module)"). Keep this list in sync with the RegulatorType enum.
 export const regulatorTypeValues = ["GPHC", "PSNI"] as const satisfies readonly RegulatorType[];
+
+// Shared by ProviderForm's multi-select and the discovery-review table's inline region editor —
+// Provider.serviceRegions is a free-text string[] in the schema, but these four are the only
+// regions the business actually serves; either UI still preserves a legacy free-text value already
+// saved on a provider even though it's not offered as a fresh option.
+export const serviceRegionOptions = ["England", "Scotland", "Wales", "Northern Ireland"] as const;

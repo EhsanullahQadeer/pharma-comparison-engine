@@ -16,6 +16,9 @@
     "discovery:google-ai-login": "tsx scripts/open-google-ai-profile.ts",
     "discovery:reset": "tsx scripts/reset-discovery.ts",
     "discovery:ed-price-scrape": "tsx scripts/scrape-ed-prices.ts",
+    "discovery:isolate-product-listings": "tsx scripts/isolate-discovery-product-listings.ts",
+    "discovery:promote-audited-product-listings": "tsx scripts/promote-audited-product-listing-candidates.ts",
+    "discovery:detect-audited-products": "tsx scripts/detect-products-for-audited-providers.ts",
     "price-collection:run-due": "tsx scripts/run-price-collection-jobs.ts",
     "prepare": "husky"
   },

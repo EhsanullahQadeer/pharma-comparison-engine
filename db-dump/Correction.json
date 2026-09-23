@@ -1,0 +1,46 @@
+[
+  {
+    "id": "cmu2m9mnb0022gouy9fym110x",
+    "reportedIssue": "This pharmacy appears to have closed — website is down.",
+    "reporterEmail": "Monroe_Rosenbaum45@yahoo.com",
+    "providerId": "cmu29y37y0008u0uy84q216fd",
+    "assignedOwnerId": null,
+    "status": "OPEN",
+    "resolution": null,
+    "createdAt": "2026-09-15T11:56:53.352Z",
+    "updatedAt": "2026-09-15T11:56:53.352Z"
+  },
+  {
+    "id": "cmu2m9mni0023gouysalmlehe",
+    "reportedIssue": "Regulator registration number looks incorrect.",
+    "reporterEmail": null,
+    "providerId": "cmu29y36z0002u0uyjw0qgoqt",
+    "assignedOwnerId": null,
+    "status": "OPEN",
+    "resolution": null,
+    "createdAt": "2026-09-15T11:56:53.358Z",
+    "updatedAt": "2026-09-15T11:56:53.358Z"
+  },
+  {
+    "id": "cmu2m9mnp0024gouypga1uwi9",
+    "reportedIssue": "Delivery fee wasn't included in the total shown.",
+    "reporterEmail": "Camille_Murazik-Lubowitz@yahoo.com",
+    "providerId": "cmu29y38q000cu0uy19783xsj",
+    "assignedOwnerId": "cmu29y3570000u0uy6a8wkocj",
+    "status": "IN_PROGRESS",
+    "resolution": null,
+    "createdAt": "2026-09-15T11:56:53.365Z",
+    "updatedAt": "2026-09-15T12:35:09.239Z"
+  },
+  {
+    "id": "cmu2m9mnt0025gouyob3fq5wo",
+    "reportedIssue": "Delivery fee wasn't included in the total shown.",
+    "reporterEmail": null,
+    "providerId": "cmu29y37s0007u0uy1worh8xr",
+    "assignedOwnerId": "cmu29y3570000u0uy6a8wkocj",
+    "status": "RESOLVED",
+    "resolution": null,
+    "createdAt": "2026-09-15T11:56:53.369Z",
+    "updatedAt": "2026-09-15T12:35:10.280Z"
+  }
+]

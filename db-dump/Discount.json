@@ -1,0 +1,98 @@
+[
+  {
+    "id": "cmu2m9mdd000hgouyokkwv1zo",
+    "offerId": "cmu2m9mbw000fgouyjzvlz0qu",
+    "eligibility": "First-time customers",
+    "valueType": "PERCENT",
+    "valuePence": null,
+    "valuePercent": 10,
+    "stackable": false,
+    "expiresAt": null,
+    "createdAt": "2026-09-15T11:56:52.993Z",
+    "updatedAt": "2026-09-15T11:56:52.993Z"
+  },
+  {
+    "id": "cmu2m9mfw000qgouy69mtoji3",
+    "offerId": "cmu2m9mfm000ogouyzas3fsr0",
+    "eligibility": "First-time customers",
+    "valueType": "PERCENT",
+    "valuePence": null,
+    "valuePercent": 10,
+    "stackable": false,
+    "expiresAt": null,
+    "createdAt": "2026-09-15T11:56:53.084Z",
+    "updatedAt": "2026-09-15T11:56:53.084Z"
+  },
+  {
+    "id": "cmu2m9mh3000xgouymeko2di0",
+    "offerId": "cmu2m9mgk000vgouyonivt5p6",
+    "eligibility": "First-time customers",
+    "valueType": "PERCENT",
+    "valuePence": null,
+    "valuePercent": 15,
+    "stackable": false,
+    "expiresAt": null,
+    "createdAt": "2026-09-15T11:56:53.127Z",
+    "updatedAt": "2026-09-15T11:56:53.127Z"
+  },
+  {
+    "id": "cmu2m9mj5001cgouy5l4z151i",
+    "offerId": "cmu2m9miw001agouy0ys4xhw0",
+    "eligibility": "First-time customers",
+    "valueType": "PERCENT",
+    "valuePence": null,
+    "valuePercent": 15,
+    "stackable": false,
+    "expiresAt": null,
+    "createdAt": "2026-09-15T11:56:53.201Z",
+    "updatedAt": "2026-09-15T11:56:53.201Z"
+  },
+  {
+    "id": "cmu2m9ml3001pgouyvx6uhvm4",
+    "offerId": "cmu2m9mks001ngouyd53urd7d",
+    "eligibility": "First-time customers",
+    "valueType": "PERCENT",
+    "valuePence": null,
+    "valuePercent": 20,
+    "stackable": false,
+    "expiresAt": null,
+    "createdAt": "2026-09-15T11:56:53.271Z",
+    "updatedAt": "2026-09-15T11:56:53.271Z"
+  },
+  {
+    "id": "cmu2m9mlo001ugouyetfqv4gh",
+    "offerId": "cmu2m9mlg001sgouyrvh9l61g",
+    "eligibility": "First-time customers",
+    "valueType": "PERCENT",
+    "valuePence": null,
+    "valuePercent": 10,
+    "stackable": false,
+    "expiresAt": null,
+    "createdAt": "2026-09-15T11:56:53.292Z",
+    "updatedAt": "2026-09-15T11:56:53.292Z"
+  },
+  {
+    "id": "cmu2nfezh0007qouy5gjtqxtq",
+    "offerId": "cmu2nfdhg0004qouy18sde6on",
+    "eligibility": "Returning customers",
+    "valueType": "PERCENT",
+    "valuePence": null,
+    "valuePercent": 10,
+    "stackable": false,
+    "expiresAt": null,
+    "createdAt": "2026-09-15T12:29:22.973Z",
+    "updatedAt": "2026-09-15T12:29:22.973Z"
+  },
+  {
+    "id": "cmu3s77i400030kuy3qxiazj1",
+    "offerId": "cmu3s75w700000kuyxexiqy12",
+    "eligibility": "First-time customers",
+    "valueType": "PERCENT",
+    "valuePence": null,
+    "valuePercent": 15,
+    "stackable": false,
+    "expiresAt": null,
+    "createdAt": "2026-09-16T07:30:44.284Z",
+    "updatedAt": "2026-09-16T07:30:44.284Z"
+  }
+]

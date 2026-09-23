@@ -1,0 +1,72 @@
+[
+  {
+    "id": "cmu3vhx1000024ouysrsd2rxg",
+    "type": "NHS_ODS",
+    "enabled": false,
+    "cadence": "WEEKLY",
+    "lastRunAt": "2026-09-17T08:02:31.180Z",
+    "nextRunAt": "2026-09-24T08:02:31.180Z",
+    "config": null,
+    "credentialsCiphertext": null,
+    "configuredCredentialKeys": [],
+    "createdAt": "2026-09-16T09:03:02.772Z",
+    "updatedAt": "2026-09-17T08:02:31.184Z"
+  },
+  {
+    "id": "cmu3vhx1l00034ouyofv8z5bg",
+    "type": "GPHC",
+    "enabled": false,
+    "cadence": "MONTHLY",
+    "lastRunAt": "2026-09-17T07:53:41.674Z",
+    "nextRunAt": "2026-10-21T10:00:35.567Z",
+    "config": null,
+    "credentialsCiphertext": null,
+    "configuredCredentialKeys": [],
+    "createdAt": "2026-09-16T09:03:02.793Z",
+    "updatedAt": "2026-09-21T10:00:35.569Z"
+  },
+  {
+    "id": "cmu3xe9jg0004rguyodfgkuir",
+    "type": "CQC",
+    "enabled": false,
+    "cadence": "WEEKLY",
+    "lastRunAt": "2026-09-17T11:37:54.299Z",
+    "nextRunAt": "2026-09-28T12:29:51.059Z",
+    "config": null,
+    "credentialsCiphertext": "IadGpG1rGeOv7oyx:aKjvv/tr8M6V9HPGuVDDiw==:QZ2vogfQWWsqUlhCt2gwLE4OKq1RKk5BcodH1GWPVnwlRNZWg/5+mNXv4rNl6PVb+m47e54YZWzcwaDrFOVN0PhU6NOrBsZ/1AgDEm2wNrrf5FFiBUnzS7/efZKXGCkXvdw7Q95JtA==",
+    "configuredCredentialKeys": [
+      "subscriptionKey",
+      "partnerCode"
+    ],
+    "createdAt": "2026-09-16T09:56:11.596Z",
+    "updatedAt": "2026-09-21T12:29:51.066Z"
+  },
+  {
+    "id": "cmu3vhx3800044ouy1n3bl7o6",
+    "type": "NHSBSA_CONTRACTOR_DETAILS",
+    "enabled": false,
+    "cadence": "MONTHLY",
+    "lastRunAt": "2026-09-17T07:49:39.831Z",
+    "nextRunAt": "2026-10-21T12:59:06.563Z",
+    "config": null,
+    "credentialsCiphertext": null,
+    "configuredCredentialKeys": [],
+    "createdAt": "2026-09-16T09:03:02.852Z",
+    "updatedAt": "2026-09-21T12:59:06.564Z"
+  },
+  {
+    "id": "cmu3vhwzp00004ouywhjjj5uf",
+    "type": "COMPANIES_HOUSE",
+    "enabled": false,
+    "cadence": "WEEKLY",
+    "lastRunAt": "2026-09-17T07:49:03.560Z",
+    "nextRunAt": "2026-09-24T07:49:03.560Z",
+    "config": null,
+    "credentialsCiphertext": "ey5KHXdsYdANAGw4:OxTclwOOW3a6RcCZ+oRwiw==:2fpP9afOGHIFmOuxh7aQn7wjpx0tALrri7ITpoOdjPEFRTLBt4L8jPCPgFAVeT4a+w==",
+    "configuredCredentialKeys": [
+      "apiKey"
+    ],
+    "createdAt": "2026-09-16T09:03:02.725Z",
+    "updatedAt": "2026-09-17T07:49:03.567Z"
+  }
+]
