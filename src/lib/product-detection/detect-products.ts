@@ -26,12 +26,18 @@ function extractSameOriginLinks(html: string, base: URL): string[] {
 // the raw link set for their own page-level checks (e.g. the price scraper's category-page
 // fallback), which don't need each feed item's own declared title.
 export async function collectCandidateUrls(websiteDomain: string): Promise<string[]> {
-  const [homepage, feedCandidates] = await Promise.all([
-    collectPublicWebsite(`https://${websiteDomain}`),
+  const [homepageLinks, feedCandidates] = await Promise.all([
+    collectHomepageLinks(websiteDomain),
     collectFeedCandidates(websiteDomain),
   ]);
-  const base = new URL(homepage.finalUrl);
-  return [...new Set([...extractSameOriginLinks(homepage.html, base), ...feedCandidates.map((candidate) => candidate.url)])];
+  return [...new Set([...homepageLinks, ...feedCandidates.map((candidate) => candidate.url)])];
+}
+
+// Same-domain links on the provider's homepage alone (plain request) — for callers that already
+// hold the feed/sitemap URLs and only reach for the homepage when those found nothing.
+export async function collectHomepageLinks(websiteDomain: string): Promise<string[]> {
+  const homepage = await collectPublicWebsite(`https://${websiteDomain}`);
+  return extractSameOriginLinks(homepage.html, new URL(homepage.finalUrl));
 }
 
 // Matches ED ingredient tokens against same-domain link paths (never page body text, per

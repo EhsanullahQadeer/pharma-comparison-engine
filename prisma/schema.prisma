@@ -510,6 +510,8 @@ model ProviderIdentifier {
 // Offer. Confirming picks the exact ProductVariant; the priced Offer itself is created later by the
 // price-collection pilot's first successful scrape (offerId links back once that happens), not at
 // confirm time — an Offer requires a real price and this step never has one yet.
+// A staff-entered offer instead creates/claims its CONFIRMED match at save time
+// (src/lib/price-collection/offer-product-match.ts).
 model ProductMatch {
   id                String                 @id @default(cuid())
   providerId        String
@@ -537,7 +539,10 @@ model ProductMatch {
   detectedAt        DateTime               @default(now())
   updatedAt         DateTime               @updatedAt
 
-  @@unique([providerId, candidateUrl])
+  // One match per page per exact variant, so a page listing several strengths/pack sizes can carry a
+  // confirmed match (and linked offer) for each. Undecided detection rows have no variant yet; code
+  // checks for any match on a page before adding one (Postgres treats NULL variants as distinct).
+  @@unique([providerId, candidateUrl, productVariantId])
   @@index([status])
   @@index([scrapeEnabled, nextScrapeAt])
 }

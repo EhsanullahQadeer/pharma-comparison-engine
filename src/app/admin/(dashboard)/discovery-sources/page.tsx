@@ -18,6 +18,9 @@ export default async function DiscoverySourcesPage() {
             Administrator-only. Free UK registries this platform checks for candidate pharmacies. Fetch cadence and API
             credentials are per-source settings — turn a source on once its credentials are configured.
           </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            New candidates are split between Google AI and the signed-in DeepSeek Web Search session, never sent to both.
+          </p>
         </div>
         <CreateDiscoverySourceModal availableTypes={availableTypes} />
       </div>

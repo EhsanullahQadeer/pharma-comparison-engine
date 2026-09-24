@@ -1,38 +1,16 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
-import { useTransition } from "react";
-
-import { deleteOffer } from "@/actions/offers/offers";
+import { OfferDeleteButton } from "@/components/admin/offer-delete-button";
 import { OfferDiscountsModal } from "@/components/admin/offer-discounts-modal";
 import { AddOfferModal, EditOfferModal } from "@/components/admin/offer-form-modal";
 import { Badge } from "@/components/common/badge";
-import { Button } from "@/components/common/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/card";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/common/table";
 import type { Discount, Offer, ProductVariant } from "@/generated/prisma/client";
 import { availabilityBadgeVariant, availabilityLabels, ingredientLabels, purchaseModelLabels } from "@/lib/catalogue-labels";
-import { confirm } from "@/lib/confirm-store";
 import { formatPence } from "@/lib/money";
 
-type OfferWithRelations = Offer & { productVariant: ProductVariant; discounts: Discount[] };
-
-function OfferDeleteButton({ offerId, providerId, label }: { offerId: string; providerId: string; label: string }) {
-  const [isPending, startTransition] = useTransition();
-
-  async function handleDelete() {
-    const ok = await confirm({ title: "Remove this offer?", message: `"${label}" will be removed from this pharmacy.`, confirmText: "Remove", variant: "destructive" });
-    if (!ok) return;
-    startTransition(() => deleteOffer(offerId, providerId));
-  }
-
-  return (
-    <Button type="button" variant="ghost" size="icon-sm" disabled={isPending} onClick={handleDelete}>
-      <Trash2 aria-hidden="true" className="size-4" />
-      <span className="sr-only">Remove offer</span>
-    </Button>
-  );
-}
+type OfferWithRelations = Offer & { productVariant: ProductVariant; discounts: Discount[]; productMatch: { id: string } | null };
 
 export function ProviderOffersSection({ providerId, offers, variants }: { providerId: string; offers: OfferWithRelations[]; variants: ProductVariant[] }) {
   return (
@@ -75,10 +53,9 @@ export function ProviderOffersSection({ providerId, offers, variants }: { provid
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         <OfferDiscountsModal offerId={offer.id} providerId={providerId} discounts={offer.discounts} />
-                        <EditOfferModal providerId={providerId} variants={variants} offer={offer} />
+                        <EditOfferModal variants={variants} offer={offer} tracked={!!offer.productMatch} />
                         <OfferDeleteButton
                           offerId={offer.id}
-                          providerId={providerId}
                           label={`${ingredientLabels[offer.productVariant.ingredient]} ${offer.productVariant.strengthMg}mg`}
                         />
                       </div>

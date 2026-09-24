@@ -2,6 +2,7 @@ import { chromium, type Page } from "patchright";
 
 import { collectPublicWebsite } from "@/lib/discovery/public-web";
 import { openHumanBrowser, waitForHumanVerification } from "@/lib/price-collection/human-browser";
+import { labelMatchesVariant } from "@/lib/price-collection/variant-label";
 
 export type ScrapedPrice = {
   itemPricePence: number;
@@ -10,7 +11,7 @@ export type ScrapedPrice = {
   availability: "IN_STOCK" | "OUT_OF_STOCK" | "UNKNOWN";
   sourceUrl: string;
   evidence?: string;
-  source: "json-ld-product-offer" | "rendered-product-card";
+  source: "merchant-feed" | "json-ld-product-offer" | "rendered-product-card";
 };
 
 type ScrapeProductPriceOptions = {
@@ -31,7 +32,11 @@ function extractJsonLdBlocks(html: string): Record<string, unknown>[] {
     try {
       const parsed: unknown = JSON.parse(match[1].trim());
       for (const node of Array.isArray(parsed) ? parsed : [parsed]) {
-        if (node && typeof node === "object") blocks.push(node as Record<string, unknown>);
+        if (!node || typeof node !== "object") continue;
+        const record = node as Record<string, unknown>;
+        // Yoast/WooCommerce-style pages wrap every entity in a single @graph array.
+        const graph = Array.isArray(record["@graph"]) ? record["@graph"] : [record];
+        for (const entry of graph) if (entry && typeof entry === "object") blocks.push(entry as Record<string, unknown>);
       }
     } catch {
       // Malformed JSON-LD on this block; other blocks may still be usable.
@@ -94,6 +99,47 @@ function pickStructuredPrice(html: string, matchedTokens: string[], sourceUrl: s
     return { itemPricePence, deliveryFeePence, deliveryAssumption, availability, sourceUrl, source: "json-ld-product-offer" };
   }
   return undefined;
+}
+
+function asRecords(value: unknown): Record<string, unknown>[] {
+  const list = Array.isArray(value) ? value : [value];
+  return list.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object");
+}
+
+function textField(node: Record<string, unknown>, key: string): string {
+  const value = node[key];
+  return typeof value === "string" ? value : "";
+}
+
+// Variant-aware JSON-LD read: every Product (plus a ProductGroup's hasVariant children) and each of
+// its offers is labelled "product name + offer name + sku", and only offers whose label names this
+// exact strength and pack size count. Like the other steps, it needs every matching GBP offer to
+// agree on one price; otherwise it returns nothing and the browser step reads the page instead.
+function pickStructuredVariantPrice(html: string, matchedTokens: string[], variant: NonNullable<ScrapeProductPriceOptions["variant"]>, sourceUrl: string): ScrapedPrice | undefined {
+  const products = extractJsonLdBlocks(html)
+    .flatMap((block) => [block, ...asRecords(block.hasVariant)])
+    .filter((node) => hasType(node, "Product"));
+  const matches: { itemPricePence: number; availability: ScrapedPrice["availability"]; evidence: string }[] = [];
+  for (const product of products) {
+    const offers = asRecords(product.offers).flatMap((offer) => (hasType(offer, "AggregateOffer") ? asRecords(offer.offers) : [offer]));
+    for (const offer of offers) {
+      if (offer.priceCurrency !== "GBP") continue;
+      const label = [textField(product, "name"), textField(offer, "name"), textField(offer, "sku") || textField(product, "sku")].filter(Boolean).join(" ");
+      if (!labelMatchesVariant(label, matchedTokens, variant)) continue;
+      const itemPricePence = toPence(offer.price);
+      if (itemPricePence === undefined) continue;
+      const availability = typeof offer.availability === "string" ? (availabilityMap[offer.availability] ?? "UNKNOWN") : "UNKNOWN";
+      matches.push({ itemPricePence, availability, evidence: label });
+    }
+  }
+  if (new Set(matches.map((match) => match.itemPricePence)).size !== 1) return undefined;
+  return {
+    ...matches[0],
+    deliveryFeePence: 0,
+    deliveryAssumption: "As shown on the provider's product page at collection time",
+    sourceUrl,
+    source: "json-ld-product-offer",
+  };
 }
 
 function readVariantFromRenderedText(text: string, matchedTokens: string[], variant: NonNullable<ScrapeProductPriceOptions["variant"]>) {
@@ -301,10 +347,14 @@ async function readRenderedCard(page: Page, matchedTokens: string[], variant?: S
 export async function scrapeProductPrice(url: string, options: ScrapeProductPriceOptions = {}): Promise<ScrapedPrice> {
   const matchedTokens = options.matchedTokens ?? [];
 
+  // A plain request is tried first even in human-assist mode — the browser (and any verification
+  // the admin has to complete in it) is only needed when that request is blocked or finds nothing.
   try {
-    if (!options.humanAssist) options.onProgress?.("Checking the page's structured price data…");
-    const page = options.humanAssist ? null : await collectPublicWebsite(url);
-    const structured = options.variant || !page ? undefined : pickStructuredPrice(page.html, matchedTokens, page.finalUrl);
+    options.onProgress?.("Checking the page's structured price data…");
+    const page = await collectPublicWebsite(url);
+    const structured = options.variant
+      ? pickStructuredVariantPrice(page.html, matchedTokens, options.variant, page.finalUrl)
+      : pickStructuredPrice(page.html, matchedTokens, page.finalUrl);
     if (structured) return structured;
   } catch (error) {
     if (!(error instanceof Error) || !/robots rules|human-verification|captcha|review (?:it|the page) manually|unexpected content type/i.test(error.message)) throw error;

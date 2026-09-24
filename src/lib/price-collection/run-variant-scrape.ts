@@ -1,11 +1,14 @@
 import type { Ingredient } from "@/generated/prisma/client";
 import { recordAuditLog } from "@/lib/audit-log";
 import { normalizePublicUrl } from "@/lib/discovery/public-web-policy";
+import { pickFeedVariantPrice } from "@/lib/price-collection/feed-price";
 import { HumanVerificationError, openHumanBrowser, waitForHumanVerification } from "@/lib/price-collection/human-browser";
 import { scrapeProductPrice, type ScrapedPrice } from "@/lib/price-collection/scrape-price";
+import { variantTokens, type VariantSpec } from "@/lib/price-collection/variant-label";
 import { prisma } from "@/lib/prisma";
-import { collectCandidateUrls } from "@/lib/product-detection/detect-products";
+import { collectHomepageLinks } from "@/lib/product-detection/detect-products";
 import { edCategoryRootSegments, matchEdProductPath } from "@/lib/product-detection/ed-tokens";
+import { collectFeedCandidates, type FeedCandidate } from "@/lib/product-detection/site-feeds";
 
 import type { Page } from "patchright";
 
@@ -14,39 +17,43 @@ import type { Page } from "patchright";
 // plain server action (scrapePricesForVariant, no live feedback) and the SSE route handler
 // (app/api/product-variants/[id]/scrape-stream) can call the exact same logic — one place for the
 // loop, no risk of the two callers drifting apart.
+//
+// Per pharmacy, the cheapest source that can settle the exact strength + pack wins:
+// 1. a price declared in the pharmacy's own merchant/product feed (plain HTTP),
+// 2. product-page URLs from its sitemaps/feeds, homepage links only when those found none,
+// 3. that page's own JSON-LD price data (plain HTTP),
+// 4. the browser — only when 1–3 are blocked or find nothing (human verification in human mode).
+// A pharmacy with no confirmed match first retries the page its last saved price came from.
 
 export type VariantScrapeResult = { attempted: number; scraped: number; failed: number };
 export type ScrapeProgress = (message: string) => void;
 
 const noopProgress: ScrapeProgress = () => {};
 
-function variantTokens(variant: { ingredient: Ingredient; brandName: string | null }) {
-  const tokenMap = {
-    SILDENAFIL: ["sildenafil", "viagra"],
-    TADALAFIL: ["tadalafil", "cialis"],
-  } satisfies Record<Ingredient, string[]>;
-  return [...new Set([...(variant.brandName ? [variant.brandName.toLowerCase()] : []), ...tokenMap[variant.ingredient]])];
-}
-
 function isEdCategoryRoot(url: string) {
   const segments = new URL(url).pathname.split("/").filter(Boolean).map((segment) => segment.toLowerCase());
   return segments.length === 1 && edCategoryRootSegments.has(segments[0]);
 }
 
-async function findProviderVariantCandidateUrls(websiteDomain: string, ingredient: Ingredient, tokens: string[], page?: Page) {
-  let urls: string[];
-  if (page) {
-    const homepage = normalizePublicUrl(`https://${websiteDomain}`);
-    await page.goto(homepage.href, { waitUntil: "domcontentloaded", timeout: 30_000 });
-    await waitForHumanVerification(page, true);
-    const origin = new URL(page.url()).origin;
-    urls = await page.locator("a[href]").evaluateAll(elements => elements.map(element => (element as HTMLAnchorElement).href));
-    urls = urls.filter(url => {
-      try { return new URL(url).origin === origin; } catch { return false; }
-    });
-  } else {
-    urls = await collectCandidateUrls(websiteDomain);
+// Robots refusals never escalate to the browser; other plain-request blocks (403, CAPTCHA
+// markers) do in human-assist mode, where the admin can clear the check themselves.
+async function collectProviderHomepageLinks(websiteDomain: string, page?: Page) {
+  try {
+    return await collectHomepageLinks(websiteDomain);
+  } catch (error) {
+    if (!page || (error instanceof Error && /robots rules/i.test(error.message))) throw error;
   }
+  const homepage = normalizePublicUrl(`https://${websiteDomain}`);
+  await page.goto(homepage.href, { waitUntil: "domcontentloaded", timeout: 30_000 });
+  await waitForHumanVerification(page, true);
+  const origin = new URL(page.url()).origin;
+  const urls = await page.locator("a[href]").evaluateAll(elements => elements.map(element => (element as HTMLAnchorElement).href));
+  return urls.filter(url => {
+    try { return new URL(url).origin === origin; } catch { return false; }
+  });
+}
+
+function rankVariantCandidateUrls(urls: string[], ingredient: Ingredient, tokens: string[]) {
   const candidates: { candidateUrl: string; matchedTokens: string[]; confidence: "HIGH" | "MEDIUM" }[] = [];
   for (const url of urls) {
     const pathMatch = matchEdProductPath(new URL(url).pathname);
@@ -63,15 +70,26 @@ async function findProviderVariantCandidateUrls(websiteDomain: string, ingredien
     .slice(0, 3);
 }
 
-async function saveVariantScrapedOffer(providerId: string, productVariantId: string, scraped: ScrapedPrice) {
+async function findProviderVariantCandidateUrls(websiteDomain: string, ingredient: Ingredient, tokens: string[], feedCandidates: FeedCandidate[], page?: Page) {
+  const fromFeeds = rankVariantCandidateUrls(feedCandidates.map((candidate) => candidate.url), ingredient, tokens);
+  if (fromFeeds.length > 0) return fromFeeds;
+  return rankVariantCandidateUrls(await collectProviderHomepageLinks(websiteDomain, page), ingredient, tokens);
+}
+
+// One offer per pharmacy + variant: the one linked to a product match (a staff-entered or
+// match-collected price) wins over an unlinked one, so a scrape updates it instead of adding a
+// duplicate beside it. `linkMatchId` is an unpriced confirmed match for this exact variant, which
+// gets linked to the saved offer (as collectPriceForMatch does).
+async function saveVariantScrapedOffer(providerId: string, productVariantId: string, scraped: ScrapedPrice, linkMatchId?: string) {
   const now = new Date();
   const deliveredTotalPence = scraped.itemPricePence + scraped.deliveryFeePence;
   return prisma.$transaction(async (tx) => {
-    const existing = await tx.offer.findFirst({
-      where: { providerId, productVariantId, productMatch: null },
-      select: { id: true },
+    const offers = await tx.offer.findMany({
+      where: { providerId, productVariantId },
+      select: { id: true, productMatch: { select: { id: true } } },
       orderBy: { updatedAt: "desc" },
     });
+    const existing = offers.find((offer) => offer.productMatch) ?? offers[0];
     const offer = existing
       ? await tx.offer.update({
         where: { id: existing.id },
@@ -110,6 +128,10 @@ async function saveVariantScrapedOffer(providerId: string, productVariantId: str
       },
     });
 
+    if (linkMatchId && !existing?.productMatch) {
+      await tx.productMatch.updateMany({ where: { id: linkMatchId, offerId: null }, data: { offerId: offer.id } });
+    }
+
     return offer;
   });
 }
@@ -118,6 +140,38 @@ function formatPrice(scraped: ScrapedPrice) {
   const item = `£${(scraped.itemPricePence / 100).toFixed(2)}`;
   const delivery = scraped.deliveryFeePence > 0 ? ` + £${(scraped.deliveryFeePence / 100).toFixed(2)} delivery` : "";
   return `${item}${delivery}`;
+}
+
+async function recordVariantOffer(staffUserId: string, providerId: string, productVariantId: string, scraped: ScrapedPrice, collection: string, linkMatchId?: string) {
+  const offer = await saveVariantScrapedOffer(providerId, productVariantId, scraped, linkMatchId);
+  await recordAuditLog({
+    actorId: staffUserId,
+    action: "UPDATE",
+    entityType: "Offer",
+    entityId: offer.id,
+    changes: {
+      productVariantId,
+      providerId,
+      itemPricePence: scraped.itemPricePence,
+      deliveryFeePence: scraped.deliveryFeePence,
+      source: scraped.source,
+      collection,
+    },
+  });
+}
+
+const sourceLabels = {
+  "merchant-feed": "product feed",
+  "json-ld-product-offer": "page price data",
+  "rendered-product-card": "rendered page",
+} satisfies Record<ScrapedPrice["source"], string>;
+
+// Step 1 of the per-pharmacy order: never throws (collectFeedCandidates skips missing/blocked
+// feeds), and the candidates it returns double as step 2's URL source for the fallback pass.
+async function checkProviderFeeds(websiteDomain: string, name: string, tokens: string[], variant: VariantSpec, onProgress: ScrapeProgress) {
+  onProgress(`Checking ${name}'s sitemaps and product feeds…`);
+  const feedCandidates = await collectFeedCandidates(websiteDomain);
+  return { feedCandidates, feedPrice: pickFeedVariantPrice(feedCandidates, tokens, variant) };
 }
 
 export async function runVariantScrape(
@@ -133,12 +187,16 @@ export async function runVariantScrape(
   });
   if (!variant) throw new Error("Product variant not found.");
   const tokens = variantTokens(variant);
+  const variantSpec = { strengthMg: variant.strengthMg, packQuantity: variant.packQuantity };
 
   const matches = await prisma.productMatch.findMany({
     where: { matchedIngredient: variant.ingredient, status: "CONFIRMED" },
-    select: { id: true, providerId: true, candidateUrl: true, matchedTokens: true, provider: { select: { tradingName: true } } },
-    orderBy: [{ productVariantId: "desc" }, { reviewedAt: "desc" }],
+    select: { id: true, providerId: true, productVariantId: true, offerId: true, candidateUrl: true, provider: { select: { tradingName: true, websiteDomain: true } } },
+    orderBy: { reviewedAt: "desc" },
   });
+  // One page per pharmacy: its match for this exact variant when there is one (e.g. a staff-entered
+  // price's product page), otherwise its latest ingredient-level match.
+  matches.sort((a, b) => Number(b.productVariantId === productVariantId) - Number(a.productVariantId === productVariantId));
   // With no confirmed matches, continue to the provider-site fallback below.
   // Newly discovered pharmacies can have product pages before staff match them.
   onProgress(matches.length > 0
@@ -147,6 +205,13 @@ export async function runVariantScrape(
 
   const humanBrowser = humanAssist ? await openHumanBrowser() : undefined;
   if (humanAssist) onProgress("Opened the scraping browser. Complete any verification prompts as they appear.");
+  const scrapePage = (url: string, name: string) => scrapeProductPrice(url, {
+    humanAssist,
+    page: humanBrowser?.page,
+    matchedTokens: tokens,
+    variant: variantSpec,
+    onProgress: (message) => onProgress(`${name}: ${message}`),
+  });
   try {
     let scraped = 0;
     let failed = 0;
@@ -157,14 +222,10 @@ export async function runVariantScrape(
       const name = match.provider.tradingName;
       onProgress(`Checking ${name}…`);
       try {
-        const scrapedPrice = await scrapeProductPrice(match.candidateUrl, {
-          humanAssist,
-          page: humanBrowser?.page,
-          matchedTokens: tokens,
-          variant: { strengthMg: variant.strengthMg, packQuantity: variant.packQuantity },
-          onProgress: (message) => onProgress(`${name}: ${message}`),
-        });
-        const offer = await saveVariantScrapedOffer(match.providerId, productVariantId, scrapedPrice);
+        const { feedPrice } = await checkProviderFeeds(match.provider.websiteDomain, name, tokens, variantSpec, onProgress);
+        const scrapedPrice = feedPrice ?? await scrapePage(match.candidateUrl, name);
+        const linkMatchId = match.productVariantId === productVariantId && !match.offerId ? match.id : undefined;
+        await recordVariantOffer(staffUserId, match.providerId, productVariantId, scrapedPrice, "variant-row", linkMatchId);
         await prisma.productMatch.update({
           where: { id: match.id },
           data: {
@@ -174,22 +235,8 @@ export async function runVariantScrape(
             requiresHumanAssist: false,
           },
         });
-        await recordAuditLog({
-          actorId: staffUserId,
-          action: "UPDATE",
-          entityType: "Offer",
-          entityId: offer.id,
-          changes: {
-            productVariantId,
-            providerId: match.providerId,
-            itemPricePence: scrapedPrice.itemPricePence,
-            deliveryFeePence: scrapedPrice.deliveryFeePence,
-            source: scrapedPrice.source,
-            collection: "variant-row",
-          },
-        });
         scraped += 1;
-        onProgress(`Saved ${formatPrice(scrapedPrice)} for ${name}.`);
+        onProgress(`Saved ${formatPrice(scrapedPrice)} for ${name} (from ${sourceLabels[scrapedPrice.source]}).`);
       } catch (error) {
         if (error instanceof HumanVerificationError) throw error;
         const message = error instanceof Error ? error.message : "Variant price scrape failed.";
@@ -210,43 +257,56 @@ export async function runVariantScrape(
       onProgress(`Checking ${fallbackProviders.length} more pharmacy website${fallbackProviders.length === 1 ? "" : "s"} with no confirmed match yet…`);
     }
 
+    // The page a previous run saved this variant's price from — tried before searching the site again.
+    const savedPages = await prisma.offer.findMany({
+      where: { productVariantId, providerId: { in: fallbackProviders.map((provider) => provider.id) } },
+      select: { providerId: true, sourceUrl: true },
+      orderBy: { updatedAt: "desc" },
+    });
+    const savedPageByProvider = new Map<string, string>();
+    for (const saved of savedPages) {
+      if (!savedPageByProvider.has(saved.providerId)) savedPageByProvider.set(saved.providerId, saved.sourceUrl);
+    }
+
     for (const provider of fallbackProviders) {
       attemptedProviderIds.add(provider.id);
       const name = provider.tradingName;
       try {
+        const savedPage = savedPageByProvider.get(provider.id);
+        if (savedPage) {
+          onProgress(`Trying ${name}'s last saved product page: ${savedPage}`);
+          try {
+            const scrapedPrice = await scrapePage(savedPage, name);
+            await recordVariantOffer(staffUserId, provider.id, productVariantId, scrapedPrice, "provider-fallback-variant-row");
+            scraped += 1;
+            onProgress(`Saved ${formatPrice(scrapedPrice)} for ${name} (from ${sourceLabels[scrapedPrice.source]}).`);
+            continue;
+          } catch (error) {
+            if (error instanceof HumanVerificationError) throw error;
+            const message = error instanceof Error ? error.message : "no price found";
+            onProgress(`${name}'s saved page gave no price (${message}) — searching the website instead.`);
+          }
+        }
+        const { feedCandidates, feedPrice } = await checkProviderFeeds(provider.websiteDomain, name, tokens, variantSpec, onProgress);
+        if (feedPrice) {
+          await recordVariantOffer(staffUserId, provider.id, productVariantId, feedPrice, "provider-fallback-variant-row");
+          scraped += 1;
+          onProgress(`Saved ${formatPrice(feedPrice)} for ${name} (from ${sourceLabels[feedPrice.source]}).`);
+          continue;
+        }
         onProgress(`Searching ${name}'s website for a product page…`);
-        const candidates = await findProviderVariantCandidateUrls(provider.websiteDomain, variant.ingredient, tokens, humanBrowser?.page);
+        const candidates = await findProviderVariantCandidateUrls(provider.websiteDomain, variant.ingredient, tokens, feedCandidates, humanBrowser?.page);
         if (candidates.length === 0) onProgress(`No likely product page found on ${name}'s website.`);
         let saved = false;
         let lastError: unknown;
         for (const candidate of candidates) {
           try {
             onProgress(`Trying ${name}: ${candidate.candidateUrl}`);
-            const scrapedPrice = await scrapeProductPrice(candidate.candidateUrl, {
-              humanAssist,
-              page: humanBrowser?.page,
-              matchedTokens: tokens,
-              variant: { strengthMg: variant.strengthMg, packQuantity: variant.packQuantity },
-              onProgress: (message) => onProgress(`${name}: ${message}`),
-            });
-            const offer = await saveVariantScrapedOffer(provider.id, productVariantId, scrapedPrice);
-            await recordAuditLog({
-              actorId: staffUserId,
-              action: "UPDATE",
-              entityType: "Offer",
-              entityId: offer.id,
-              changes: {
-                productVariantId,
-                providerId: provider.id,
-                itemPricePence: scrapedPrice.itemPricePence,
-                deliveryFeePence: scrapedPrice.deliveryFeePence,
-                source: scrapedPrice.source,
-                collection: "provider-fallback-variant-row",
-              },
-            });
+            const scrapedPrice = await scrapePage(candidate.candidateUrl, name);
+            await recordVariantOffer(staffUserId, provider.id, productVariantId, scrapedPrice, "provider-fallback-variant-row");
             scraped += 1;
             saved = true;
-            onProgress(`Saved ${formatPrice(scrapedPrice)} for ${name}.`);
+            onProgress(`Saved ${formatPrice(scrapedPrice)} for ${name} (from ${sourceLabels[scrapedPrice.source]}).`);
             break;
           } catch (error) {
             if (error instanceof HumanVerificationError) throw error;

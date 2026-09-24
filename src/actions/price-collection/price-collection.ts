@@ -37,7 +37,10 @@ function statusForError(message: string): PriceScrapeStatus {
 }
 
 export async function collectPriceForMatch(matchId: string, options: { actorId?: string; humanAssist?: boolean } = {}) {
-  const match = await prisma.productMatch.findUnique({ where: { id: matchId } });
+  const match = await prisma.productMatch.findUnique({
+    where: { id: matchId },
+    include: { productVariant: { select: { strengthMg: true, packQuantity: true } } },
+  });
   if (!match) throw new Error("Product match not found.");
   if (match.status !== "CONFIRMED" || !match.productVariantId) throw new Error("Confirm this match with a product variant before collecting a price.");
   const productVariantId = match.productVariantId;
@@ -45,6 +48,8 @@ export async function collectPriceForMatch(matchId: string, options: { actorId?:
   try {
     const scraped = await scrapeProductPrice(match.candidateUrl, {
       matchedTokens: match.matchedTokens,
+      // A page can carry a match per strength/pack, so only this match's exact variant may be priced.
+      variant: match.productVariant ?? undefined,
       humanAssist: options.humanAssist,
     });
 

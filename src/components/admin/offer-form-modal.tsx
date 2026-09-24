@@ -5,12 +5,14 @@ import { useActionState, useState } from "react";
 
 import { createOffer, updateOffer, type OfferState } from "@/actions/offers/offers";
 import { Button } from "@/components/common/button";
+import { Checkbox } from "@/components/common/checkbox";
 import { Input } from "@/components/common/input";
 import { Label } from "@/components/common/label";
 import Modal, { DialogContent, DialogHeader, DialogTitle } from "@/components/common/modal";
 import type { Offer, ProductVariant } from "@/generated/prisma/client";
 import { useCloseModalOnSuccess } from "@/hooks/useCloseModalOnSuccess";
 import { availabilityLabels, availabilityValues, ingredientLabels, purchaseModelLabels, purchaseModelValues } from "@/lib/catalogue-labels";
+import type { OfferProviderOption } from "@/types/pricing";
 
 const initialState: OfferState = {};
 
@@ -24,26 +26,61 @@ function toDateInputValue(date?: Date | null) {
   return new Date(date).toISOString().slice(0, 10);
 }
 
+type OfferTarget = {
+  variants: ProductVariant[];
+  // Fixed pharmacy (its detail page) — or, when omitted, staff pick one of `providers` (a variant's prices page).
+  providerId?: string;
+  providers?: OfferProviderOption[];
+};
+
 function OfferForm({
   providerId,
+  providers = [],
   variants,
-  offer,
+  offer: latestOffer,
+  tracked = false,
   onClose,
-}: {
-  providerId: string;
-  variants: ProductVariant[];
+}: OfferTarget & {
   offer?: Offer;
+  tracked?: boolean;
   onClose: () => void;
 }) {
-  const action = offer ? updateOffer.bind(null, offer.id, providerId) : createOffer.bind(null, providerId);
+  // Snapshot the offer the form opened with: saving revalidates the page and hands back the updated offer
+  // while the modal is still closing, and Base UI's inputs warn if their defaultValue changes after mount.
+  const [offer] = useState(latestOffer);
+  const action = offer ? updateOffer.bind(null, offer.id) : createOffer;
   const [state, formAction, pending] = useActionState(action, initialState);
   useCloseModalOnSuccess(state, pending, onClose);
 
   let submitLabel = offer ? "Save changes" : "Add offer";
   if (pending) submitLabel = "Saving…";
+  const fixedProviderId = offer?.providerId ?? providerId;
 
   return (
     <form action={formAction} className="space-y-5">
+      {fixedProviderId ? (
+        <input type="hidden" name="providerId" value={fixedProviderId} />
+      ) : (
+        <div className="space-y-1.5">
+          <Label htmlFor="providerId">Pharmacy</Label>
+          <select
+            id="providerId"
+            name="providerId"
+            required
+            defaultValue=""
+            className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+          >
+            <option value="" disabled>Choose a pharmacy…</option>
+            {providers.map((provider) => (
+              <option key={provider.id} value={provider.id}>
+                {provider.tradingName} ({provider.websiteDomain})
+              </option>
+            ))}
+          </select>
+          <FieldError messages={state.fieldErrors?.providerId} />
+        </div>
+      )}
+
       <div className="space-y-1.5">
         <Label htmlFor="productVariantId">Product variant</Label>
         <select
@@ -129,7 +166,7 @@ function OfferForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="sourceUrl">Source URL</Label>
+          <Label htmlFor="sourceUrl">Product page URL</Label>
           <Input id="sourceUrl" name="sourceUrl" type="url" placeholder="https://…" defaultValue={offer?.sourceUrl} required />
           <FieldError messages={state.fieldErrors?.sourceUrl} />
         </div>
@@ -139,6 +176,16 @@ function OfferForm({
           <FieldError messages={state.fieldErrors?.retrievedAt} />
         </div>
       </div>
+
+      <label className="flex items-start gap-2 text-sm">
+        <Checkbox name="trackProductPage" defaultChecked={offer ? tracked : true} className="mt-0.5" />
+        <span>
+          Keep this price updated from the product page
+          <span className="block text-xs text-muted-foreground">
+            Counts this pharmacy as a confirmed match for this product, so price scrapes go straight to the page above. Use the exact page for this strength and pack; untick if the price didn&apos;t come from a web page.
+          </span>
+        </span>
+      </label>
 
       {!!state.error && <p className="text-sm text-destructive">{state.error}</p>}
 
@@ -150,14 +197,14 @@ function OfferForm({
   );
 }
 
-export function AddOfferModal({ providerId, variants }: { providerId: string; variants: ProductVariant[] }) {
+export function AddOfferModal({ providerId, providers, variants }: OfferTarget) {
   const [open, setOpen] = useState(false);
   return (
     <Modal
       open={open}
       onOpenChange={setOpen}
       trigger={
-        <Button type="button" disabled={variants.length === 0}>
+        <Button type="button" disabled={variants.length === 0 || (!providerId && !providers?.length)}>
           <Plus aria-hidden="true" className="size-4" />
           Add offer
         </Button>
@@ -167,13 +214,14 @@ export function AddOfferModal({ providerId, variants }: { providerId: string; va
         <DialogHeader>
           <DialogTitle>Add an offer</DialogTitle>
         </DialogHeader>
-        <OfferForm providerId={providerId} variants={variants} onClose={() => setOpen(false)} />
+        <OfferForm providerId={providerId} providers={providers} variants={variants} onClose={() => setOpen(false)} />
       </DialogContent>
     </Modal>
   );
 }
 
-export function EditOfferModal({ providerId, variants, offer }: { providerId: string; variants: ProductVariant[]; offer: Offer }) {
+// `tracked`: the offer is already linked to a confirmed product match (its checkbox starts ticked).
+export function EditOfferModal({ variants, offer, tracked }: { variants: ProductVariant[]; offer: Offer; tracked: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <Modal
@@ -190,7 +238,7 @@ export function EditOfferModal({ providerId, variants, offer }: { providerId: st
         <DialogHeader>
           <DialogTitle>Edit offer</DialogTitle>
         </DialogHeader>
-        <OfferForm providerId={providerId} variants={variants} offer={offer} onClose={() => setOpen(false)} />
+        <OfferForm variants={variants} offer={offer} tracked={tracked} onClose={() => setOpen(false)} />
       </DialogContent>
     </Modal>
   );

@@ -1,6 +1,8 @@
 import type { DiscoveryRunStatus, DiscoverySource } from "@/generated/prisma/client";
 import { computeNextRunAt } from "@/lib/discovery/cadence";
 import { decryptCredentials } from "@/lib/discovery/credentials-crypto";
+import { enrichWithDeepSeekWeb } from "@/lib/discovery/deepseek-web-enrichment";
+import { assignedEnrichmentWorker } from "@/lib/discovery/enrichment-worker";
 import { enrichWithGoogleAi } from "@/lib/discovery/google-ai-enrichment";
 import { findMatchingProvider } from "@/lib/discovery/identifier-match";
 import { getAdapter } from "@/lib/discovery/registry";
@@ -41,13 +43,26 @@ export async function runSource(source: DiscoverySource, options?: { triggeredBy
       recordRequest: (summary) => { requestSummary = summary; },
     });
 
+    // A serial queue per browser-backed worker avoids flooding either search session. The queues
+    // themselves run concurrently, and the stable assignment means no pharmacy reaches both bots.
+    const queues = { GOOGLE_AI_MODE: [] as NormalizedCandidate[], DEEPSEEK_WEB: [] as NormalizedCandidate[] };
     for (const record of records) {
-      if (await isDuplicate(source.id, record)) continue;
-      const enriched = await enrichWithGoogleAi(record);
-      if (!enriched || await isDuplicate(source.id, enriched)) continue;
-      await upsertCandidate(source.id, run.id, enriched);
-      candidatesFound += 1;
+      if (!await isDuplicate(source.id, record)) queues[assignedEnrichmentWorker(source.id, record)].push(record);
     }
+    const counts = await Promise.all(Object.entries(queues).map(async ([worker, queue]) => {
+      let count = 0;
+      for (const record of queue) {
+        const enriched = await ({
+          GOOGLE_AI_MODE: () => enrichWithGoogleAi(record),
+          DEEPSEEK_WEB: () => enrichWithDeepSeekWeb(record),
+        }[worker as keyof typeof queues])();
+        if (!enriched || await isDuplicate(source.id, enriched)) continue;
+        await upsertCandidate(source.id, run.id, enriched);
+        count += 1;
+      }
+      return count;
+    }));
+    candidatesFound = counts.reduce((total, count) => total + count, 0);
   } catch (error) {
     status = "FAILURE";
     errorMessage = error instanceof Error ? error.message : String(error);

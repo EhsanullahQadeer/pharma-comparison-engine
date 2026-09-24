@@ -24,11 +24,17 @@ export const FEED_PATHS = [
   "/rss.xml",
   "/atom.xml",
   "/podcast.xml",
-  "/opensearch.xml",
-  "/crossdomain.xml",
 ] as const;
 
-export type FeedCandidate = { url: string; title?: string };
+// A merchant-feed item's own declared price (Google Merchant / Meta catalog / Bing g:price, or a
+// plain <price>), GBP only — anything quoted in another currency is dropped, never converted.
+export type FeedPrice = {
+  itemPricePence: number;
+  deliveryFeePence?: number;
+  availability: "IN_STOCK" | "OUT_OF_STOCK" | "UNKNOWN";
+};
+
+export type FeedCandidate = { url: string; title?: string; price?: FeedPrice };
 
 // "Same domain" is judged www.-agnostic — base is built from the raw input domain, but a feed's own
 // <loc>/<link> entries reflect wherever the site's canonical redirect actually lands (bare ->
@@ -69,9 +75,59 @@ function extractLocs(xml: string, base: URL): string[] {
     .map((url) => url.href);
 }
 
+function tagText(block: string, tags: string[]): { attrs: string; text: string } | undefined {
+  for (const tag of tags) {
+    const match = block.match(new RegExp(`<${tag}(\\s[^>]*)?>([\\s\\S]*?)<\\/${tag}>`, "i"));
+    if (match) return { attrs: match[1] ?? "", text: cleanText(match[2]) };
+  }
+  return undefined;
+}
+
+// "12.99 GBP", "£12.99", "12.99" with currency="GBP" — GBP only; a bare number with no currency
+// marker at all is not trusted, since a feed's default currency isn't declared anywhere we read.
+function parseGbpPence(value: { attrs: string; text: string } | undefined): number | undefined {
+  if (!value) return undefined;
+  const isGbp = /\bGBP\b|£/i.test(value.text) || /currency\s*=\s*["']GBP["']/i.test(value.attrs);
+  const amount = value.text.replace(/,/g, "").match(/\d+(?:\.\d{1,2})?/)?.[0];
+  if (!isGbp || !amount) return undefined;
+  return Math.round(Number(amount) * 100);
+}
+
+function isSaleActive(entry: string): boolean {
+  const range = tagText(entry, ["g:sale_price_effective_date", "sale_price_effective_date"])?.text;
+  if (!range) return true;
+  const [from, to] = range.split("/").map((part) => Date.parse(part));
+  const now = Date.now();
+  return !(Number.isFinite(from) && now < from) && !(Number.isFinite(to) && now > to);
+}
+
+const feedAvailabilityMap: Record<string, FeedPrice["availability"]> = {
+  in_stock: "IN_STOCK",
+  instock: "IN_STOCK",
+  out_of_stock: "OUT_OF_STOCK",
+  outofstock: "OUT_OF_STOCK",
+};
+
+function extractFeedPrice(entry: string): FeedPrice | undefined {
+  const shippingBlock = entry.match(/<g:shipping>([\s\S]*?)<\/g:shipping>/i);
+  // The item's own price tags are read with the shipping block removed — it nests a <g:price> of
+  // its own that would otherwise be mistaken for the product price.
+  const itemBlock = shippingBlock ? entry.replace(shippingBlock[0], "") : entry;
+  const salePence = isSaleActive(itemBlock) ? parseGbpPence(tagText(itemBlock, ["g:sale_price", "sale_price"])) : undefined;
+  const itemPricePence = salePence ?? parseGbpPence(tagText(itemBlock, ["g:price", "price"]));
+  if (itemPricePence === undefined) return undefined;
+  const rawAvailability = tagText(itemBlock, ["g:availability", "availability"])?.text.toLowerCase().replace(/^https?:\/\/schema\.org\//, "").replace(/\s+/g, "_") ?? "";
+  return {
+    itemPricePence,
+    deliveryFeePence: shippingBlock ? parseGbpPence(tagText(shippingBlock[1], ["g:price", "price"])) : undefined,
+    availability: feedAvailabilityMap[rawAvailability] ?? "UNKNOWN",
+  };
+}
+
 // RSS 2.0 (<rss><channel><item>) and Google Shopping-style product feeds (same shape, items also
 // carry a g: namespace — <g:link>, <g:title>) / Atom (<feed><entry><link href="...">). A feed
-// item's own declared title is returned alongside its URL, distinct from a page's body text.
+// item's own declared title (and merchant-feed price, when it carries one) is returned alongside
+// its URL, distinct from a page's body text.
 function extractFeedItems(xml: string, base: URL): FeedCandidate[] {
   const isAtom = /<feed[\s>]/i.test(xml) && !/<rss[\s>]/i.test(xml);
   const items: FeedCandidate[] = [];
@@ -82,7 +138,7 @@ function extractFeedItems(xml: string, base: URL): FeedCandidate[] {
     const url = rawLink ? absoluteSameOrigin(cleanText(rawLink), base) : undefined;
     if (!url) continue;
     const rawTitle = entry.match(/<g:title>([\s\S]*?)<\/g:title>/i)?.[1] ?? entry.match(/<title>([\s\S]*?)<\/title>/i)?.[1];
-    items.push({ url: url.href, title: rawTitle ? cleanText(rawTitle) : undefined });
+    items.push({ url: url.href, title: rawTitle ? cleanText(rawTitle) : undefined, price: extractFeedPrice(entry) });
   }
   return items;
 }
@@ -126,7 +182,10 @@ export async function collectFeedCandidates(websiteDomain: string): Promise<Feed
       continue;
     }
     for (const loc of feed.locs) if (!candidates.has(loc)) candidates.set(loc, { url: loc });
-    for (const item of feed.items) candidates.set(item.url, { url: item.url, title: item.title ?? candidates.get(item.url)?.title });
+    for (const item of feed.items) {
+      const existing = candidates.get(item.url);
+      candidates.set(item.url, { url: item.url, title: item.title ?? existing?.title, price: item.price ?? existing?.price });
+    }
   }
 
   const nested = await Promise.all([...nestedSitemapUrls].slice(0, 10).map(fetchFeedText));

@@ -120,7 +120,7 @@ export async function getProvider(id: string) {
     include: {
       offers: {
         orderBy: { createdAt: "desc" },
-        include: { productVariant: true, discounts: true },
+        include: { productVariant: true, discounts: true, productMatch: { select: { id: true } } },
       },
       evidence: { orderBy: { createdAt: "desc" }, take: 10 },
       corrections: { orderBy: { createdAt: "desc" }, take: 10 },

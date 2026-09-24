@@ -34,11 +34,12 @@ async function main() {
       const detected = await detectEdProductMatches(websiteDomain);
       let newMatches = 0;
       for (const match of detected) {
-        const existing = await prisma.productMatch.findUnique({
-          where: { providerId_candidateUrl: { providerId, candidateUrl: match.candidateUrl } },
+        // A page can hold one match per variant, so "already known" means any match on this page.
+        const existing = await prisma.productMatch.findMany({
+          where: { providerId, candidateUrl: match.candidateUrl },
           select: { id: true, status: true },
         });
-        if (!existing) {
+        if (existing.length === 0) {
           await prisma.productMatch.create({
             data: {
               providerId,
@@ -49,9 +50,9 @@ async function main() {
             },
           });
           newMatches++;
-        } else if (existing.status === "NEW") {
-          await prisma.productMatch.update({
-            where: { id: existing.id },
+        } else {
+          await prisma.productMatch.updateMany({
+            where: { id: { in: existing.filter((row) => row.status === "NEW").map((row) => row.id) } },
             data: { matchedIngredient: match.ingredient, matchedTokens: match.matchedTokens, confidence: match.confidence },
           });
         }

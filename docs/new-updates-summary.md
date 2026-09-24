@@ -2,6 +2,30 @@
 
 ## 2026-09-24
 
+- 47 new pharmacy prices were added across 10 pharmacies, covering all seven catalogue products, each checked by hand against the pharmacy's own website. They are all unpublished and waiting for staff review, and each is set up so future price scrapes go straight to its product page. Pharmacies whose websites block automated visits, or that don't show a clear price for an exact strength and pack size, were skipped.
+
+- If one pharmacy page lists several strengths or pack sizes, each price you add by hand for that page now counts as its own confirmed match, rather than only the first one.
+
+- Collecting a price for a single confirmed match (from the pharmacy's page) now only takes the price for that match's exact strength and pack size. On a page listing several pack sizes it will no longer pick up another pack's price; if the right one can't be told apart, it reports that instead of saving a guess.
+
+- A price added by hand now counts as a confirmed product match for that pharmacy by default. Later price scrapes go straight to the product page you entered instead of searching the pharmacy's website again. The form's "Product page URL" field should be the exact page for that strength and pack. If the price didn't come from a web page (for example a phone quote), untick "Keep this price updated from the product page" and it is saved without a match, as before.
+
+- When a scrape finds a newer price for a pharmacy that already has a price for that product, it now updates that same price instead of sometimes adding a second, duplicate one next to it. The old value stays in the price history.
+
+- For pharmacies without a confirmed match, a scrape now first retries the page their last saved price came from, and only searches the whole website if that page no longer gives a price.
+
+- On a product variant's prices page you can now add a price by hand: choose the pharmacy, enter the item price, delivery and other fees, and save. Each saved price also has edit and remove buttons, so a wrong or out-of-date price can be corrected right there. Changing a price adds an entry to that pharmacy's price history.
+
+- Pharmacy discovery can now use Google AI and DeepSeek Web Search at the same time. Each pharmacy is assigned to only one of them, so the services cover separate pharmacies rather than repeating the same work; both results follow the same checks before appearing for review.
+
+- On the Product variants page, scrape progress now appears in one panel above the table instead of a small box squeezed into each row's buttons. It shows which variant is being scraped, a larger live log and the final result, and stays visible after the scrape finishes until you close it. While one scrape is running, the scrape buttons on other rows are paused.
+
+- Price scraping on the Product variants page now tries the quick routes first: it reads a pharmacy's own product feed and product pages directly, and only opens the browser (where you may need to complete a security check) when those don't give a price. Human scrape should now need your help on far fewer pharmacies.
+
+- A price is taken from a pharmacy's product feed only when the feed names the exact strength and pack size and gives one clear price in pounds; anything unclear falls through to the product page instead.
+
+- The scrape progress log now says where each saved price came from (product feed, page price data or the rendered page).
+
 - Product detection now looks through every section of a pharmacy website's page listing, not just the top level. Pharmacies whose online shop pages sit in a separate section (common on WordPress and Shopify shops) are no longer missed.
 
 - When the medicine filter promotes a pharmacy, the erectile-dysfunction product pages it found now appear in the Product matches review queue, ready for staff to pick the exact product.

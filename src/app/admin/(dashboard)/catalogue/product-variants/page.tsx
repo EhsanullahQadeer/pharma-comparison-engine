@@ -4,6 +4,7 @@ import { getProductVariants } from "@/actions/product-variants/product-variants"
 import { ProductVariantDeleteButton } from "@/components/admin/product-variant-delete-button";
 import { AddProductVariantModal, EditProductVariantModal } from "@/components/admin/product-variant-form-modal";
 import { ProductVariantPriceActions } from "@/components/admin/product-variant-price-actions";
+import { ProductVariantScrapeProgress } from "@/components/admin/product-variant-scrape-progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/card";
 import { EmptyState } from "@/components/common/empty-state";
 import { Input } from "@/components/common/input";
@@ -32,6 +33,7 @@ export default async function ProductVariantsPage(props: PageProps<"/admin/catal
         </div>
         <AddProductVariantModal />
       </div>
+      <ProductVariantScrapeProgress />
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-4 space-y-0">
           <CardTitle className="text-sm text-muted-foreground">{total} variant{total === 1 ? "" : "s"}</CardTitle>
@@ -67,7 +69,7 @@ export default async function ProductVariantsPage(props: PageProps<"/admin/catal
                     <TableCell className="text-muted-foreground">{supplyClassificationLabels[variant.supplyClassification]}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <ProductVariantPriceActions id={variant.id} />
+                        <ProductVariantPriceActions id={variant.id} label={`${ingredientLabels[variant.ingredient]} ${variant.strengthMg}mg × ${variant.packQuantity}`} />
                         <EditProductVariantModal variant={variant} />
                         <ProductVariantDeleteButton id={variant.id} label={`${ingredientLabels[variant.ingredient]} ${variant.strengthMg}mg`} />
                       </div>
