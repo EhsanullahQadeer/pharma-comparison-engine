@@ -11,12 +11,14 @@ import { collectPublicWebsite } from "../src/lib/discovery/public-web";
 import { openHumanBrowser, waitForHumanVerification } from "../src/lib/price-collection/human-browser";
 import { collectCandidateUrls } from "../src/lib/product-detection/detect-products";
 
-import type { Page } from "playwright";
+import type { Page } from "patchright";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 const MAX_PRODUCT_PATHS_PER_CANDIDATE = 4;
 const MAX_CONCURRENT_CANDIDATES = 24;
+const HUMAN_PAGE_DELAY_MIN_MS = 3_000;
+const HUMAN_PAGE_DELAY_MAX_MS = 9_000;
 const humanAssist = process.argv.includes("--human");
 const inputIndex = process.argv.indexOf("--input");
 const humanInputPath = inputIndex === -1 ? undefined : process.argv[inputIndex + 1];
@@ -36,6 +38,16 @@ type AuditRecord = {
 
 type PreviousAudit = { inconclusive: { candidateId: string; evidence: string[] }[] };
 
+function randomDelay(minMs: number, maxMs: number) {
+  return minMs + Math.floor(Math.random() * (maxMs - minMs + 1));
+}
+
+async function waitForSettledNavigation(page: Page) {
+  await page.waitForLoadState("domcontentloaded");
+  await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => undefined);
+  await waitForHumanVerification(page, true);
+}
+
 function humanCandidateIds() {
   if (!humanInputPath) throw new Error("Human mode needs the prior report: npm run discovery:isolate-product-listings -- --human --input <results.json>");
   const audit = JSON.parse(readFileSync(humanInputPath, "utf8")) as PreviousAudit;
@@ -46,7 +58,7 @@ function humanCandidateIds() {
 
 async function collectHumanPage(page: Page, url: string) {
   await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
-  await waitForHumanVerification(page, true);
+  await waitForSettledNavigation(page);
   const base = new URL(page.url());
   return page.evaluate(() => ({
     html: document.documentElement.outerHTML,
@@ -72,7 +84,10 @@ async function assessCandidateWithHumanBrowser(candidate: { id: string; sourceRe
     const homepage = await collectHumanPage(page, "https://" + candidate.websiteDomain);
     const productUrls = homepage.links.filter(hasProductListingPath).slice(0, MAX_PRODUCT_PATHS_PER_CANDIDATE);
     const pages = [];
-    for (const url of productUrls) pages.push({ url, html: (await collectHumanPage(page, url)).html });
+    for (const url of productUrls) {
+      await page.waitForTimeout(randomDelay(HUMAN_PAGE_DELAY_MIN_MS, HUMAN_PAGE_DELAY_MAX_MS));
+      pages.push({ url, html: (await collectHumanPage(page, url)).html });
+    }
     const assessment = assessProductListing(homepage.html, pages);
     return { ...base, ...assessment, inspectedUrls: pages.map(item => item.url) };
   } catch (error) {
@@ -124,14 +139,17 @@ async function main() {
     const retryIds = humanCandidateIds();
     const retryCandidates = websiteCandidates.filter(candidate => retryIds.has(candidate.id));
     process.stdout.write("Human browser audit: " + retryCandidates.length + " recoverable candidates. Complete any visible verification in Chrome; the audit will continue automatically.\n");
-    for (const [index, candidate] of retryCandidates.entries()) {
-      const { page, close } = await openHumanBrowser();
-      try {
+    const humanBrowser = await openHumanBrowser({ preferCdp: false });
+    try {
+      for (const [index, candidate] of retryCandidates.entries()) {
         process.stdout.write("Checking " + (index + 1) + " of " + retryCandidates.length + ": " + candidate.name + " (" + candidate.websiteDomain + ")...\n");
-        records.push(await assessCandidateWithHumanBrowser(candidate, page));
-      } finally {
-        await close();
+        records.push(await assessCandidateWithHumanBrowser(candidate, humanBrowser.page));
+        if (index < retryCandidates.length - 1) {
+          await humanBrowser.page.waitForTimeout(randomDelay(HUMAN_PAGE_DELAY_MIN_MS, HUMAN_PAGE_DELAY_MAX_MS));
+        }
       }
+    } finally {
+      await humanBrowser?.close();
     }
   } else {
     for (let start = 0; start < websiteCandidates.length; start += MAX_CONCURRENT_CANDIDATES) {

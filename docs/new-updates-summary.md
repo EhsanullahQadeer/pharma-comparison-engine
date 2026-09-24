@@ -12,6 +12,10 @@
 
 - The product variants page now shows a live, step-by-step progress panel while prices are being scraped ("Checking X...", "Saved £Y for X...", "Still waiting for verification..."), instead of a single spinner with no detail — for "Human scrape" especially, which can otherwise sit quietly for minutes while staff wait with no feedback.
 
+- Human-assisted price collection now uses the Patchright browser engine with the saved, visible Chrome session, while keeping staff-controlled website verification and review-only price handling.
+
+- Human product-listing checks now keep one maximized dedicated Chrome session open throughout the run, reuse the same page and saved browser profile, wait for each page to settle, and slow navigation between websites. Staff still complete any website verification themselves.
+
 - Pharmacy discovery now starts by requiring Google AI to cite a direct public product or treatment listing from the pharmacy’s official site. This filters out consultation-only, prescription-request-only and no-catalogue results before review, while saving the cited listing and supporting evidence with eligible pharmacies.
 
 ## 2026-09-22

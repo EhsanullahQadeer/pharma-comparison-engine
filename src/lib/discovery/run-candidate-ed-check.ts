@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { detectEdProductMatches, type DetectedProductMatch } from "@/lib/product-detection/detect-products";
 import { matchEdProductPath } from "@/lib/product-detection/ed-tokens";
 
-import type { Page } from "playwright";
+import type { Page } from "patchright";
 
 // The single-candidate orchestration behind the "Check for ED medicine"/"Human check" buttons on
 // the Discovery candidates review queue (lives outside the "use server" actions file, same reason

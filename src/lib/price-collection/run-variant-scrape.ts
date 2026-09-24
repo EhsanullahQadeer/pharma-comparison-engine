@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { collectCandidateUrls } from "@/lib/product-detection/detect-products";
 import { edCategoryRootSegments, matchEdProductPath } from "@/lib/product-detection/ed-tokens";
 
-import type { Page } from "playwright";
+import type { Page } from "patchright";
 
 // The orchestration behind ProductVariantPriceActions' "Scrape prices"/"Human scrape" buttons.
 // Lives outside the "use server" actions file (which may only export async functions) so both the

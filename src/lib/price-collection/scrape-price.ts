@@ -1,4 +1,4 @@
-import { chromium, type Page } from "playwright";
+import { chromium, type Page } from "patchright";
 
 import { collectPublicWebsite } from "@/lib/discovery/public-web";
 import { openHumanBrowser, waitForHumanVerification } from "@/lib/price-collection/human-browser";

@@ -3,10 +3,23 @@ import { request } from "node:https";
 
 import { extractPageTitle, isPublicIpv4, normalizePublicUrl, robotsAllows } from "./public-web-policy";
 
+// Falls back to a public resolver when the system-configured DNS server rejects the query
+// (e.g. a VPN/antivirus DNS proxy registered in Windows network config but not actually running).
+const FALLBACK_DNS_SERVERS = ["1.1.1.1", "8.8.8.8"];
+
+async function resolveHostname(hostname: string) {
+  try {
+    return await new Resolver({ timeout: 2000, tries: 1 }).resolve4(hostname);
+  } catch {
+    const fallback = new Resolver({ timeout: 2000, tries: 1 });
+    fallback.setServers(FALLBACK_DNS_SERVERS);
+    return fallback.resolve4(hostname);
+  }
+}
+
 async function readPage(url: URL, signal: AbortSignal) {
-  const resolver = new Resolver({ timeout: 2000, tries: 1 });
   signal.throwIfAborted();
-  const addresses = await resolver.resolve4(url.hostname);
+  const addresses = await resolveHostname(url.hostname);
   if (!addresses.length || addresses.some(address => !isPublicIpv4(address))) throw new Error("Website resolves to a restricted network address.");
   signal.throwIfAborted();
   // Pin the validated address to the socket, retaining the hostname for TLS verification.

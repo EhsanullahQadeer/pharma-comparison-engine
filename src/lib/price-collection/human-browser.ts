@@ -1,4 +1,6 @@
-import { chromium, type Browser, type Page } from "playwright";
+import { join } from "node:path";
+
+import { chromium, type Browser, type Page } from "patchright";
 
 export class HumanVerificationError extends Error {}
 
@@ -142,22 +144,37 @@ async function connectToHumanScrapeCdp() {
   return browser;
 }
 
-export async function openHumanBrowser() {
+export async function openHumanBrowser(options: { requireCdp?: boolean; preferCdp?: boolean } = {}) {
   if (humanBrowserInUse) throw new HumanVerificationError("Another human scrape is running. Finish or close that browser before starting another.");
   humanBrowserInUse = true;
   try {
-    const cdpBrowser = await connectToHumanScrapeCdp();
-    if (!cdpBrowser) {
-      throw new HumanVerificationError("Could not open or reach a Chrome debugging session yet — it may still be starting. Wait a moment and retry human-assisted scraping.");
+    const cdpBrowser = options.preferCdp === false ? undefined : await connectToHumanScrapeCdp();
+    if (cdpBrowser) {
+      const context = cdpBrowser.contexts()[0] ?? await cdpBrowser.newContext();
+      const page = await context.newPage();
+      return {
+        page,
+        close: async () => {
+          try { await page.close().catch(() => undefined); } finally { humanBrowserInUse = false; }
+        },
+      };
     }
-    const context = cdpBrowser.contexts()[0] ?? await cdpBrowser.newContext();
-    const page = await context.newPage();
-    return {
-      page,
-      close: async () => {
-        try { await page.close().catch(() => undefined); } finally { humanBrowserInUse = false; }
-      },
-    };
+
+    if (options.requireCdp) {
+      throw new HumanVerificationError("Your Chrome debugging session is not reachable. Keep Chrome open with remote debugging at http://127.0.0.1:9222, then retry human-assisted scraping.");
+    }
+
+    const context = await chromium.launchPersistentContext(join(process.cwd(), "tmp", "price-collection-human-browser"), {
+      channel: HUMAN_SCRAPE_BROWSER_CHANNEL,
+      headless: false,
+      viewport: null,
+      args: ["--start-maximized"],
+    });
+    context.on("close", () => { humanBrowserInUse = false; });
+    const page = context.pages()[0] ?? await context.newPage();
+    return { page, close: async () => {
+      try { await context.close(); } finally { humanBrowserInUse = false; }
+    } };
   } catch (error) {
     humanBrowserInUse = false;
     throw error;
