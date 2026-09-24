@@ -11,6 +11,7 @@ import {
   rejectDiscoveryCandidatesBulk,
   type PromoteDiscoveryCandidateRow,
 } from "@/actions/discovery/discovery-candidates";
+import { DiscoveryCandidateEdCheckActions } from "@/components/admin/discovery-candidate-ed-check-actions";
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/common/card";
@@ -21,10 +22,11 @@ import Pagination from "@/components/common/pagination";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/common/table";
 import type { DiscoverySourceType, RegulatorType } from "@/generated/prisma/client";
 import { identifierSummary } from "@/lib/discovery-identifier-summary";
-import { discoverySourceTypeLabels } from "@/lib/discovery-labels";
+import { discoverySourceTypeLabels, readEdFilterAudit } from "@/lib/discovery-labels";
 import { DEFAULT_PAGE_SIZE } from "@/lib/pagination";
 import { regulatorTypeLabels, regulatorTypeValues, serviceRegionOptions } from "@/lib/provider-labels";
 import { cn } from "@/lib/utils";
+import type { EdFilterAudit } from "@/types/discovery";
 
 type CandidateItem = {
   id: string;
@@ -35,6 +37,7 @@ type CandidateItem = {
   cqcLocationId: string | null;
   odsCode: string | null;
   gphcNumber: string | null;
+  rawPayload: unknown;
   source: { type: DiscoverySourceType };
   matchedProvider: { id: string; tradingName: string } | null;
 };
@@ -272,6 +275,18 @@ function EditableRegionsCell({
   return <EditableDisplay value={selectedRegions.join(", ")} ariaLabel={ariaLabel} placeholder="Select regions" onClick={() => setEditing(true)} />;
 }
 
+// NEEDS_GPHC is the actionable case — a real ED product page was already found, it just needs a
+// regulator reference typed into the already-editable column above before Promote will succeed
+// (Provider.regulatorReference is required). BLOCKED means the site itself couldn't be checked at
+// all, so it's worth opening directly rather than assuming it's just unprocessed backlog.
+function EdFilterBadge({ audit }: { audit: EdFilterAudit | undefined }) {
+  if (!audit) return null;
+  if (audit.outcome === "NEEDS_GPHC") {
+    return <Badge variant="default" title={audit.matchedUrls?.join(", ")}>ED match — needs GPhC #</Badge>;
+  }
+  return <Badge variant="outline" title={audit.reason}>Needs manual check</Badge>;
+}
+
 function CandidateRow({
   item,
   draft,
@@ -388,11 +403,14 @@ function CandidateRow({
       </TableCell>
       <TableCell className="max-w-xs truncate text-xs text-muted-foreground">{identifierSummary(item)}</TableCell>
       <TableCell>
-        {item.matchedProvider ? (
-          <Badge variant="outline">Possible match: {item.matchedProvider.tradingName}</Badge>
-        ) : (
-          <Badge variant="secondary">New</Badge>
-        )}
+        <div className="flex flex-col items-start gap-1">
+          {item.matchedProvider ? (
+            <Badge variant="outline">Possible match: {item.matchedProvider.tradingName}</Badge>
+          ) : (
+            <Badge variant="secondary">New</Badge>
+          )}
+          <EdFilterBadge audit={readEdFilterAudit(item.rawPayload)} />
+        </div>
       </TableCell>
       <TableCell className="text-right">
         <div className="flex flex-wrap justify-end gap-1">
@@ -404,6 +422,7 @@ function CandidateRow({
           <Button type="button" size="sm" variant="ghost" disabled={isPending} onClick={handleReject}>Reject</Button>
         </div>
         {error || rowError ? <p className="mt-1 max-w-56 text-right text-xs text-destructive">{error ?? rowError}</p> : null}
+        {!item.matchedProvider ? <div className="mt-1"><DiscoveryCandidateEdCheckActions id={item.id} /></div> : null}
       </TableCell>
     </TableRow>
   );
@@ -417,13 +436,16 @@ export function DiscoveryCandidateReviewTable({ items }: { items: CandidateItem[
   const [isPending, startTransition] = useTransition();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [onlyFlagged, setOnlyFlagged] = useState(false);
 
   const itemsById = useMemo(() => new Map(items.map((item) => [item.id, item])), [items]);
-  const pages = Math.max(1, Math.ceil(items.length / pageSize));
+  const flaggedCount = useMemo(() => items.filter((item) => readEdFilterAudit(item.rawPayload)).length, [items]);
+  const visibleItems = useMemo(() => (onlyFlagged ? items.filter((item) => readEdFilterAudit(item.rawPayload)) : items), [items, onlyFlagged]);
+  const pages = Math.max(1, Math.ceil(visibleItems.length / pageSize));
   const currentPage = Math.min(page, pages);
   const pagedItems = useMemo(
-    () => items.slice((currentPage - 1) * pageSize, currentPage * pageSize),
-    [items, currentPage, pageSize],
+    () => visibleItems.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [visibleItems, currentPage, pageSize],
   );
   // "Select all" only covers the visible page — selecting across all 243+ candidates in one click
   // risks bulk-promoting rows staff never actually looked at (unedited defaults can fail validation
@@ -457,6 +479,11 @@ export function DiscoveryCandidateReviewTable({ items }: { items: CandidateItem[
 
   function handlePageSizeChange(nextPageSize: number) {
     setPageSize(nextPageSize);
+    setPage(1);
+  }
+
+  function handleToggleOnlyFlagged(checked: boolean) {
+    setOnlyFlagged(checked);
     setPage(1);
   }
 
@@ -507,6 +534,12 @@ export function DiscoveryCandidateReviewTable({ items }: { items: CandidateItem[
         <CardTitle>Discovery candidates ({items.length})</CardTitle>
         {items.length > 0 ? (
           <div className="flex flex-wrap items-center gap-2">
+            {flaggedCount > 0 ? (
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Checkbox checked={onlyFlagged} onCheckedChange={(checked) => handleToggleOnlyFlagged(checked === true)} />
+                Only flagged for manual check ({flaggedCount})
+              </label>
+            ) : null}
             <span className="text-sm text-muted-foreground">{selected.size} selected</span>
             <Button type="button" size="sm" variant="outline" disabled={selected.size === 0 || isPending} onClick={handleBulkPromote}>
               Promote selected
@@ -519,8 +552,8 @@ export function DiscoveryCandidateReviewTable({ items }: { items: CandidateItem[
       </CardHeader>
       <CardContent className="px-0">
         {bulkError ? <p className="px-4 pb-2 text-sm text-destructive">{bulkError}</p> : null}
-        {items.length === 0 ? (
-          <EmptyState title="No discovery candidates awaiting review." />
+        {visibleItems.length === 0 ? (
+          <EmptyState title={onlyFlagged ? "No candidates flagged for manual check." : "No discovery candidates awaiting review."} />
         ) : (
           <Table resizable={false}>
             <TableHeader>
@@ -557,9 +590,9 @@ export function DiscoveryCandidateReviewTable({ items }: { items: CandidateItem[
           </Table>
         )}
       </CardContent>
-      {items.length > 0 ? (
+      {visibleItems.length > 0 ? (
         <CardFooter className="border-t">
-          <Pagination page={currentPage} setPage={setPage} pages={pages} total={items.length} pageSize={pageSize} onPageSizeChange={handlePageSizeChange} />
+          <Pagination page={currentPage} setPage={setPage} pages={pages} total={visibleItems.length} pageSize={pageSize} onPageSizeChange={handlePageSizeChange} />
         </CardFooter>
       ) : null}
     </Card>

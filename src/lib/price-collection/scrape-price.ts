@@ -21,6 +21,8 @@ type ScrapeProductPriceOptions = {
     strengthMg: number;
     packQuantity: number;
   };
+  /** Reports coarse step text (e.g. "Rendering the page…") as scraping progresses. */
+  onProgress?: (message: string) => void;
 };
 
 function extractJsonLdBlocks(html: string): Record<string, unknown>[] {
@@ -125,20 +127,23 @@ function readVariantFromRenderedText(text: string, matchedTokens: string[], vari
   };
 }
 
-async function collectRenderedProductCard(url: string, matchedTokens: string[], humanAssist: boolean, variant?: ScrapeProductPriceOptions["variant"], existingPage?: Page): Promise<ScrapedPrice | undefined> {
+async function collectRenderedProductCard(url: string, matchedTokens: string[], humanAssist: boolean, variant?: ScrapeProductPriceOptions["variant"], existingPage?: Page, onProgress?: (message: string) => void): Promise<ScrapedPrice | undefined> {
   const humanBrowser = !existingPage && humanAssist ? await openHumanBrowser() : undefined;
   const browserContext = existingPage?.context() ?? humanBrowser?.page.context() ?? await chromium.launch({ headless: true }).then((browser) => browser.newContext());
   if (!browserContext) throw new Error("Could not open the price collection browser.");
   const browser = browserContext.browser();
+  const onWaiting = onProgress ? (elapsedSeconds: number) => onProgress(`Still waiting for verification… (${elapsedSeconds}s elapsed)`) : undefined;
   try {
     const page = existingPage ?? humanBrowser?.page ?? await browserContext.newPage();
     if (page.url() !== url) {
+      onProgress?.("Opening the product page…");
       await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
     }
-    await waitForHumanVerification(page, humanAssist);
+    await waitForHumanVerification(page, humanAssist, onWaiting);
+    onProgress?.("Reading the rendered page for a price card…");
     const deadline = Date.now() + 15_000;
     while (Date.now() < deadline) {
-      await waitForHumanVerification(page, humanAssist);
+      await waitForHumanVerification(page, humanAssist, onWaiting);
       const result = await readRenderedCard(page, matchedTokens, variant);
       if (result) return { ...result, sourceUrl: page.url(), source: "rendered-product-card" };
       if (variant) {
@@ -297,6 +302,7 @@ export async function scrapeProductPrice(url: string, options: ScrapeProductPric
   const matchedTokens = options.matchedTokens ?? [];
 
   try {
+    if (!options.humanAssist) options.onProgress?.("Checking the page's structured price data…");
     const page = options.humanAssist ? null : await collectPublicWebsite(url);
     const structured = options.variant || !page ? undefined : pickStructuredPrice(page.html, matchedTokens, page.finalUrl);
     if (structured) return structured;
@@ -304,7 +310,7 @@ export async function scrapeProductPrice(url: string, options: ScrapeProductPric
     if (!(error instanceof Error) || !/robots rules|human-verification|captcha|review (?:it|the page) manually|unexpected content type/i.test(error.message)) throw error;
   }
 
-  const rendered = await collectRenderedProductCard(url, matchedTokens, Boolean(options.humanAssist), options.variant, options.page);
+  const rendered = await collectRenderedProductCard(url, matchedTokens, Boolean(options.humanAssist), options.variant, options.page, options.onProgress);
   if (rendered) return rendered;
   throw new Error(options.variant ? "No matching strength and pack-size GBP price row found for this variant." : "No unambiguous GBP product price found for the confirmed product match.");
 }

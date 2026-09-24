@@ -88,3 +88,22 @@ export function resolveIngredientFromTerm(term: string): Ingredient | undefined 
 export function edPageMentionsIngredient(html: string, ingredient: Ingredient): boolean {
   return edIngredientTokens.some(([token, tokenIngredient]) => tokenIngredient === ingredient && new RegExp(`\\b${token}\\b`, "i").test(html));
 }
+
+// A structured product-feed item's own declared title (a sitemap/RSS/Atom/Google-Shopping-style
+// feed's <title>/<g:title> — see site-feeds.ts) is fundamentally different evidence from arbitrary
+// page body text: it's the site's own e-commerce/catalog system explicitly naming what a URL sells,
+// not an incidental mention (e.g. a blog post title using the word in passing), so it's exempt from
+// matchEdProductPath's body-text ban the same way edPageMentionsIngredient's category-page fallback
+// is. Always HIGH confidence for the same reason. Catches products behind an opaque URL slug (e.g.
+// "/products/hezkue") that matchEdProductPath's URL-only rule can never resolve on its own.
+export function matchEdProductTitle(title: string): EdPathMatch | undefined {
+  const matchedTokens: string[] = [];
+  let ingredient: Ingredient | undefined;
+  for (const [token, tokenIngredient] of edIngredientTokens) {
+    if (!new RegExp(`\\b${token}\\b`, "i").test(title)) continue;
+    matchedTokens.push(token);
+    ingredient ??= tokenIngredient;
+  }
+  if (!ingredient) return undefined;
+  return { ingredient, matchedTokens, confidence: "HIGH" };
+}

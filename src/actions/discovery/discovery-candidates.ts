@@ -7,6 +7,8 @@ import { createProviderSchema } from "@/actions/providers/provider-schema";
 import { createProviderRecord, type CreateProviderState } from "@/actions/providers/providers";
 import type { DiscoveryCandidate, DiscoverySourceType, ProviderIdentifierType } from "@/generated/prisma/client";
 import { recordAuditLog } from "@/lib/audit-log";
+import { runCandidateEdCheck, type CandidateEdCheckResult } from "@/lib/discovery/run-candidate-ed-check";
+import { HumanVerificationError } from "@/lib/price-collection/human-browser";
 import { prisma } from "@/lib/prisma";
 import { requireStaffRole } from "@/lib/staff-auth";
 
@@ -26,6 +28,55 @@ export async function getDiscoveryCandidatesForReview() {
       matchedProvider: { select: { id: true, tradingName: true } },
     },
   });
+}
+
+// The other side of the queue above: every candidate a staff member has already decided on
+// (promoted, linked or rejected), newest decision first, for the Reviews page's history tabs.
+export async function getReviewedDiscoveryCandidates() {
+  await requireStaffRole(["CATALOGUE_EDITOR", "ADMINISTRATOR"]);
+  return prisma.discoveryCandidate.findMany({
+    where: { reviewedAt: { not: null } },
+    orderBy: { reviewedAt: "desc" },
+    select: {
+      id: true,
+      name: true,
+      postcode: true,
+      websiteDomain: true,
+      companyNumber: true,
+      cqcLocationId: true,
+      odsCode: true,
+      gphcNumber: true,
+      status: true,
+      reviewedAt: true,
+      source: { select: { type: true } },
+      matchedProvider: { select: { id: true, tradingName: true } },
+      reviewedByStaff: { select: { name: true } },
+    },
+  });
+}
+
+export type CheckCandidateEdMedicineState = { error?: string; result?: CandidateEdCheckResult };
+
+// The loop itself lives in lib/discovery/run-candidate-ed-check.ts (shared with the SSE progress
+// route at app/api/discovery-candidates/[id]/ed-check-stream) — this just does auth, calls it with
+// a no-op progress reporter, and translates the result into this action's return shape.
+export async function checkCandidateForEdMedicine(candidateId: string, humanAssist = false): Promise<CheckCandidateEdMedicineState> {
+  let staffUser;
+  try {
+    staffUser = await requireStaffRole(["CATALOGUE_EDITOR", "ADMINISTRATOR"]);
+  } catch {
+    return { error: "You are not authorized to check this candidate." };
+  }
+
+  try {
+    const result = await runCandidateEdCheck(candidateId, humanAssist, staffUser.id);
+    revalidatePath("/admin/reviews");
+    return { result };
+  } catch (error) {
+    if (error instanceof HumanVerificationError) return { error: error.message };
+    if (error instanceof Error) return { error: error.message };
+    throw error;
+  }
 }
 
 export async function getDiscoveryCandidateForPromotion(id: string) {

@@ -125,7 +125,7 @@ async function main() {
     const retryCandidates = websiteCandidates.filter(candidate => retryIds.has(candidate.id));
     process.stdout.write("Human browser audit: " + retryCandidates.length + " recoverable candidates. Complete any visible verification in Chrome; the audit will continue automatically.\n");
     for (const [index, candidate] of retryCandidates.entries()) {
-      const { page, close } = await openHumanBrowser({ requireCdp: true });
+      const { page, close } = await openHumanBrowser();
       try {
         process.stdout.write("Checking " + (index + 1) + " of " + retryCandidates.length + ": " + candidate.name + " (" + candidate.websiteDomain + ")...\n");
         records.push(await assessCandidateWithHumanBrowser(candidate, page));

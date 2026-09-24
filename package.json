@@ -19,6 +19,7 @@
     "discovery:isolate-product-listings": "tsx scripts/isolate-discovery-product-listings.ts",
     "discovery:promote-audited-product-listings": "tsx scripts/promote-audited-product-listing-candidates.ts",
     "discovery:detect-audited-products": "tsx scripts/detect-products-for-audited-providers.ts",
+    "discovery:filter-ed-candidates": "tsx scripts/filter-discovery-candidates-by-ed-medicine.ts",
     "price-collection:run-due": "tsx scripts/run-price-collection-jobs.ts",
     "prepare": "husky"
   },

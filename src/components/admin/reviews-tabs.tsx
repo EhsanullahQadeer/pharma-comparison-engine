@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { CorrectionReviewTable } from "@/components/admin/correction-review-table";
-import { DiscoveryCandidateReviewTable } from "@/components/admin/discovery-candidate-review-table";
+import { DiscoveryCandidatesPanel } from "@/components/admin/discovery-candidates-panel";
 import { EvidenceReviewTable } from "@/components/admin/evidence-review-table";
 import { ProductMatchReviewTable } from "@/components/admin/product-match-review-table";
 import { Button } from "@/components/common/button";
@@ -16,12 +16,14 @@ export function ReviewsTabs({
   evidence,
   corrections,
   candidates,
+  reviewedCandidates,
   productMatches,
   productVariants,
 }: {
   evidence: ComponentProps<typeof EvidenceReviewTable>["items"];
   corrections: ComponentProps<typeof CorrectionReviewTable>["items"];
-  candidates: ComponentProps<typeof DiscoveryCandidateReviewTable>["items"];
+  candidates: ComponentProps<typeof DiscoveryCandidatesPanel>["pending"];
+  reviewedCandidates: ComponentProps<typeof DiscoveryCandidatesPanel>["reviewed"];
   productMatches: ComponentProps<typeof ProductMatchReviewTable>["items"];
   productVariants: ComponentProps<typeof ProductMatchReviewTable>["variants"];
 }) {
@@ -30,7 +32,7 @@ export function ReviewsTabs({
   const panels: Record<Tab, () => ReactNode> = {
     evidence: () => <EvidenceReviewTable items={evidence} />,
     corrections: () => <CorrectionReviewTable items={corrections} />,
-    candidates: () => <DiscoveryCandidateReviewTable items={candidates} />,
+    candidates: () => <DiscoveryCandidatesPanel pending={candidates} reviewed={reviewedCandidates} />,
     productMatches: () => <ProductMatchReviewTable items={productMatches} variants={productVariants} />,
   };
 

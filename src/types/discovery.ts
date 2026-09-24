@@ -37,3 +37,10 @@ export type DiscoveryAdapter = {
   type: DiscoverySourceType;
   run(context: DiscoveryAdapterContext): Promise<NormalizedCandidate[]>;
 };
+
+// Written by scripts/filter-discovery-candidates-by-ed-medicine.ts onto a DiscoveryCandidate's
+// rawPayload.edFilterAudit (same colocated-metadata pattern as rawPayload.source/enrichment) when
+// an automated or human-assisted ED check couldn't resolve a candidate either way — NEEDS_GPHC
+// already found a real ED product page but has no regulator reference to promote with, BLOCKED
+// means the site couldn't be checked at all (CAPTCHA/robots/network).
+export type EdFilterAudit = { outcome: "BLOCKED" | "NEEDS_GPHC"; reason?: string; matchedUrls?: string[] };

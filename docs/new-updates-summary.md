@@ -1,6 +1,16 @@
 # Product updates
 
+## 2026-09-24
+
+- Product detection now looks through every section of a pharmacy website's page listing, not just the top level. Pharmacies whose online shop pages sit in a separate section (common on WordPress and Shopify shops) are no longer missed.
+
+- When the medicine filter promotes a pharmacy, the erectile-dysfunction product pages it found now appear in the Product matches review queue, ready for staff to pick the exact product.
+
+- The Discovery candidates section of the admin Reviews page now has Pending, Promoted, Linked and Rejected tabs, so pharmacies that have already been promoted or rejected stay visible (with who reviewed them and when) instead of disappearing from the page.
+
 ## 2026-09-23
+
+- The product variants page now shows a live, step-by-step progress panel while prices are being scraped ("Checking X...", "Saved £Y for X...", "Still waiting for verification..."), instead of a single spinner with no detail — for "Human scrape" especially, which can otherwise sit quietly for minutes while staff wait with no feedback.
 
 - Pharmacy discovery now starts by requiring Google AI to cite a direct public product or treatment listing from the pharmacy’s official site. This filters out consultation-only, prescription-request-only and no-catalogue results before review, while saving the cited listing and supporting evidence with eligible pharmacies.
 

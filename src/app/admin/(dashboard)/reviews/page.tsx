@@ -1,5 +1,5 @@
 import { getCorrections } from "@/actions/corrections/corrections";
-import { getDiscoveryCandidatesForReview } from "@/actions/discovery/discovery-candidates";
+import { getDiscoveryCandidatesForReview, getReviewedDiscoveryCandidates } from "@/actions/discovery/discovery-candidates";
 import { getPendingEvidence } from "@/actions/evidence/evidence";
 import { getProductMatchesForReview } from "@/actions/product-matches/product-matches";
 import { getAllProductVariants } from "@/actions/product-variants/product-variants";
@@ -10,10 +10,11 @@ import type { Metadata } from "next";
 export const metadata: Metadata = { title: "Reviews", robots: { index: false, follow: false } };
 
 export default async function ReviewsPage() {
-  const [evidence, corrections, candidates, productMatches, productVariants] = await Promise.all([
+  const [evidence, corrections, candidates, reviewedCandidates, productMatches, productVariants] = await Promise.all([
     getPendingEvidence(),
     getCorrections(),
     getDiscoveryCandidatesForReview(),
+    getReviewedDiscoveryCandidates(),
     getProductMatchesForReview(),
     getAllProductVariants(),
   ]);
@@ -26,7 +27,7 @@ export default async function ReviewsPage() {
           Evidence awaiting approval, corrections reported by the public, pharmacy candidates found by automatic discovery, and detected product matches.
         </p>
       </div>
-      <ReviewsTabs evidence={evidence} corrections={corrections} candidates={candidates} productMatches={productMatches} productVariants={productVariants} />
+      <ReviewsTabs evidence={evidence} corrections={corrections} candidates={candidates} reviewedCandidates={reviewedCandidates} productMatches={productMatches} productVariants={productVariants} />
     </div>
   );
 }
