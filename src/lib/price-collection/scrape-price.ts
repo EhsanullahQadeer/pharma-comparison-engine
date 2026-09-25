@@ -1,8 +1,17 @@
 import { chromium, type Page } from "patchright";
 
-import { collectPublicWebsite } from "@/lib/discovery/public-web";
+import { collectPublicWebsite, ROBOTS_BEHIND_CHALLENGE } from "@/lib/discovery/public-web";
+import { pickBigCommercePrice } from "@/lib/price-collection/bigcommerce-price";
 import { openHumanBrowser, waitForHumanVerification } from "@/lib/price-collection/human-browser";
-import { labelMatchesVariant } from "@/lib/price-collection/variant-label";
+import { pickNextDataVariantPrice } from "@/lib/price-collection/next-data-variant-price";
+import { pickPerTabletPriceTable } from "@/lib/price-collection/per-tablet-price-table";
+import { pickPharmacyPluginPrice } from "@/lib/price-collection/pharmacy-plugin-price";
+import { readPriceCheckerDropdown } from "@/lib/price-collection/price-checker-dropdown";
+import { pickPriceGridTable } from "@/lib/price-collection/price-grid-table";
+import { assertRobotsAllowInBrowser } from "@/lib/price-collection/robots-in-browser";
+import { pickShopifyMetaPrice } from "@/lib/price-collection/shopify-meta-price";
+import { brandSideMatches, labelMatchesVariant, preferPrescriptionLabels, type VariantSpec } from "@/lib/price-collection/variant-label";
+import { pickWooCommercePrice } from "@/lib/price-collection/woocommerce-price";
 
 export type ScrapedPrice = {
   itemPricePence: number;
@@ -11,17 +20,14 @@ export type ScrapedPrice = {
   availability: "IN_STOCK" | "OUT_OF_STOCK" | "UNKNOWN";
   sourceUrl: string;
   evidence?: string;
-  source: "merchant-feed" | "json-ld-product-offer" | "rendered-product-card";
+  source: "merchant-feed" | "json-ld-product-offer" | "bigcommerce-page-data" | "woocommerce-variation-data" | "pharmacy-plugin-price-list" | "next-data-variants" | "per-tablet-price-table" | "shopify-product-meta" | "price-grid-table" | "price-checker-dropdown" | "rendered-product-card";
 };
 
 type ScrapeProductPriceOptions = {
   matchedTokens?: string[];
   humanAssist?: boolean;
   page?: Page;
-  variant?: {
-    strengthMg: number;
-    packQuantity: number;
-  };
+  variant?: VariantSpec;
   /** Reports coarse step text (e.g. "Rendering the page…") as scraping progresses. */
   onProgress?: (message: string) => void;
 };
@@ -34,9 +40,18 @@ function extractJsonLdBlocks(html: string): Record<string, unknown>[] {
       for (const node of Array.isArray(parsed) ? parsed : [parsed]) {
         if (!node || typeof node !== "object") continue;
         const record = node as Record<string, unknown>;
-        // Yoast/WooCommerce-style pages wrap every entity in a single @graph array.
+        // Yoast/WooCommerce-style pages wrap every entity in a single @graph array; product listings
+        // (e.g. Boots' ED page) put each product in an ItemList, directly or inside a ListItem.
         const graph = Array.isArray(record["@graph"]) ? record["@graph"] : [record];
-        for (const entry of graph) if (entry && typeof entry === "object") blocks.push(entry as Record<string, unknown>);
+        for (const entry of graph) {
+          if (!entry || typeof entry !== "object") continue;
+          const node = entry as Record<string, unknown>;
+          blocks.push(node);
+          for (const item of Array.isArray(node.itemListElement) ? node.itemListElement : []) {
+            const listed = item && typeof item === "object" ? ((item as Record<string, unknown>).item ?? item) : undefined;
+            if (listed && typeof listed === "object") blocks.push(listed as Record<string, unknown>);
+          }
+        }
       }
     } catch {
       // Malformed JSON-LD on this block; other blocks may still be usable.
@@ -125,6 +140,7 @@ function pickStructuredVariantPrice(html: string, matchedTokens: string[], varia
     for (const offer of offers) {
       if (offer.priceCurrency !== "GBP") continue;
       const label = [textField(product, "name"), textField(offer, "name"), textField(offer, "sku") || textField(product, "sku")].filter(Boolean).join(" ");
+      if (!brandSideMatches(textField(product, "name"), textField(offer, "name"), matchedTokens[0], variant.generic)) continue;
       if (!labelMatchesVariant(label, matchedTokens, variant)) continue;
       const itemPricePence = toPence(offer.price);
       if (itemPricePence === undefined) continue;
@@ -132,9 +148,10 @@ function pickStructuredVariantPrice(html: string, matchedTokens: string[], varia
       matches.push({ itemPricePence, availability, evidence: label });
     }
   }
-  if (new Set(matches.map((match) => match.itemPricePence)).size !== 1) return undefined;
+  const preferred = preferPrescriptionLabels(matches, (match) => match.evidence);
+  if (new Set(preferred.map((match) => match.itemPricePence)).size !== 1) return undefined;
   return {
-    ...matches[0],
+    ...preferred[0],
     deliveryFeePence: 0,
     deliveryAssumption: "As shown on the provider's product page at collection time",
     sourceUrl,
@@ -173,7 +190,7 @@ function readVariantFromRenderedText(text: string, matchedTokens: string[], vari
   };
 }
 
-async function collectRenderedProductCard(url: string, matchedTokens: string[], humanAssist: boolean, variant?: ScrapeProductPriceOptions["variant"], existingPage?: Page, onProgress?: (message: string) => void): Promise<ScrapedPrice | undefined> {
+async function collectRenderedProductCard(url: string, matchedTokens: string[], humanAssist: boolean, variant?: ScrapeProductPriceOptions["variant"], existingPage?: Page, onProgress?: (message: string) => void, checkRobotsInBrowser = false): Promise<ScrapedPrice | undefined> {
   const humanBrowser = !existingPage && humanAssist ? await openHumanBrowser() : undefined;
   const browserContext = existingPage?.context() ?? humanBrowser?.page.context() ?? await chromium.launch({ headless: true }).then((browser) => browser.newContext());
   if (!browserContext) throw new Error("Could not open the price collection browser.");
@@ -181,11 +198,31 @@ async function collectRenderedProductCard(url: string, matchedTokens: string[], 
   const onWaiting = onProgress ? (elapsedSeconds: number) => onProgress(`Still waiting for verification… (${elapsedSeconds}s elapsed)`) : undefined;
   try {
     const page = existingPage ?? humanBrowser?.page ?? await browserContext.newPage();
+    if (checkRobotsInBrowser) {
+      onProgress?.("Reading the site's robots.txt in the browser…");
+      await assertRobotsAllowInBrowser(page, url, humanAssist, onWaiting);
+    }
     if (page.url() !== url) {
       onProgress?.("Opening the product page…");
       await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
     }
     await waitForHumanVerification(page, humanAssist, onWaiting);
+    // Pages only reachable in the browser (e.g. behind a Cloudflare check) still carry their
+    // platform's embedded price data — read that before falling back to the visible card.
+    const html = await page.content();
+    const embedded = (variant
+      ? pickWooCommercePrice(html, matchedTokens, variant, page.url())
+        ?? pickPharmacyPluginPrice(html, matchedTokens, variant, page.url())
+        ?? pickNextDataVariantPrice(html, matchedTokens, variant, page.url())
+        ?? pickPerTabletPriceTable(html, matchedTokens, variant, page.url())
+        ?? pickShopifyMetaPrice(html, matchedTokens, variant, page.url())
+        ?? pickPriceGridTable(html, matchedTokens, variant, page.url())
+      : undefined)
+      ?? pickBigCommercePrice(html, matchedTokens, variant, page.url());
+    if (embedded) return embedded;
+    // A price checker that only loads the chosen strength's packs on selection (e.g. Treated).
+    const checker = variant ? await readPriceCheckerDropdown(page, matchedTokens, variant) : undefined;
+    if (checker) return { ...checker, sourceUrl: page.url(), source: "price-checker-dropdown" };
     onProgress?.("Reading the rendered page for a price card…");
     const deadline = Date.now() + 15_000;
     while (Date.now() < deadline) {
@@ -226,6 +263,10 @@ async function readRenderedCard(page: Page, matchedTokens: string[], variant?: S
         if (normalized.length < 6 || normalized.length > 220 || fee.test(normalized)) return;
         const prices = [...new Set(normalized.match(money) ?? [])].map((price) => price.replace(/\s/g, ""));
         if (prices.length !== 1) return;
+        // A row naming several products or strengths (e.g. a trial pack: "Sildenafil 50mg x 4
+        // tablets, Tadalafil 10mg x 4 tablets and …") is not one variant's price.
+        const strengths = [...normalized.matchAll(/\b(\d{1,3}(?:\.\d+)?)\s*mg\b/gi)].map((match) => Number(match[1]));
+        if (new Set(strengths).size > 1 || /\b(?:trial|bundle|mixed)\b/i.test(normalized)) return;
         const strength = Number(normalized.match(strengthPattern)?.[1]);
         if (!Number.isFinite(strength) || strength !== variant.strengthMg) return;
         const quantityMatch = quantityPatterns.map((pattern) => normalized.match(pattern)).find(Boolean);
@@ -349,18 +390,32 @@ export async function scrapeProductPrice(url: string, options: ScrapeProductPric
 
   // A plain request is tried first even in human-assist mode — the browser (and any verification
   // the admin has to complete in it) is only needed when that request is blocked or finds nothing.
+  // When robots.txt itself is behind a check, its rules are read in the browser before the page.
+  let checkRobotsInBrowser = false;
   try {
     options.onProgress?.("Checking the page's structured price data…");
     const page = await collectPublicWebsite(url);
-    const structured = options.variant
+    const structured = (options.variant
       ? pickStructuredVariantPrice(page.html, matchedTokens, options.variant, page.finalUrl)
-      : pickStructuredPrice(page.html, matchedTokens, page.finalUrl);
+      : pickStructuredPrice(page.html, matchedTokens, page.finalUrl))
+      ?? (options.variant
+        ? pickWooCommercePrice(page.html, matchedTokens, options.variant, page.finalUrl)
+          ?? pickPharmacyPluginPrice(page.html, matchedTokens, options.variant, page.finalUrl)
+          ?? pickNextDataVariantPrice(page.html, matchedTokens, options.variant, page.finalUrl)
+          ?? pickPerTabletPriceTable(page.html, matchedTokens, options.variant, page.finalUrl)
+          ?? pickShopifyMetaPrice(page.html, matchedTokens, options.variant, page.finalUrl)
+          ?? pickPriceGridTable(page.html, matchedTokens, options.variant, page.finalUrl)
+        : undefined)
+      ?? pickBigCommercePrice(page.html, matchedTokens, options.variant, page.finalUrl);
     if (structured) return structured;
   } catch (error) {
-    if (!(error instanceof Error) || !/robots rules|human-verification|captcha|review (?:it|the page) manually|unexpected content type/i.test(error.message)) throw error;
+    // A robots refusal is final — never retried in a browser, visible or not.
+    if (!(error instanceof Error) || /robots rules/i.test(error.message)) throw error;
+    if (!/human-verification|captcha|review (?:it|the page) manually|unexpected content type/i.test(error.message)) throw error;
+    checkRobotsInBrowser = error.message === ROBOTS_BEHIND_CHALLENGE;
   }
 
-  const rendered = await collectRenderedProductCard(url, matchedTokens, Boolean(options.humanAssist), options.variant, options.page, options.onProgress);
+  const rendered = await collectRenderedProductCard(url, matchedTokens, Boolean(options.humanAssist), options.variant, options.page, options.onProgress, checkRobotsInBrowser);
   if (rendered) return rendered;
   throw new Error(options.variant ? "No matching strength and pack-size GBP price row found for this variant." : "No unambiguous GBP product price found for the confirmed product match.");
 }

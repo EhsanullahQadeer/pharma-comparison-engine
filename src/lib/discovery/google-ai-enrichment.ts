@@ -1,5 +1,6 @@
 import { chromium, type Browser, type Page } from "playwright";
 
+import { cdpUrlVariants, ensureDebugChrome } from "@/lib/browser/debug-chrome";
 import { assertGoogleAiRequestLimit, waitForGoogleAiCitationUrls } from "@/lib/discovery/google-ai-citations";
 import { collectDiscoveryHomepage } from "@/lib/discovery/homepage-collection";
 import { homepageEvidence } from "@/lib/discovery/homepage-evidence";
@@ -24,17 +25,12 @@ function isClosedTargetError(error: unknown) {
   return error instanceof Error && /target page, context or browser has been closed|econnrefused|connectovercdp/i.test(error.message);
 }
 
-function googleAiCdpUrls() {
-  const urls = [GOOGLE_AI_CDP_URL];
-  if (GOOGLE_AI_CDP_URL.includes("127.0.0.1")) urls.push(GOOGLE_AI_CDP_URL.replace("127.0.0.1", "localhost"));
-  if (GOOGLE_AI_CDP_URL.includes("localhost")) urls.push(GOOGLE_AI_CDP_URL.replace("localhost", "127.0.0.1"));
-  return [...new Set(urls)];
-}
-
 async function connectToGoogleAiCdp() {
   if (cdpBrowserPromise) return cdpBrowserPromise;
-  const urls = googleAiCdpUrls();
+  const urls = cdpUrlVariants(GOOGLE_AI_CDP_URL);
   cdpBrowserPromise = (async () => {
+    // Reopens the project's signed-in debug Chrome if an admin closed it, before attaching.
+    const started = await ensureDebugChrome(GOOGLE_AI_CDP_URL);
     let lastError: unknown;
     for (const cdpUrl of urls) {
       for (const delay of [0, 500, 1_500]) {
@@ -51,15 +47,26 @@ async function connectToGoogleAiCdp() {
         }
       }
     }
+    const startNote = started ? "" : " Chrome could not be started automatically (is Google Chrome installed? HUMAN_SCRAPE_CHROME_PATH can point to it).";
     if (lastError instanceof Error) {
-      throw new Error(`Google AI Chrome debugging session is not reachable at ${urls.join(" or ")}. Reopen Chrome with --remote-debugging-port=9222, keep it open, confirm AI Mode is signed in, then rerun discovery. Last error: ${lastError.message}`);
+      throw new Error(`Google AI Chrome debugging session is not reachable at ${urls.join(" or ")}.${startNote} Confirm AI Mode is signed in there, then rerun discovery. Last error: ${lastError.message}`);
     }
-    throw new Error(`Google AI Chrome debugging session is not reachable at ${urls.join(" or ")}. Reopen Chrome with --remote-debugging-port=9222, keep it open, confirm AI Mode is signed in, then rerun discovery.`);
+    throw new Error(`Google AI Chrome debugging session is not reachable at ${urls.join(" or ")}.${startNote} Confirm AI Mode is signed in there, then rerun discovery.`);
   })().catch(error => {
     cdpBrowserPromise = null;
     throw error;
   });
   return cdpBrowserPromise;
+}
+
+// Detaches from the debug Chrome (leaving the window open) so nothing stays attached between runs —
+// sites such as DeepSeek's hCaptcha keep looping while automation is attached, so a person could
+// otherwise never sign in without stopping the dev server. The next run reconnects.
+export async function disconnectGoogleAiBrowser() {
+  const pending = cdpBrowserPromise;
+  cdpBrowserPromise = null;
+  const browser = await pending?.catch(() => undefined);
+  await browser?.close().catch(() => undefined);
 }
 
 async function openGoogleAiSession(): Promise<GoogleAiSession> {

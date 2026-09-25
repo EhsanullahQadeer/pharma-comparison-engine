@@ -6,7 +6,36 @@
 
 import type { Ingredient } from "@/generated/prisma/client";
 
-export type VariantSpec = { strengthMg: number; packQuantity: number };
+// `generic`: the catalogue variant is a generic (its formulation says so); when known, readers that
+// can tell branded from generic packs apart (e.g. a shared WooCommerce dropdown) keep only that side.
+export type VariantSpec = { strengthMg: number; packQuantity: number; generic?: boolean };
+
+export function isGenericFormulation(formulation: string) {
+  return /generic/i.test(formulation);
+}
+
+// Whether a shop's product (name + chosen option text) is on the branded or generic side the catalogue
+// variant needs. Option text that says so decides ("Viagra (Branded) 50mg" / "Sildenafil (Generic)",
+// "…-Branded (Viagra)-…"); otherwise the product name does: one that starts with the brand
+// ("Viagra (Sildenafil) Tablets") is branded, anything else ("Sildenafil (Viagra) Tablets",
+// "Tadalafil (Generic Cialis)") is generic — a brand in brackets only describes a generic.
+// `brand` is tokens[0] when the variant has a brand name (see variantTokens).
+export function brandSideMatches(productName: string, optionText: string, brand: string | undefined, generic: boolean | undefined) {
+  if (generic === undefined || !brand) return true;
+  const options = optionText.toLowerCase();
+  const name = productName.trim().toLowerCase();
+  const genericLabel = /generic/.test(options) || (!/branded/.test(options) && /generic/.test(name));
+  const brandedLabel = /branded/.test(options) || (!genericLabel && (options.includes(brand.toLowerCase()) || name.startsWith(brand.toLowerCase())));
+  return generic ? genericLabel || !brandedLabel : brandedLabel && !genericLabel;
+}
+
+// When one page lists both the prescription brand and its over-the-counter version (Viagra and Viagra
+// Connect, Cialis and Cialis Together) for the same strength and pack, the catalogue's branded
+// product is the prescription one — keep those labels whenever any are present.
+export function preferPrescriptionLabels<T>(items: T[], label: (item: T) => string): T[] {
+  const prescription = items.filter((item) => !/\b(connect|together)\b/i.test(label(item)));
+  return prescription.length > 0 ? prescription : items;
+}
 
 // Words a product page/label for this variant would use: its brand, then the ingredient's generic
 // and best-known brand names.

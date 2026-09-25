@@ -124,7 +124,7 @@ export type ScrapeVariantPricesState = {
 // The scrape loop itself lives in lib/price-collection/run-variant-scrape.ts (shared with the SSE
 // progress route at app/api/product-variants/[id]/scrape-stream) — this just does auth, calls it
 // with a no-op progress reporter, and translates the result into this action's return shape.
-export async function scrapePricesForVariant(productVariantId: string, humanAssist = false): Promise<ScrapeVariantPricesState> {
+export async function scrapePricesForVariant(productVariantId: string): Promise<ScrapeVariantPricesState> {
   let staffUser;
   try {
     staffUser = await requireStaffRole(["CATALOGUE_EDITOR", "ADMINISTRATOR"]);
@@ -133,7 +133,7 @@ export async function scrapePricesForVariant(productVariantId: string, humanAssi
   }
 
   try {
-    const result = await runVariantScrape(productVariantId, humanAssist, staffUser.id);
+    const result = await runVariantScrape(productVariantId, staffUser.id);
     revalidatePath("/admin/catalogue/product-variants");
     revalidatePath(`/admin/catalogue/product-variants/${productVariantId}/prices`);
     return { result };

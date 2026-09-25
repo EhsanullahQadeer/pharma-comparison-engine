@@ -2,8 +2,8 @@
 // each row's ProductVariantPriceActions starts a scrape, and the single ProductVariantScrapeProgress
 // panel above the table renders it, with no context/provider linking the two. It owns the
 // EventSource to app/api/product-variants/[id]/scrape-stream (a server action can only return
-// once, so it can't narrate a scrape that runs for minutes in human-assist mode). One scrape at a
-// time: the server only allows one human browser anyway, and one panel shows one run.
+// once, so it can't narrate a scrape that can wait minutes for a security check). One scrape at a
+// time: the server only allows one visible Chrome window anyway, and one panel shows one run.
 
 export type VariantScrapeResult = { attempted: number; scraped: number; failed: number };
 
@@ -11,13 +11,12 @@ export interface VariantScrapeSnapshot {
   status: "idle" | "running" | "done" | "error";
   variantId?: string;
   label?: string;
-  humanAssist: boolean;
   log: string[];
   result?: VariantScrapeResult;
   error?: string;
 }
 
-export const idleVariantScrape: VariantScrapeSnapshot = { status: "idle", humanAssist: false, log: [] };
+export const idleVariantScrape: VariantScrapeSnapshot = { status: "idle", log: [] };
 
 let snapshot = idleVariantScrape;
 let eventSource: EventSource | null = null;
@@ -34,12 +33,12 @@ function finish(next: Pick<VariantScrapeSnapshot, "status" | "result" | "error">
   setSnapshot(next);
 }
 
-export function startVariantScrape(variantId: string, label: string, humanAssist: boolean) {
+export function startVariantScrape(variantId: string, label: string) {
   if (snapshot.status === "running") return;
-  snapshot = { status: "running", variantId, label, humanAssist, log: [] };
+  snapshot = { status: "running", variantId, label, log: [] };
   listeners.forEach((listener) => listener());
 
-  const source = new EventSource(`/api/product-variants/${variantId}/scrape-stream?assisted=${humanAssist}`);
+  const source = new EventSource(`/api/product-variants/${variantId}/scrape-stream`);
   eventSource = source;
   source.addEventListener("progress", (event) => {
     const { message } = JSON.parse((event as MessageEvent).data) as { message: string };

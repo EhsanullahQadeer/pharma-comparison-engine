@@ -3,8 +3,9 @@ import { recordAuditLog } from "@/lib/audit-log";
 import { normalizePublicUrl } from "@/lib/discovery/public-web-policy";
 import { pickFeedVariantPrice } from "@/lib/price-collection/feed-price";
 import { HumanVerificationError, openHumanBrowser, waitForHumanVerification } from "@/lib/price-collection/human-browser";
+import { assertRobotsAllowInBrowser } from "@/lib/price-collection/robots-in-browser";
 import { scrapeProductPrice, type ScrapedPrice } from "@/lib/price-collection/scrape-price";
-import { variantTokens, type VariantSpec } from "@/lib/price-collection/variant-label";
+import { isGenericFormulation, variantTokens, type VariantSpec } from "@/lib/price-collection/variant-label";
 import { prisma } from "@/lib/prisma";
 import { collectHomepageLinks } from "@/lib/product-detection/detect-products";
 import { edCategoryRootSegments, matchEdProductPath } from "@/lib/product-detection/ed-tokens";
@@ -12,7 +13,7 @@ import { collectFeedCandidates, type FeedCandidate } from "@/lib/product-detecti
 
 import type { Page } from "patchright";
 
-// The orchestration behind ProductVariantPriceActions' "Scrape prices"/"Human scrape" buttons.
+// The orchestration behind ProductVariantPriceActions' single "Scrape prices" button.
 // Lives outside the "use server" actions file (which may only export async functions) so both the
 // plain server action (scrapePricesForVariant, no live feedback) and the SSE route handler
 // (app/api/product-variants/[id]/scrape-stream) can call the exact same logic — one place for the
@@ -22,7 +23,10 @@ import type { Page } from "patchright";
 // 1. a price declared in the pharmacy's own merchant/product feed (plain HTTP),
 // 2. product-page URLs from its sitemaps/feeds, homepage links only when those found none,
 // 3. that page's own JSON-LD price data (plain HTTP),
-// 4. the browser — only when 1–3 are blocked or find nothing (human verification in human mode).
+// 4. a background (headless) browser — only when 1–3 are blocked or find nothing,
+// 5. the visible Chrome window — only for a pharmacy whose pages show a security check to 1–4.
+//    It opens on first need, is reused for later blocked pharmacies in the same run, and a person
+//    completes the check there; nothing here tries to pass one. Robots refusals never escalate.
 // A pharmacy with no confirmed match first retries the page its last saved price came from.
 
 export type VariantScrapeResult = { attempted: number; scraped: number; failed: number };
@@ -30,13 +34,26 @@ export type ScrapeProgress = (message: string) => void;
 
 const noopProgress: ScrapeProgress = () => {};
 
+// A security check (Cloudflare/CAPTCHA) seen by the automatic attempt — the one failure that the
+// visible Chrome window can resolve. Robots refusals are deliberately excluded.
+function isSecurityCheck(error: unknown) {
+  return error instanceof Error
+    && !(error instanceof HumanVerificationError)
+    && !/robots rules/i.test(error.message)
+    && /manual verification|human-verification|captcha|verify you are human|checking your browser/i.test(error.message);
+}
+
+function needsVerification(error: unknown) {
+  return error instanceof HumanVerificationError || isSecurityCheck(error);
+}
+
 function isEdCategoryRoot(url: string) {
   const segments = new URL(url).pathname.split("/").filter(Boolean).map((segment) => segment.toLowerCase());
   return segments.length === 1 && edCategoryRootSegments.has(segments[0]);
 }
 
 // Robots refusals never escalate to the browser; other plain-request blocks (403, CAPTCHA
-// markers) do in human-assist mode, where the admin can clear the check themselves.
+// markers) do once a visible-browser page is supplied, where a person can clear the check.
 async function collectProviderHomepageLinks(websiteDomain: string, page?: Page) {
   try {
     return await collectHomepageLinks(websiteDomain);
@@ -44,6 +61,7 @@ async function collectProviderHomepageLinks(websiteDomain: string, page?: Page) 
     if (!page || (error instanceof Error && /robots rules/i.test(error.message))) throw error;
   }
   const homepage = normalizePublicUrl(`https://${websiteDomain}`);
+  await assertRobotsAllowInBrowser(page, homepage.href, true);
   await page.goto(homepage.href, { waitUntil: "domcontentloaded", timeout: 30_000 });
   await waitForHumanVerification(page, true);
   const origin = new URL(page.url()).origin;
@@ -163,6 +181,14 @@ async function recordVariantOffer(staffUserId: string, providerId: string, produ
 const sourceLabels = {
   "merchant-feed": "product feed",
   "json-ld-product-offer": "page price data",
+  "bigcommerce-page-data": "store page data",
+  "woocommerce-variation-data": "product options data",
+  "pharmacy-plugin-price-list": "product options data",
+  "next-data-variants": "product options data",
+  "per-tablet-price-table": "product options data",
+  "shopify-product-meta": "product options data",
+  "price-grid-table": "price table",
+  "price-checker-dropdown": "price checker",
   "rendered-product-card": "rendered page",
 } satisfies Record<ScrapedPrice["source"], string>;
 
@@ -176,18 +202,17 @@ async function checkProviderFeeds(websiteDomain: string, name: string, tokens: s
 
 export async function runVariantScrape(
   productVariantId: string,
-  humanAssist: boolean,
   staffUserId: string,
   onProgress: ScrapeProgress = noopProgress,
 ): Promise<VariantScrapeResult> {
   onProgress("Loading product variant details…");
   const variant = await prisma.productVariant.findUnique({
     where: { id: productVariantId },
-    select: { ingredient: true, brandName: true, strengthMg: true, packQuantity: true },
+    select: { ingredient: true, brandName: true, strengthMg: true, packQuantity: true, formulation: true },
   });
   if (!variant) throw new Error("Product variant not found.");
   const tokens = variantTokens(variant);
-  const variantSpec = { strengthMg: variant.strengthMg, packQuantity: variant.packQuantity };
+  const variantSpec = { strengthMg: variant.strengthMg, packQuantity: variant.packQuantity, generic: isGenericFormulation(variant.formulation) };
 
   const matches = await prisma.productMatch.findMany({
     where: { matchedIngredient: variant.ingredient, status: "CONFIRMED" },
@@ -203,15 +228,33 @@ export async function runVariantScrape(
     ? `Found ${matches.length} confirmed product match${matches.length === 1 ? "" : "es"} to check.`
     : "No confirmed product matches — checking provider websites directly.");
 
-  const humanBrowser = humanAssist ? await openHumanBrowser() : undefined;
-  if (humanAssist) onProgress("Opened the scraping browser. Complete any verification prompts as they appear.");
-  const scrapePage = (url: string, name: string) => scrapeProductPrice(url, {
-    humanAssist,
-    page: humanBrowser?.page,
+  let humanBrowser: Awaited<ReturnType<typeof openHumanBrowser>> | undefined;
+  // Runs `attempt` automatically first; only if that hits a security check does it (re)open the
+  // visible Chrome window and retry there, waiting for a person to complete the check.
+  async function withSecurityCheckFallback<T>(name: string, attempt: (page?: Page) => Promise<T>): Promise<T> {
+    try {
+      return await attempt();
+    } catch (error) {
+      if (!isSecurityCheck(error)) throw error;
+    }
+    if (humanBrowser?.page.isClosed()) {
+      await humanBrowser.close();
+      humanBrowser = undefined;
+    }
+    if (!humanBrowser) {
+      humanBrowser = await openHumanBrowser();
+      onProgress("Opened the Chrome window on the server computer for security checks; it stays open for the rest of this run.");
+    }
+    onProgress(`${name} is showing a security check — complete it in the Chrome window (waiting up to 5 minutes).`);
+    return attempt(humanBrowser.page);
+  }
+  const scrapePage = (url: string, name: string) => withSecurityCheckFallback(name, (page) => scrapeProductPrice(url, {
+    humanAssist: Boolean(page),
+    page,
     matchedTokens: tokens,
     variant: variantSpec,
     onProgress: (message) => onProgress(`${name}: ${message}`),
-  });
+  }));
   try {
     let scraped = 0;
     let failed = 0;
@@ -238,11 +281,16 @@ export async function runVariantScrape(
         scraped += 1;
         onProgress(`Saved ${formatPrice(scrapedPrice)} for ${name} (from ${sourceLabels[scrapedPrice.source]}).`);
       } catch (error) {
-        if (error instanceof HumanVerificationError) throw error;
         const message = error instanceof Error ? error.message : "Variant price scrape failed.";
+        const verification = needsVerification(error);
         await prisma.productMatch.update({
           where: { id: match.id },
-          data: { lastScrapedAt: new Date(), lastScrapeStatus: "FAILED", lastScrapeError: message },
+          data: {
+            lastScrapedAt: new Date(),
+            lastScrapeStatus: verification ? "HUMAN_VERIFICATION_REQUIRED" : "FAILED",
+            lastScrapeError: message,
+            requiresHumanAssist: verification,
+          },
         });
         failed += 1;
         onProgress(`Could not get a price from ${name}: ${message}`);
@@ -295,7 +343,7 @@ export async function runVariantScrape(
           continue;
         }
         onProgress(`Searching ${name}'s website for a product page…`);
-        const candidates = await findProviderVariantCandidateUrls(provider.websiteDomain, variant.ingredient, tokens, feedCandidates, humanBrowser?.page);
+        const candidates = await withSecurityCheckFallback(name, (page) => findProviderVariantCandidateUrls(provider.websiteDomain, variant.ingredient, tokens, feedCandidates, page));
         if (candidates.length === 0) onProgress(`No likely product page found on ${name}'s website.`);
         let saved = false;
         let lastError: unknown;
@@ -318,7 +366,6 @@ export async function runVariantScrape(
           throw new Error("No likely product page found for this provider.");
         }
       } catch (error) {
-        if (error instanceof HumanVerificationError) throw error;
         failed += 1;
         const message = error instanceof Error ? error.message : "Could not collect a price for this provider.";
         onProgress(`Could not get a price from ${name}: ${message}`);

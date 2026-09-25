@@ -122,3 +122,15 @@ main()
     process.exitCode = 1;
   })
   .finally(async () => prisma.$disconnect());
+
+
+
+
+// Quick Meds: Cloudflare kept looping, even after the check was completed. It detects the controlled browser.
+// Pharmaceutra: its generic sildenafil and tadalafil pages had no matching pack, and a check on one page timed out. Its branded prices above are saved.
+// Well: only subscription and "from" prices.
+// Treated and Mail My Meds: prices aren't tied to a pack size, and Mail My Meds shows everything out of stock.
+// e-Pharmacy and Crosshills: no per-pack price data.
+// Prime Med and Rai's Pharmacy: the prices only appear after you pick options in their custom selector.
+// Seriva, iPharm and Chemist2Door: nothing matching your products.
+// Peak, Pharmica, Oxford Online and Your Medicals: their robots rules refuse automated access.

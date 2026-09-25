@@ -23,7 +23,7 @@ async function readPage(url: URL, signal: AbortSignal) {
   if (!addresses.length || addresses.some(address => !isPublicIpv4(address))) throw new Error("Website resolves to a restricted network address.");
   signal.throwIfAborted();
   // Pin the validated address to the socket, retaining the hostname for TLS verification.
-  return new Promise<{ status: number; location?: string; type: string; text: string }>((resolve, reject) => {
+  return new Promise<{ status: number; location?: string; type: string; text: string; challenge: boolean }>((resolve, reject) => {
     const req = request(url, {
       agent: false, family: 4, signal,
       lookup: (_hostname, _options, callback) => callback(null, addresses[0], 4),
@@ -34,12 +34,22 @@ async function readPage(url: URL, signal: AbortSignal) {
         chunks.push(chunk);
       });
       response.on("error", reject);
-      response.on("end", () => resolve({ status: response.statusCode ?? 0, location: response.headers.location, type: response.headers["content-type"] ?? "", text: Buffer.concat(chunks).toString("utf8") }));
+      // AWS WAF signals its browser check in a header (the body can be empty), not the page text.
+      const wafAction = String(response.headers["x-amzn-waf-action"] ?? "");
+      response.on("end", () => resolve({ status: response.statusCode ?? 0, location: response.headers.location, type: response.headers["content-type"] ?? "", text: Buffer.concat(chunks).toString("utf8"), challenge: /challenge|captcha/i.test(wafAction) }));
     });
     req.on("error", reject);
     req.end();
   });
 }
+
+// A robots.txt answered by a human-verification page (Cloudflare "Just a moment…", or an AWS WAF
+// `x-amzn-waf-action: challenge` response) has rules
+// that exist but can't be read by a plain request — distinct from rules that refuse. Worded as a
+// human-verification stop (not "robots rules", which callers treat as a final refusal) so price
+// collection can read the rules in a browser once a person clears the check.
+export const ROBOTS_BEHIND_CHALLENGE = "Collection stopped: robots.txt is behind a human-verification challenge; its rules can only be read in a browser once the check is cleared.";
+const challengeMarkers = /just a moment|performing security verification|cf-chl-|challenge-platform|captcha|verify you are human|checking your browser/i;
 
 // Shared SSRF-safe, robots-respecting fetch behind both collectPublicWebsite (HTML pages) and
 // collectPublicResource (e.g. a sitemap.xml for product detection) — same redirect/robots/status
@@ -56,6 +66,7 @@ async function collectPublicResource(input: string, accept: RegExp, { detectChal
       url = normalizePublicUrl(new URL(url.pathname + url.search, new URL(robots.location, url).origin).href);
       continue;
     }
+    if (robots.status !== 404 && robots.status !== 200 && (robots.challenge || challengeMarkers.test(robots.text))) throw new Error(ROBOTS_BEHIND_CHALLENGE);
     if (robots.status !== 404 && (robots.status !== 200 || !/text\/plain/i.test(robots.type) || !robotsAllows(robots.text, url.pathname))) {
       throw new Error("Collection stopped: robots rules could not be confirmed or do not permit this page. Review it manually.");
     }

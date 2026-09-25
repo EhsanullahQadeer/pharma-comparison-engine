@@ -1,9 +1,9 @@
 import type { DiscoveryRunStatus, DiscoverySource } from "@/generated/prisma/client";
 import { computeNextRunAt } from "@/lib/discovery/cadence";
 import { decryptCredentials } from "@/lib/discovery/credentials-crypto";
-import { enrichWithDeepSeekWeb } from "@/lib/discovery/deepseek-web-enrichment";
+import { disconnectDeepSeekBrowser, enrichWithDeepSeekWeb } from "@/lib/discovery/deepseek-web-enrichment";
 import { assignedEnrichmentWorker } from "@/lib/discovery/enrichment-worker";
-import { enrichWithGoogleAi } from "@/lib/discovery/google-ai-enrichment";
+import { disconnectGoogleAiBrowser, enrichWithGoogleAi } from "@/lib/discovery/google-ai-enrichment";
 import { findMatchingProvider } from "@/lib/discovery/identifier-match";
 import { getAdapter } from "@/lib/discovery/registry";
 import { prisma } from "@/lib/prisma";
@@ -19,6 +19,16 @@ function decryptSourceCredentials(source: DiscoverySource): Record<string, strin
   } catch {
     return null;
   }
+}
+
+// Runs currently using the debug Chrome. When the last one ends, discovery detaches from Chrome so a
+// person can sign into Google/DeepSeek between runs (their bot checks loop while automation is
+// attached); overlapping runs (cron + "Run now") keep the connection until both are done.
+let activeEnrichmentRuns = 0;
+
+async function releaseEnrichmentBrowsers() {
+  activeEnrichmentRuns -= 1;
+  if (activeEnrichmentRuns === 0) await Promise.all([disconnectGoogleAiBrowser(), disconnectDeepSeekBrowser()]);
 }
 
 // Shared orchestration for both the cron route handler and the staff "Run now" action. Never lets
@@ -49,6 +59,7 @@ export async function runSource(source: DiscoverySource, options?: { triggeredBy
     for (const record of records) {
       if (!await isDuplicate(source.id, record)) queues[assignedEnrichmentWorker(source.id, record)].push(record);
     }
+    activeEnrichmentRuns += 1;
     const counts = await Promise.all(Object.entries(queues).map(async ([worker, queue]) => {
       let count = 0;
       for (const record of queue) {
@@ -61,7 +72,7 @@ export async function runSource(source: DiscoverySource, options?: { triggeredBy
         count += 1;
       }
       return count;
-    }));
+    })).finally(releaseEnrichmentBrowsers);
     candidatesFound = counts.reduce((total, count) => total + count, 0);
   } catch (error) {
     status = "FAILURE";

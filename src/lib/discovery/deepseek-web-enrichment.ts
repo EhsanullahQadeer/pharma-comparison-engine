@@ -1,5 +1,6 @@
 import { chromium, type Browser, type Page } from "playwright";
 
+import { cdpUrlVariants, ensureDebugChrome } from "@/lib/browser/debug-chrome";
 import { googleAiCitationUrls } from "@/lib/discovery/google-ai-citations";
 import { isManualReviewCollectionStop } from "@/lib/discovery/google-ai-enrichment";
 import { collectDiscoveryHomepage } from "@/lib/discovery/homepage-collection";
@@ -13,18 +14,23 @@ const productListingPathPattern = /\/(?:products?|shop|treatments?|medicines?|me
 
 let cdpBrowserPromise: Promise<Browser> | null = null;
 
-function cdpUrls() {
-  const urls = [DEEPSEEK_CDP_URL];
-  if (DEEPSEEK_CDP_URL.includes("127.0.0.1")) urls.push(DEEPSEEK_CDP_URL.replace("127.0.0.1", "localhost"));
-  if (DEEPSEEK_CDP_URL.includes("localhost")) urls.push(DEEPSEEK_CDP_URL.replace("localhost", "127.0.0.1"));
-  return [...new Set(urls)];
+// Detaches from the debug Chrome (leaving the window open) once a run is over: DeepSeek's hCaptcha
+// keeps looping while automation is attached, so signing in needs nothing attached. The next run
+// reconnects.
+export async function disconnectDeepSeekBrowser() {
+  const pending = cdpBrowserPromise;
+  cdpBrowserPromise = null;
+  const browser = await pending?.catch(() => undefined);
+  await browser?.close().catch(() => undefined);
 }
 
 async function openDeepSeekPage() {
   if (!cdpBrowserPromise) {
     cdpBrowserPromise = (async () => {
+      // Reopens the project's signed-in debug Chrome if an admin closed it, before attaching.
+      const started = await ensureDebugChrome(DEEPSEEK_CDP_URL);
       let lastError: unknown;
-      for (const url of cdpUrls()) {
+      for (const url of cdpUrlVariants(DEEPSEEK_CDP_URL)) {
         try {
           const browser = await chromium.connectOverCDP(url);
           browser.on("disconnected", () => { cdpBrowserPromise = null; });
@@ -32,7 +38,8 @@ async function openDeepSeekPage() {
         } catch (error) { lastError = error; }
       }
       const detail = lastError instanceof Error ? ` Last error: ${lastError.message}` : "";
-      throw new Error(`DeepSeek Chrome debugging session is not reachable at ${cdpUrls().join(" or ")}. Sign into DeepSeek in a normal Chrome session with remote debugging, then retry.${detail}`);
+      const startNote = started ? "" : " Chrome could not be started automatically (is Google Chrome installed? HUMAN_SCRAPE_CHROME_PATH can point to it).";
+      throw new Error(`DeepSeek Chrome debugging session is not reachable at ${cdpUrlVariants(DEEPSEEK_CDP_URL).join(" or ")}.${startNote} Sign into DeepSeek there, then retry.${detail}`);
     })().catch(error => { cdpBrowserPromise = null; throw error; });
   }
   const browser = await cdpBrowserPromise;

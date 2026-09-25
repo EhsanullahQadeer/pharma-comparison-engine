@@ -25,7 +25,7 @@ const statusBadges = {
 // variant-scrape-store.ts). Hidden until a scrape starts; stays after it ends so the full log and
 // result can be read, until dismissed.
 export function ProductVariantScrapeProgress() {
-  const { status, label, humanAssist, log, result, error } = useSyncExternalStore(subscribeVariantScrape, getVariantScrapeSnapshot, () => idleVariantScrape);
+  const { status, label, log, result, error } = useSyncExternalStore(subscribeVariantScrape, getVariantScrapeSnapshot, () => idleVariantScrape);
   const logRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -36,16 +36,18 @@ export function ProductVariantScrapeProgress() {
   if (status === "idle") return null;
   const badge = statusBadges[status];
   const isRunning = status === "running";
+  // The run only needs a person while its latest step is waiting on a pharmacy's security check.
+  const waitingForCheck = isRunning && /security check|waiting for verification/i.test(log.at(-1) ?? "");
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center gap-2 text-sm">
           {isRunning ? <Loader2 aria-hidden="true" className="size-4 animate-spin text-muted-foreground" /> : null}
-          {humanAssist ? "Human scrape" : "Price scrape"}: {label}
+          Price scrape: {label}
           <Badge variant={badge.variant}>{badge.label}</Badge>
         </CardTitle>
-        {isRunning && humanAssist ? <CardDescription>Complete any verification in the Chrome scraping window on the server computer. Scraping resumes automatically; keep the window open.</CardDescription> : null}
+        {waitingForCheck ? <CardDescription>A pharmacy is showing a security check. Complete it in the Chrome window on the server computer; scraping resumes automatically. Keep the window open.</CardDescription> : null}
         {!isRunning && (
           <CardAction>
             <Button type="button" size="icon-sm" variant="ghost" onClick={dismissVariantScrape}>

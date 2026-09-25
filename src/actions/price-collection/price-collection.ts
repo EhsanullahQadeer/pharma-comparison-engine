@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import type { PriceScrapeCadence, PriceScrapeStatus } from "@/generated/prisma/client";
 import { recordAuditLog } from "@/lib/audit-log";
 import { scrapeProductPrice } from "@/lib/price-collection/scrape-price";
+import { isGenericFormulation } from "@/lib/price-collection/variant-label";
 import { prisma } from "@/lib/prisma";
 import { requireStaffRole } from "@/lib/staff-auth";
 
@@ -39,7 +40,7 @@ function statusForError(message: string): PriceScrapeStatus {
 export async function collectPriceForMatch(matchId: string, options: { actorId?: string; humanAssist?: boolean } = {}) {
   const match = await prisma.productMatch.findUnique({
     where: { id: matchId },
-    include: { productVariant: { select: { strengthMg: true, packQuantity: true } } },
+    include: { productVariant: { select: { strengthMg: true, packQuantity: true, formulation: true } } },
   });
   if (!match) throw new Error("Product match not found.");
   if (match.status !== "CONFIRMED" || !match.productVariantId) throw new Error("Confirm this match with a product variant before collecting a price.");
@@ -49,7 +50,9 @@ export async function collectPriceForMatch(matchId: string, options: { actorId?:
     const scraped = await scrapeProductPrice(match.candidateUrl, {
       matchedTokens: match.matchedTokens,
       // A page can carry a match per strength/pack, so only this match's exact variant may be priced.
-      variant: match.productVariant ?? undefined,
+      variant: match.productVariant
+        ? { strengthMg: match.productVariant.strengthMg, packQuantity: match.productVariant.packQuantity, generic: isGenericFormulation(match.productVariant.formulation) }
+        : undefined,
       humanAssist: options.humanAssist,
     });
 

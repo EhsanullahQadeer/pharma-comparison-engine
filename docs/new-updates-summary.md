@@ -1,8 +1,42 @@
 # Product updates
 
+## 2026-09-25
+
+- Pharmacy discovery and price scraping now let go of the Chrome window when they finish. You can sign into Google or DeepSeek in that window between runs without its "are you a robot" check repeating endlessly.
+
+- The admin Reviews page now has a search bar. Type a pharmacy name, website, postcode, link or any other detail to narrow the table you're viewing. It works on every tab, and the counts on each tab update to show how many results match.
+
+- If the Chrome window used for pharmacy discovery and price scraping has been closed, clicking "Run now" on the Discovery sources page, or scraping prices, now opens it again automatically. Google and DeepSeek sign-ins are kept, so you don't need to reopen it by hand first.
+
+- Boots' prices were rechecked and corrected. Viagra 50mg (4 tablets) had been stored at £60, which was actually the price of Boots' "ED Trial Pack". It's now £30. Boots' Viagra 25mg and 100mg (4 tablets) and generic tadalafil 5mg daily (28 tablets) prices were added. Price scraping no longer mistakes a multi-medicine trial pack for a single product, and now prefers prescription Viagra and Cialis over their over-the-counter versions when a pharmacy lists both.
+
+- Price scraping now works on pharmacies whose site rules are hidden behind a security check: Peak, Pharmica, Oxford Online Pharmacy and Your Medicals. When a check appears, the scrape opens the project's Chrome window so it can be completed, reads the site's rules there, and only reads prices if the rules allow it. Twelve new prices were added from Pharmica, Oxford Online Pharmacy and Your Medicals, and Peak's prices were confirmed.
+
+- Price scraping can also read three more shop layouts: Pharmica's per-tablet price lists, strength-by-pack price tables such as Oxford Online Pharmacy's, and Shopify shops such as Your Medicals, Everyday Meds, 365 Pharmacist and 121 Pharmacy.
+
+- Peak Pharmacy prices were added for six catalogue products: branded Viagra 25mg, 50mg and 100mg (4 tablets), branded Cialis 10mg and 20mg (4 tablets), and generic tadalafil 5mg daily (28 tablets). Peak's security check was completed by hand in a Chrome window before the prices were read, after confirming its site rules allow these pages.
+
+- Price scraping is now stricter about branded versus generic medicines. A generic product that only mentions the brand in its name, such as "Sildenafil (Viagra) Tablets", is no longer taken as a branded Viagra price, and a branded Viagra page is no longer taken as generic sildenafil. Seriva was checked: it only sells generic sildenafil in 4-tablet packs, which don't match any catalogue product, so no prices were added for it.
+
+- Mail My Meds is now listed with prices for all seven catalogue products, marked out of stock because the pharmacy currently shows everything as unavailable. Price scraping can now read Mail My Meds' strength and pack options, so its prices and stock status update when it's scraped again.
+
+- Price scraping can now read Treated's price checker, where each strength's pack prices only appear after you choose the strength. Treated's prices for all seven catalogue products were added: Viagra 25mg, 50mg and 100mg (4 tablets), generic sildenafil 100mg (8 tablets, currently out of stock), Cialis 10mg and 20mg (4 tablets) and generic tadalafil 5mg daily (28 tablets). Treated's prices include delivery and the online consultation.
+
+- Price scraping can now read the strength and pack options on Rai's Pharmacy and Prime Med Pharmacy, which use a pharmacy shop system whose prices only show after you pick options. Eight prices were added from them: Viagra 25mg, 50mg and 100mg (4 tablets) at both pharmacies, plus Cialis 10mg and 20mg (4 tablets) at Rai's. The Viagra prices are marked for checking before publishing, because the pages say the product may come from a different manufacturer and the prices look like generic sildenafil prices.
+
+- Price scraping can now read strength and pack-size dropdowns on pharmacy shops built with WooCommerce, such as Pharmaceutra, Razi Meds, Be Online and Newtons Chemist. It picks exactly the chosen strength and pack, and keeps branded and generic options apart when a shop lists both in the same dropdown.
+
+- The Product variants page now has one "Scrape prices" button instead of separate "Scrape" and "Human scrape" buttons. For each pharmacy it tries the quick methods first, then automatically opens the page in a background browser. Only if a pharmacy shows a security check does a Chrome window open on the server computer, and the progress panel then asks you to complete the check. A check that isn't completed now skips just that pharmacy instead of stopping the whole scrape.
+
+- Price scraping never opens a pharmacy's website in a browser after the site has said it doesn't allow automated visits.
+
+- Well Pharmacy prices are now included. Well only lists per-pack prices as subscriptions, so these are saved as recurring prices rather than one-off purchases.
+
+- Price scraping can now read prices from pharmacy shops built on the BigCommerce platform, such as Well, and only accepts a price when the page names the exact strength and pack size. If Well shows a security check, the scrape opens a Chrome window for you to complete it.
+
 ## 2026-09-24
 
-- 47 new pharmacy prices were added across 10 pharmacies, covering all seven catalogue products, each checked by hand against the pharmacy's own website. They are all unpublished and waiting for staff review, and each is set up so future price scrapes go straight to its product page. Pharmacies whose websites block automated visits, or that don't show a clear price for an exact strength and pack size, were skipped.
+- 74 new pharmacy prices were added across 18 pharmacies, covering all seven catalogue products, each checked by hand against the pharmacy's own website. They are all unpublished and waiting for staff review, and each is set up so future price scrapes go straight to its product page. Pharmacies whose websites block automated visits, or that don't show a clear price for an exact strength and pack size, were skipped.
 
 - If one pharmacy page lists several strengths or pack sizes, each price you add by hand for that page now counts as its own confirmed match, rather than only the first one.
 

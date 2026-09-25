@@ -6,11 +6,9 @@ import { requireStaffRole } from "@/lib/staff-auth";
 // Server-Sent Events endpoint behind ProductVariantPriceActions' live progress panel — a plain
 // server action can only return once, so this Route Handler streams runVariantScrape's onProgress
 // callback out as it happens instead. GET (not POST) so the client can use a native EventSource,
-// which sends the staff session cookie automatically for this same-origin request; humanAssist
-// rides along as a query param since EventSource can't send a request body.
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+// which sends the staff session cookie automatically for this same-origin request.
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const humanAssist = new URL(request.url).searchParams.get("assisted") === "true";
 
   let staffUser;
   try {
@@ -28,7 +26,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
       }
       try {
-        const result = await runVariantScrape(id, humanAssist, staffUser.id, (message) => send("progress", { message }));
+        const result = await runVariantScrape(id, staffUser.id, (message) => send("progress", { message }));
         revalidatePath("/admin/catalogue/product-variants");
         revalidatePath(`/admin/catalogue/product-variants/${id}/prices`);
         send("done", result);

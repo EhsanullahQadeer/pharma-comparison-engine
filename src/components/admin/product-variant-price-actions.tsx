@@ -17,12 +17,9 @@ export function ProductVariantPriceActions({ id, label }: { id: string; label: s
 
   return (
     <div className="flex justify-end gap-1">
-      <Button type="button" size="icon-sm" variant="outline" disabled={isRunning} onClick={() => startVariantScrape(id, label, false)}>
+      <Button type="button" size="sm" variant="outline" disabled={isRunning} onClick={() => startVariantScrape(id, label)}>
         <RefreshCw aria-hidden="true" className={cn("size-4", isThisRow && "animate-spin")} />
-        <span className="sr-only">Scrape prices for this variant</span>
-      </Button>
-      <Button type="button" size="sm" variant="outline" disabled={isRunning} onClick={() => startVariantScrape(id, label, true)}>
-        Human scrape
+        Scrape prices
       </Button>
       <Link href={`/admin/catalogue/product-variants/${id}/prices`} className={buttonVariants({ size: "icon-sm", variant: "outline" })}>
         <BarChart3 aria-hidden="true" className="size-4" />
