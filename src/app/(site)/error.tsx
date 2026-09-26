@@ -17,11 +17,11 @@ export default function SiteError({ error, reset }: { error: Error & { digest?: 
       <p className="text-sm text-muted-foreground">Something went wrong</p>
       <h1 className="mt-4 text-4xl font-semibold">This page could not be shown</h1>
       <p className="mt-4 max-w-2xl text-muted-foreground">
-        An unexpected error stopped this page from loading. Nothing was saved or changed as a result — try again, or head back to the build progress overview.
+        An unexpected error stopped this page from loading. Nothing was saved or changed as a result — try again, or browse every page on the site.
       </p>
       <div className="mt-6 flex flex-wrap gap-3">
         <button type="button" onClick={reset} className="rounded-full bg-primary px-5 py-3 font-medium text-foreground hover:bg-primary/80">Try again</button>
-        <Link href="/ed/roadmap" className="rounded-full border border-border px-5 py-3 font-medium hover:bg-muted">View build progress</Link>
+        <Link href="/ed/site-map" className="rounded-full border border-border px-5 py-3 font-medium hover:bg-muted">Browse all pages</Link>
       </div>
     </div>
   );

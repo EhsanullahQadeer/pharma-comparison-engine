@@ -12,9 +12,10 @@ export function SiteFooter() {
         <p>&copy; {new Date().getFullYear()} {siteConfig.brandShortName}. All rights reserved.</p>
       </div>
       <div className="mx-auto mt-6 max-w-6xl space-y-4 text-sm text-muted-foreground">
-        <p>ED comparison platform preview. Pharmacy listings and prices are coming soon. Consultations and purchases will take place with the pharmacy.</p>
+        <p>An independent comparison of registered UK pharmacies for ED treatment. Consultations and purchases take place with the pharmacy.</p>
         <nav aria-label="Footer navigation" className="flex flex-wrap gap-x-6 gap-y-3">
-          <Link href="/ed/roadmap" className="hover:underline">Build progress</Link>
+          <Link href="/ed/site-map" className="hover:underline">All pages</Link>
+          <Link href="/ed/trust/about" className="hover:underline">About</Link>
           <Link href="/ed/independence" className="hover:underline">Independence</Link>
           <Link href="/ed/privacy" className="hover:underline">Privacy</Link>
           <Link href="/ed/terms" className="hover:underline">Terms</Link>

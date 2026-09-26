@@ -9,7 +9,7 @@ export function HeroSection() {
       <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2 lg:gap-16">
         <div>
           <span className="mb-6 inline-block text-sm font-medium text-primary">
-            UK ED treatment · Platform preview
+            UK ED treatment · Independent price comparison
           </span>
           <h1 className="max-w-xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
             A clearer way to explore ED pharmacies.
@@ -24,14 +24,14 @@ export function HeroSection() {
               size="lg"
               className="rounded-full px-6"
               nativeButton={false}
-              render={<Link href="/ed/pharmacies">Explore the directory plan</Link>}
+              render={<Link href="/ed/compare">Compare prices</Link>}
             />
             <Button
               size="lg"
               variant="outline"
               className="rounded-full px-6"
               nativeButton={false}
-              render={<Link href="/ed/roadmap">See build progress</Link>}
+              render={<Link href="/ed/pharmacies">Browse pharmacies</Link>}
             />
           </div>
         </div>

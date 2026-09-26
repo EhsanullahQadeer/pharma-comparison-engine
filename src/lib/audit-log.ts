@@ -9,7 +9,7 @@ type AuditEntityType =
   | "Evidence"
   | "Article"
   | "Correction"
-  | "Referral"
+  | "AffiliateProgramme"
   | "StaffUser"
   | "DiscoverySource"
   | "DiscoveryCandidate"

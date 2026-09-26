@@ -3,6 +3,9 @@ import { AuditActivityChart } from "@/components/admin/charts/audit-activity-cha
 import { CorrectionMixChart } from "@/components/admin/charts/correction-mix-chart";
 import { EvidenceMixChart } from "@/components/admin/charts/evidence-mix-chart";
 import { OfferAvailabilityChart } from "@/components/admin/charts/offer-availability-chart";
+import { OutboundClicksChart } from "@/components/admin/charts/outbound-clicks-chart";
+import { OutboundPharmacyChart } from "@/components/admin/charts/outbound-pharmacy-chart";
+import { OutboundPlacementChart } from "@/components/admin/charts/outbound-placement-chart";
 import { ProviderFunnelChart } from "@/components/admin/charts/provider-funnel-chart";
 import { ProvidersTrendChart } from "@/components/admin/charts/providers-trend-chart";
 import { PurchaseModelChart } from "@/components/admin/charts/purchase-model-chart";
@@ -21,7 +24,7 @@ export default async function AnalyticsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Analytics</h1>
-        <p className="mt-1 text-sm text-muted-foreground">A full view across the provider pipeline, catalogue and review queues.</p>
+        <p className="mt-1 text-sm text-muted-foreground">A full view across the provider pipeline, catalogue, review queues and clicks to pharmacies.</p>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <ProviderFunnelChart data={analytics.funnel} />
@@ -30,6 +33,9 @@ export default async function AnalyticsPage() {
         <RegulatorMixChart data={analytics.regulatorMix} />
         <OfferAvailabilityChart data={analytics.offerAvailabilityMix} />
         <PurchaseModelChart data={analytics.offerPurchaseModelMix} />
+        <OutboundClicksChart data={analytics.outboundClicks} />
+        <OutboundPharmacyChart data={analytics.outboundClicks.byPharmacy} />
+        <OutboundPlacementChart data={analytics.outboundClicks} />
         <EvidenceMixChart data={analytics.evidenceMix} />
         <CorrectionMixChart data={analytics.correctionMix} />
         <AuditActivityChart data={analytics.auditActivityByDay} />

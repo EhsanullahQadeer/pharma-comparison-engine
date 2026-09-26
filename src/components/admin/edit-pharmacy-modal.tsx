@@ -11,7 +11,7 @@ import type { Provider } from "@/generated/prisma/client";
 type EditPharmacyModalProps = {
   provider: Pick<
     Provider,
-    "id" | "tradingName" | "legalName" | "websiteDomain" | "regulatorType" | "regulatorReference" | "dispensingPartnerName" | "serviceRegions"
+    "id" | "tradingName" | "legalName" | "websiteDomain" | "regulatorType" | "regulatorReference" | "dispensingPartnerName" | "serviceRegions" | "logoUrl"
   >;
   /** Icon-only trigger, for a table row. */
   compact?: boolean;

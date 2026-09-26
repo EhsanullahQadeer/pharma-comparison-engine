@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 
 type Crumb = { label: string; href: string };
 
-const defaultCrumbs: Crumb[] = [{ label: "Home", href: "/" }, { label: "ED platform", href: "/ed/roadmap" }];
+const defaultCrumbs: Crumb[] = [{ label: "Home", href: "/" }, { label: "All pages", href: "/ed/site-map" }];
 
 export function PageShell({ title, heading, eyebrow, description, crumbs = defaultCrumbs, aside, children }: {
   title: string;

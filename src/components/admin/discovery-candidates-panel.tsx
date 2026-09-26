@@ -20,8 +20,8 @@ const tabLabels: Record<StatusTab, string> = {
   rejected: "Rejected",
 };
 
-// Pending is the actionable queue; the other three are read-only history split by the decision
-// staff made, so promoted/rejected candidates stay findable after they leave the queue.
+// Pending is the actionable queue; the other three are history split by the decision staff made,
+// so promoted/rejected candidates stay findable (and their decision reversible) after they leave it.
 export function DiscoveryCandidatesPanel({
   pending,
   reviewed,

@@ -3,10 +3,10 @@ import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "../src/generated/prisma/client";
-import { guideDrafts } from "./lib/article-drafts-guides";
-import { safetyDrafts } from "./lib/article-drafts-safety";
+import { sourcedArticles } from "../src/lib/sourced-articles";
 
-// Inserts the first-draft ED articles as DRAFTs authored by the seeded admin account. Safe to re-run:
+// Inserts the source-checked ED articles (the content public pages show until review) as DRAFTs
+// authored by the seeded admin account. Safe to re-run:
 // a page that already has an article (in any status) is left untouched, so staff edits are never
 // overwritten. Nothing here is public; a different staff member must review and approve each one.
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
@@ -19,13 +19,13 @@ async function main() {
   if (!author) throw new Error(`No staff user with email ${email}.`);
 
   let created = 0;
-  for (const draft of [...guideDrafts, ...safetyDrafts]) {
+  for (const draft of sourcedArticles) {
     const existing = await prisma.article.findUnique({ where: { slug: draft.slug }, select: { id: true } });
     if (existing) continue;
     await prisma.article.create({ data: { ...draft, topic: draft.slug.split("/")[0], status: "DRAFT", authorId: author.id } });
     created += 1;
   }
-  console.log(`Created ${created} draft article(s); ${guideDrafts.length + safetyDrafts.length - created} already existed.`);
+  console.log(`Created ${created} draft article(s); ${sourcedArticles.length - created} already existed.`);
 }
 
 main()

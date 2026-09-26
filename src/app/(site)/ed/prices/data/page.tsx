@@ -49,8 +49,8 @@ export default async function PriceDataPage() {
       </ContentSection>
       <ContentSection id="freshness" title="How we handle prices that may be out of date">
         <PointList points={[
-          "Checked within 24 hours: shown and ranked.",
-          "Checked 24 to 48 hours ago: shown separately, marked “may have changed”, and not ranked.",
+          "Checked within 24 hours: shown and ranked by price.",
+          "Checked 24 to 48 hours ago: still ranked by price, marked “may have changed”.",
           "Older than 48 hours: hidden until it's checked again (we keep the history).",
           "Out of stock: shown separately and not ranked.",
         ]} />

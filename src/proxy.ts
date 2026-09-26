@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/auth";
 
-// Convenience redirect only — the authoritative role/session check lives in
-// src/app/admin/layout.tsx, since Server Functions can bypass proxy matchers.
+// Convenience redirect only — the authoritative check is getStaffUser() (src/lib/staff-auth.ts) in
+// the admin layout and every staff action, since Server Functions can bypass proxy matchers. Only a
+// staff session counts: partner-portal accounts will share this login.
 export default auth((req) => {
-  const isLoggedIn = Boolean(req.auth);
+  const isStaff = req.auth?.user?.kind === "staff";
   const { pathname } = req.nextUrl;
 
-  if (pathname.startsWith("/admin") && pathname !== "/admin/login" && !isLoggedIn) {
+  if (pathname.startsWith("/admin") && pathname !== "/admin/login" && !isStaff) {
     return NextResponse.redirect(new URL("/admin/login", req.nextUrl));
   }
 });

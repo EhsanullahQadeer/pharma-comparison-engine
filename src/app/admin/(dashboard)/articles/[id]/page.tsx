@@ -1,7 +1,6 @@
 import { ArrowLeft, ExternalLink } from "lucide-react";
 
 import { getArticle, getArticles } from "@/actions/articles/articles";
-import { auth } from "@/auth";
 import { ArticleEditor } from "@/components/admin/article-editor";
 import { ArticleReviewActions } from "@/components/admin/article-review-actions";
 import { Badge } from "@/components/common/badge";
@@ -11,6 +10,7 @@ import { articleSlugOptions } from "@/lib/article-options";
 import { formatShortDate } from "@/lib/comparison";
 import { articleStatusBadgeVariant, articleStatusLabels } from "@/lib/content-labels";
 import { edHref } from "@/lib/ed-pages";
+import { getStaffUser } from "@/lib/staff-auth";
 
 import type { Metadata } from "next";
 
@@ -18,7 +18,7 @@ export const metadata: Metadata = { title: "Edit article", robots: { index: fals
 
 export default async function EditArticlePage(props: PageProps<"/admin/articles/[id]">) {
   const { id } = await props.params;
-  const [article, articles, session] = await Promise.all([getArticle(id), getArticles(), auth()]);
+  const [article, articles, staffUser] = await Promise.all([getArticle(id), getArticles(), getStaffUser()]);
   const slugOptions = articleSlugOptions(articles.map((entry) => entry.slug), article.slug);
 
   return (
@@ -45,7 +45,7 @@ export default async function EditArticlePage(props: PageProps<"/admin/articles/
       <Card>
         <CardHeader><CardTitle>Clinical review</CardTitle></CardHeader>
         <CardContent>
-          <ArticleReviewActions id={article.id} status={article.status} isAuthor={session?.user.id === article.author.id} reviewNotes={article.reviewNotes} />
+          <ArticleReviewActions id={article.id} status={article.status} isAuthor={staffUser?.id === article.author.id} reviewNotes={article.reviewNotes} />
         </CardContent>
       </Card>
       <Card>

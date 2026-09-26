@@ -2,7 +2,6 @@ import { AlertTriangle, BarChart3, CheckCircle2, Clock3, Pill } from "lucide-rea
 
 import { getAdminAnalytics } from "@/actions/analytics/analytics";
 import { getProviderStatusCounts, getProviders } from "@/actions/providers/providers";
-import { auth } from "@/auth";
 import { AddPharmacyModal } from "@/components/admin/add-pharmacy-modal";
 import { ProviderFunnelChart } from "@/components/admin/charts/provider-funnel-chart";
 import { ProvidersTrendChart } from "@/components/admin/charts/providers-trend-chart";
@@ -14,6 +13,7 @@ import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@
 import Link from "@/components/Link";
 import type { ProviderStatus } from "@/generated/prisma/client";
 import { providerStatusLabels, providerStatusBadgeVariant } from "@/lib/provider-labels";
+import { getStaffUser } from "@/lib/staff-auth";
 
 import type { Metadata } from "next";
 
@@ -23,8 +23,8 @@ const inReviewStatuses: ProviderStatus[] = ["DISCOVERED", "IDENTITY_VERIFIED", "
 const attentionStatuses: ProviderStatus[] = ["TEMPORARILY_WITHHELD", "ARCHIVED"];
 
 export default async function AdminDashboardPage() {
-  const [session, counts, recentProviders, analytics] = await Promise.all([
-    auth(),
+  const [staffUser, counts, recentProviders, analytics] = await Promise.all([
+    getStaffUser(),
     getProviderStatusCounts(),
     getProviders(undefined, 5),
     getAdminAnalytics(),
@@ -41,7 +41,7 @@ export default async function AdminDashboardPage() {
     { label: "Needs attention", value: sum(attentionStatuses), icon: AlertTriangle },
   ];
 
-  const firstName = session?.user.name.split(" ")[0] ?? "there";
+  const firstName = staffUser?.name.split(" ")[0] ?? "there";
 
   return (
     <div className="space-y-6">

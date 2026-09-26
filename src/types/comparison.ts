@@ -1,4 +1,4 @@
-import type { Availability, Ingredient, PurchaseModel, RegulatorType } from "@/generated/prisma/client";
+import type { Availability, DiscountValueType, Ingredient, PurchaseModel, RegulatorType } from "@/generated/prisma/client";
 
 // Roadmap §4.5 freshness: "fresh" is ranked, "stale" is shown outside the ranking with a
 // may-have-changed label, "expired" is never shown publicly (history is kept internally).
@@ -22,6 +22,19 @@ export type PublicVariant = {
   packQuantity: number;
 };
 
+// A staff-entered, unexpired discount on a published offer. Never estimated or inferred — if a
+// pharmacy has none recorded, the public site says so rather than implying one exists.
+export type PublicDiscount = {
+  id: string;
+  eligibility: string;
+  code: string | null;
+  valueType: DiscountValueType;
+  valuePence: number | null;
+  valuePercent: number | null;
+  stackable: boolean;
+  expiresAt: Date | null;
+};
+
 // A published offer from a PUBLISHED provider, with totals and freshness already derived.
 export type PublicOffer = {
   id: string;
@@ -29,6 +42,7 @@ export type PublicOffer = {
   providerName: string;
   providerSlug: string;
   providerDomain: string;
+  providerLogoUrl: string | null;
   variant: PublicVariant;
   itemPricePence: number;
   deliveryFeePence: number;
@@ -44,6 +58,7 @@ export type PublicOffer = {
   sourceUrl: string;
   checkedAt: Date;
   freshness: Exclude<FreshnessTier, "expired">;
+  discounts: PublicDiscount[];
 };
 
 export type PublicProviderSummary = {
@@ -52,6 +67,7 @@ export type PublicProviderSummary = {
   name: string;
   legalName: string;
   websiteDomain: string;
+  logoUrl: string | null;
   regulatorType: RegulatorType;
   regulatorReference: string;
   serviceRegions: string[];

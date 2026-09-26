@@ -42,7 +42,7 @@ export default async function RepeatCostsPage() {
         {recurring.length === 0 ? (
           <PublicEmptyState icon={Repeat} title="No subscription prices published yet" description="None of the pharmacies we list currently publish a recurring plan we've verified. One-off pack prices are on the comparison page." action={{ href: "/ed/compare", label: "Compare one-off prices" }} />
         ) : (
-          <OfferResults offers={recurring} sort="tablet" now={new Date()} />
+          <OfferResults offers={recurring} sort="tablet" now={new Date()} placement="REPEAT_COSTS" />
         )}
       </ContentSection>
       <CallToAction title="Compare the full cost of a pack" body="See every current price with delivery and consultation fees added in." href="/ed/compare" label="Compare prices" />

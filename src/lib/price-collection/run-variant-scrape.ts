@@ -215,12 +215,19 @@ export async function runVariantScrape(
   const variantSpec = { strengthMg: variant.strengthMg, packQuantity: variant.packQuantity, generic: isGenericFormulation(variant.formulation) };
 
   const matches = await prisma.productMatch.findMany({
-    where: { matchedIngredient: variant.ingredient, status: "CONFIRMED" },
+    // An exact variant match is authoritative. Ingredient-level matches that staff have not yet
+    // assigned remain useful discovery fallbacks, but pages already assigned to another variant
+    // (for example prescription Viagra) must never be tried for Viagra Connect.
+    where: {
+      matchedIngredient: variant.ingredient,
+      status: "CONFIRMED",
+      OR: [{ productVariantId }, { productVariantId: null }],
+    },
     select: { id: true, providerId: true, productVariantId: true, offerId: true, candidateUrl: true, provider: { select: { tradingName: true, websiteDomain: true } } },
     orderBy: { reviewedAt: "desc" },
   });
   // One page per pharmacy: its match for this exact variant when there is one (e.g. a staff-entered
-  // price's product page), otherwise its latest ingredient-level match.
+  // price's product page), otherwise its latest unassigned ingredient-level match.
   matches.sort((a, b) => Number(b.productVariantId === productVariantId) - Number(a.productVariantId === productVariantId));
   // With no confirmed matches, continue to the provider-site fallback below.
   // Newly discovered pharmacies can have product pages before staff match them.

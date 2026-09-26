@@ -53,7 +53,7 @@ export async function IngredientPricesView({ ingredient }: { ingredient: Ingredi
               {summaries.map((summary, index) => <VariantPriceCard key={summary.variant.id} summary={summary} index={index} />)}
             </ul>
           </section>
-          <OfferResults offers={offers} sort="tablet" now={now} limit={TOP_OFFERS} />
+          <OfferResults offers={offers} sort="tablet" now={now} placement="INGREDIENT_PRICES" limit={TOP_OFFERS} />
           <Link href={comparisonHref({ ingredient })} className="group mt-6 inline-flex items-center gap-2 text-sm font-medium underline-offset-4 hover:underline">
             See all {offers.length} {label.toLowerCase()} prices<ArrowRight aria-hidden="true" className="size-4 transition-transform group-hover:translate-x-1" />
           </Link>

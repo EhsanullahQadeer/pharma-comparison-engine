@@ -134,9 +134,12 @@ for what's actually built vs. in progress.
    wrong is a real risk.
 2. **All data access goes through `src/actions/**` server actions — never
    query Prisma directly from a page/component, and never add a REST route
-   for internal data** (the one exception is `src/app/api/discovery` and
+   for internal data** (the exceptions are `src/app/api/discovery` and
    `src/app/api/auth`, which are genuine external/NextAuth integration
-   points, not internal data access). Actions are colocated by domain
+   points, and `src/app/go/[offerId]`, the public outbound-click redirect —
+   its data access lives in `src/actions/referrals/outbound-clicks.ts`,
+   which is intentionally *not* a `"use server"` module so click-writing
+   isn't exposed as a callable endpoint). Actions are colocated by domain
    (`src/actions/analytics`, `audit-log`, `auth`, `corrections`,
    `discounts`, `discovery`, `evidence`, `offers`, `price-collection`,
    `product-matches`, `product-variants`, `providers`, `staff`); add to or
@@ -227,7 +230,11 @@ for what's actually built vs. in progress.
     `ProviderStatus`, confirms a `ProductMatch`, or publishes/edits an
     `Offer`/`Discount` must call `requireStaffRole` (`src/lib/staff-auth.ts`)
     with the appropriate role first — don't add a new write path that
-    bypasses this gate. `Offer`s created by price collection must stay
+    bypasses this gate. Staff pages that need the signed-in user call
+    `getStaffUser()` (same file), never a bare `auth()`: a session alone
+    isn't proof of staff (partner-portal accounts will share the login),
+    and `getStaffUser()` also re-checks the account is still active and
+    reads the current role. `Offer`s created by price collection must stay
     unpublished (`publishedAt: null`) until a staff member explicitly
     publishes them — never auto-publish a scraped price.
 14. **No barrel/index re-export files.** Import each component/util directly

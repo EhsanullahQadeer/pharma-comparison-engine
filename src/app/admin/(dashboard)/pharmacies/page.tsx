@@ -1,12 +1,12 @@
 import { Search } from "lucide-react";
 
 import { getProviders } from "@/actions/providers/providers";
-import { auth } from "@/auth";
 import { AddPharmacyModal } from "@/components/admin/add-pharmacy-modal";
 import { PharmaciesTable } from "@/components/admin/pharmacies-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/card";
 import { EmptyState } from "@/components/common/empty-state";
 import { Input } from "@/components/common/input";
+import { getStaffUser } from "@/lib/staff-auth";
 
 import type { Metadata } from "next";
 
@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: "Pharmacies", robots: { index: false,
 export default async function AdminPharmaciesPage(props: PageProps<"/admin/pharmacies">) {
   const { q } = await props.searchParams;
   const query = typeof q === "string" ? q : undefined;
-  const [providers, session] = await Promise.all([getProviders(query), auth()]);
+  const [providers, staffUser] = await Promise.all([getProviders(query), getStaffUser()]);
 
   return (
     <div className="space-y-6">
@@ -38,7 +38,7 @@ export default async function AdminPharmaciesPage(props: PageProps<"/admin/pharm
           {providers.length === 0 ? (
             <EmptyState title={query ? "No providers match that search." : "No providers yet. Add the first pharmacy manually to start the catalogue."} />
           ) : (
-            <PharmaciesTable providers={providers} role={session?.user?.role ?? null} />
+            <PharmaciesTable providers={providers} role={staffUser?.role ?? null} />
           )}
         </CardContent>
       </Card>

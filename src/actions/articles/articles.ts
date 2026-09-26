@@ -9,6 +9,7 @@ import type { StaffRole } from "@/generated/prisma/client";
 import { recordAuditLog } from "@/lib/audit-log";
 import { edHref } from "@/lib/ed-pages";
 import { prisma } from "@/lib/prisma";
+import { revalidatePublicSite } from "@/lib/revalidate-public-site";
 import { requireStaffRole } from "@/lib/staff-auth";
 
 export type ArticleActionState = { error?: string; id?: string };
@@ -28,7 +29,7 @@ function revalidateArticle(slug: string, id?: string) {
   revalidatePath("/admin/articles");
   if (id) revalidatePath(`/admin/articles/${id}`);
   revalidatePath(edHref(slug));
-  revalidatePath("/ed", "layout");
+  revalidatePublicSite();
 }
 
 export async function getArticles() {

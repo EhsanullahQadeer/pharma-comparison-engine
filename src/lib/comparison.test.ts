@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import type { PublicOffer } from "@/types/comparison";
@@ -22,6 +23,7 @@ function offer(overrides: Partial<PublicOffer> & Pick<PublicOffer, "id" | "provi
     providerName: overrides.providerId,
     providerSlug: overrides.providerId,
     providerDomain: `${overrides.providerId}.co.uk`,
+    providerLogoUrl: null,
     variant: { id: "v", ingredient: "SILDENAFIL", brandName: null, strengthMg: 50, formulation: "Film-coated tablet", packQuantity: 8 },
     itemPricePence: overrides.deliveredTotalPence,
     deliveryFeePence: 0,
@@ -34,6 +36,7 @@ function offer(overrides: Partial<PublicOffer> & Pick<PublicOffer, "id" | "provi
     sourceUrl: "https://example.test",
     checkedAt: new Date(),
     freshness: "fresh",
+    discounts: [],
     ...overrides,
   };
 }
@@ -55,7 +58,7 @@ test("freshness tiers follow the 24h / 48h boundaries", () => {
   assert.equal(freshnessTier(new Date(now.getTime() - 49 * HOUR), now), "expired");
 });
 
-test("ranking is cheapest first with a stable id tie-break, and gates stale / out-of-stock offers", () => {
+test("ranking is cheapest first with a stable id tie-break, ranks stale offers by price and gates out-of-stock ones", () => {
   const offers = [
     offer({ id: "o3", providerId: "c", deliveredTotalPence: 1800 }),
     offer({ id: "o2", providerId: "b", deliveredTotalPence: 1800 }),
@@ -64,8 +67,8 @@ test("ranking is cheapest first with a stable id tie-break, and gates stale / ou
     offer({ id: "o5", providerId: "e", deliveredTotalPence: 800, availability: "OUT_OF_STOCK" }),
   ];
   const { ranked, other } = splitRankedOffers(offers, "total");
-  assert.deepEqual(ranked.map((entry) => entry.id), ["o2", "o3", "o1"]);
-  assert.deepEqual(other.map((entry) => entry.id), ["o5", "o4"]);
+  assert.deepEqual(ranked.map((entry) => entry.id), ["o4", "o2", "o3", "o1"]);
+  assert.deepEqual(other.map((entry) => entry.id), ["o5"]);
 });
 
 test("an indicative total never outranks a verified one, even when cheaper", () => {
@@ -89,4 +92,28 @@ test("slugs and display names", () => {
   assert.equal(displayName("PEAK PHARMACY DIRECT"), "Peak Pharmacy Direct");
   assert.equal(displayName("RAI'S PHARMACY"), "Rai's Pharmacy");
   assert.equal(displayName("medy"), "medy");
+});
+
+// M7 independence rule: commercial relationships never change inclusion or order. Ranking code
+// must not read affiliate/commission/referral data at all, and results are identical whichever
+// providers are partners.
+test("ranking is identical for partner and non-partner providers", () => {
+  const base = [
+    offer({ id: "o1", providerId: "a", deliveredTotalPence: 2100 }),
+    offer({ id: "o2", providerId: "b", deliveredTotalPence: 1900 }),
+    offer({ id: "o3", providerId: "c", deliveredTotalPence: 1900, feesVerified: false }),
+    offer({ id: "o4", providerId: "d", deliveredTotalPence: 2500 }),
+  ];
+  const expected = splitRankedOffers(base, "total").ranked.map((entry) => entry.id);
+  for (const partners of [["a"], ["d"], ["a", "c", "d"]]) {
+    const tagged = base.map((entry) => ({ ...entry, affiliateApproved: partners.includes(entry.providerId), commissionPence: partners.includes(entry.providerId) ? 800 : 0 }));
+    assert.deepEqual(splitRankedOffers(tagged, "total").ranked.map((entry) => entry.id), expected);
+  }
+});
+
+test("ranking and public offer reads never reference affiliate data", () => {
+  for (const file of ["comparison.ts", "../actions/offers/public-offers.ts", "../types/comparison.ts"]) {
+    const source = readFileSync(new URL(file, import.meta.url), "utf8");
+    assert.doesNotMatch(source, /affiliate|commission|referral/i, file);
+  }
 });

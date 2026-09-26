@@ -21,7 +21,7 @@ function FieldError({ messages }: { messages?: string[] }) {
 type ProviderFormProps = {
   provider?: Pick<
     Provider,
-    "id" | "tradingName" | "legalName" | "websiteDomain" | "regulatorType" | "regulatorReference" | "dispensingPartnerName" | "serviceRegions"
+    "id" | "tradingName" | "legalName" | "websiteDomain" | "regulatorType" | "regulatorReference" | "dispensingPartnerName" | "serviceRegions" | "logoUrl"
   >;
   // Prefill + a different submit action when this form is promoting a discovery candidate rather
   // than a from-scratch manual entry — mutually exclusive with `provider` (editing).
@@ -106,6 +106,15 @@ export function ProviderForm({ provider, fromCandidateId, defaultValues }: Provi
         <Label htmlFor="dispensingPartnerName">Dispensing partner (if different from trading name)</Label>
         <Input id="dispensingPartnerName" name="dispensingPartnerName" defaultValue={provider?.dispensingPartnerName ?? undefined} />
       </div>
+
+      {provider ? (
+        <div className="space-y-1.5">
+          <Label htmlFor="logoUrl">Logo</Label>
+          <Input id="logoUrl" name="logoUrl" placeholder="/pharmacy-logos/example-pharmacy-co-uk.png" defaultValue={provider.logoUrl ?? undefined} aria-describedby="logoUrl-help" />
+          <p id="logoUrl-help" className="text-xs text-muted-foreground">Shown on the public site. A path from the logo download script or an https:// image address; leave blank for initials.</p>
+          <FieldError messages={state.fieldErrors?.logoUrl} />
+        </div>
+      ) : null}
 
       <div className="space-y-1.5">
         <Label htmlFor="serviceRegions">Service regions</Label>

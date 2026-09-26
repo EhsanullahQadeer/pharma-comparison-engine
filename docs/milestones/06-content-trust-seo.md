@@ -1,6 +1,6 @@
 # M6 — Educational Content, Trust & Search Discovery
 
-**Status:** ⬜ Not started
+**Status:** 🟨 In progress — in-app article workflow, citations, provider trust pages and source-checked drafts for every guide/side-effects/tool page are built; nothing is clinically reviewed or published yet (23 drafts, 2026-09-26)
 **Depends on:** M1–M3; can overlap M4/M5
 **Roadmap:** [monj-functionality-and-ed-milestones.md § Milestone 6](../monj-functionality-and-ed-milestones.md#milestone-6--educational-content-trust-and-search-discovery)
 **Platform context:** [`00-platform-strategy.md`](00-platform-strategy.md) — the entire taxonomy below is the ED vertical's content and stays as its design record unchanged. A weight-loss deployment needs its own equivalent taxonomy (built from the weight-loss patient journey, the same way this file explicitly refused to just relabel Monj's columns for ED) — that's new content-planning work for whenever the weight-loss vertical is actually scheduled, not a retrofit of this file. One weight-loss-specific point worth flagging now: per `01-scope-and-compliance.md`'s compliance framework, weight-loss GLP-1s have no P-medicine tier, so a weight-loss vertical's price-related content stays `noindex`-gated from day one, with no equivalent of ED's "P-medicine pages can go live immediately" path.
@@ -96,28 +96,28 @@ This validates the `Article`/`Evidence` fields already planned in M3a (author, r
 
 ## Checklist
 
-- [ ] CMS vs. in-app authoring decided
-- [ ] `Article` CRUD (author / reviewer / sources / dates / revision)
-- [ ] Citation/footnote rendering component (numbered inline refs + references list)
-- [ ] Clinical review/approval workflow before publish
-- [ ] Guides library: **Understanding ED** articles (prevalence, sudden vs gradual causes, ED as a cardiovascular warning sign, medication-induced ED) — write early; this content doesn't depend on which pharmacies/providers are live yet
-- [ ] Guides library: **Beyond Medication** articles (devices, injections, pelvic floor exercises, lifestyle evidence, counselling, testosterone)
-- [ ] Guides library: **Talking About It** articles (prevalence/normalising, partner communication, performance anxiety, why people avoid their GP)
-- [ ] Guides library: Getting Started With Treatment articles, including the sildenafil-vs-tadalafil comparison, an onset & duration reference table, and a dose-strength reference chart (reclassified in from `09-retention-tools.md` — these are static reference content, not personalised tools)
-- [ ] Guides library: Travel & Practical articles
-- [ ] Guides library: Policy & News articles
-- [ ] Guides library: Managing Treatment articles
-- [ ] Side effects: Start Here articles
-- [ ] Side effects: **Urgent Warning Signs** articles (priapism, NAION, sudden hearing loss, chest pain, allergic reaction) — prioritise above all other content
-- [ ] Side effects: **Cardiovascular Safety Before Starting** articles — prioritise alongside Urgent Warning Signs
-- [ ] Side effects: **Dangerous Interactions** articles (nitrates, alpha-blockers, poppers, alcohol, grapefruit) — prioritise above all other content
-- [ ] Side effects: Common, non-urgent articles
-- [ ] Side effects: Vision & Hearing articles
-- [ ] IIEF-5 self-assessment explainer tool (clinical review required before publish)
-- [ ] Cardiovascular pre-screening checklist tool (clinical review required before publish)
+- [x] CMS vs. in-app authoring decided — in-app (`Article` model + `/admin/articles`)
+- [x] `Article` CRUD (author / reviewer / sources / dates / revision) — `/admin/articles`, `src/actions/articles/articles.ts`
+- [x] Citation/footnote rendering component (numbered inline refs + references list) — `article-markdown.tsx` + `article-view.tsx`, `src/lib/article-citations.ts`
+- [x] Clinical review/approval workflow before publish — DRAFT → IN_REVIEW → PUBLISHED; a reviewer other than the author must approve (`reviewArticle`)
+- [x] Guides library: **Understanding ED** articles (prevalence, sudden vs gradual causes, ED as a cardiovascular warning sign, medication-induced ED) — write early; this content doesn't depend on which pharmacies/providers are live yet — source-checked draft written (2026-09-26); clinical sign-off tracked under "Named clinical reviewer" below
+- [x] Guides library: **Beyond Medication** articles (devices, injections, pelvic floor exercises, lifestyle evidence, counselling, testosterone) — source-checked draft written (2026-09-26); clinical sign-off tracked under "Named clinical reviewer" below
+- [x] Guides library: **Talking About It** articles (prevalence/normalising, partner communication, performance anxiety, why people avoid their GP) — source-checked draft written (2026-09-26); clinical sign-off tracked under "Named clinical reviewer" below
+- [x] Guides library: Getting Started With Treatment articles, including the sildenafil-vs-tadalafil comparison, an onset & duration reference table, and a dose-strength reference chart (reclassified in from `09-retention-tools.md` — these are static reference content, not personalised tools) — source-checked draft written (2026-09-26); clinical sign-off tracked under "Named clinical reviewer" below
+- [x] Guides library: Travel & Practical articles — source-checked draft written (2026-09-26); clinical sign-off tracked under "Named clinical reviewer" below
+- [x] Guides library: Policy & News articles — source-checked draft written (2026-09-26); clinical sign-off tracked under "Named clinical reviewer" below
+- [x] Guides library: Managing Treatment articles — source-checked draft written (2026-09-26); clinical sign-off tracked under "Named clinical reviewer" below
+- [x] Side effects: Start Here articles — source-checked draft written (2026-09-26); clinical sign-off tracked under "Named clinical reviewer" below
+- [x] Side effects: **Urgent Warning Signs** articles (priapism, NAION, sudden hearing loss, chest pain, allergic reaction) — prioritise above all other content — source-checked draft written (2026-09-26); clinical sign-off tracked under "Named clinical reviewer" below
+- [x] Side effects: **Cardiovascular Safety Before Starting** articles — prioritise alongside Urgent Warning Signs — source-checked draft written (2026-09-26); clinical sign-off tracked under "Named clinical reviewer" below
+- [x] Side effects: **Dangerous Interactions** articles (nitrates, alpha-blockers, poppers, alcohol, grapefruit) — prioritise above all other content — source-checked draft written (2026-09-26); clinical sign-off tracked under "Named clinical reviewer" below
+- [x] Side effects: Common, non-urgent articles — source-checked draft written (2026-09-26); clinical sign-off tracked under "Named clinical reviewer" below
+- [x] Side effects: Vision & Hearing articles — source-checked draft written (2026-09-26); clinical sign-off tracked under "Named clinical reviewer" below
+- [ ] IIEF-5 self-assessment explainer tool (clinical review required before publish) — **draft written** (`tools/iief-5`); stays open until clinically reviewed
+- [ ] Cardiovascular pre-screening checklist tool (clinical review required before publish) — **draft written** (`tools/heart-health-checklist`); stays open until clinically reviewed
 - [x] Trust hub: `trust/pharmacy-evidence` and `trust/editorial-policy` routes added to `ed-pages.ts` (evidence page deliberately replaces a composite "pharmacy score")
 - [x] Trust hub: `trust/listing-disclaimer` and `trust/data-transparency` routes added to `ed-pages.ts`
-- [ ] Provider trust-page template (evidence, checked dates, unknown states)
+- [x] Provider trust-page template (evidence, checked dates, unknown states) — `/ed/pharmacies/[slug]`: registration, checked evidence with dates, "Prices are being checked" empty state
 - [x] `generateMetadata` on every public route (coming-soon preview copy; real content pending)
 - [x] `app/sitemap.ts` generated from real routes (route-derived, excludes noindex previews)
 - [ ] Named clinical reviewer assigned per published medical article

@@ -8,22 +8,22 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Editorial and clinical review policy",
-  description: "How our ED guides are written, sourced and clinically reviewed before publication, how revisions are handled and how to report a mistake.",
+  description: "How our ED guides are written, source-checked and clinically reviewed, how each guide shows which stage it has reached, and how to report a mistake.",
   alternates: { canonical: "/ed/trust/editorial-policy" },
 };
 
 const PRINCIPLES = [
-  { icon: PenLine, title: "A named author", body: "Every guide shows who wrote it." },
-  { icon: UserCheck, title: "A different, named reviewer", body: "A clinical reviewer who didn't write the guide checks it before it's published. Nobody can approve their own work." },
-  { icon: BookOpenCheck, title: "Sources you can check", body: "Every guide lists its sources, favouring the NHS, NICE, the MHRA and official medicine information." },
-  { icon: FileClock, title: "Dated and versioned", body: "Guides show their review date and revision number. Any change to a published guide sends it back for review." },
+  { icon: PenLine, title: "Every statement cited", body: "Each fact links to a numbered source, so you can check it yourself." },
+  { icon: UserCheck, title: "A different, named reviewer", body: "A clinical reviewer who didn't write the guide approves it. Nobody can approve their own work." },
+  { icon: BookOpenCheck, title: "Sources you can check", body: "We use the NHS, the MHRA, regulators and each medicine's official product information (SmPC)." },
+  { icon: FileClock, title: "Dated and versioned", body: "Guides show the date their sources were checked, or their review date and revision number once reviewed." },
 ];
 
 const STEPS = [
-  { title: "Draft", body: "The author writes the guide from its sources, with a summary and key facts, and lists every source used." },
-  { title: "Clinical review", body: "A named reviewer checks accuracy against the sources, safety wording and signposting. They approve it or return it with notes." },
-  { title: "Publication", body: "Only an approved guide appears on the site, showing the author, reviewer and review date." },
-  { title: "Revision", body: "Any edit creates a new revision that is taken off the site until it has been reviewed again." },
+  { title: "Source check", body: "The guide is written only from official sources. Each statement is checked against the source it cites, and the guide shows the date of that check." },
+  { title: "Published as source-checked", body: "The guide appears marked “Sourced · clinical review pending”. It never claims a review it hasn't had, and it's kept out of search results until reviewed." },
+  { title: "Clinical review", body: "A named reviewer checks accuracy, safety wording and signposting. They approve it or return it with notes." },
+  { title: "Reviewed and revised", body: "An approved guide shows its author, reviewer and review date. Any later edit goes back for review." },
 ];
 
 export default function EditorialPolicyPage() {
@@ -32,11 +32,11 @@ export default function EditorialPolicyPage() {
       title="Editorial and clinical review policy"
       heading={<>How our guides are written <GradientText>and reviewed.</GradientText></>}
       eyebrow="Trust / Our approach"
-      description="Health information has to be accurate, sourced and checked. This is the process every ED guide goes through before you can read it here."
+      description="Health information has to be accurate, sourced and checked. This is the process every ED guide goes through, and each guide shows which stage it has reached."
       crumbs={[{ label: "Home", href: "/" }]}
     >
       <InfoCardGrid items={PRINCIPLES} columns={4} />
-      <ContentSection id="process" title="From draft to published">
+      <ContentSection id="process" title="From sources to clinical review">
         <StepList steps={STEPS} />
       </ContentSection>
       <ContentSection id="boundaries" title="What our guides will and won't do">

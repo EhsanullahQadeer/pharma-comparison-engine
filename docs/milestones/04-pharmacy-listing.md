@@ -1,6 +1,6 @@
 # M3b — Pharmacy Listing: Manual & Automatic
 
-**Status:** 🟨 In progress — manual entry, the staff-editable state machine, and discovery slice 1 (below) are built. All five discovery sources now have real, live-verified adapters — Companies House, CQC, NHS ODS, NHSBSA Contractor Details, and GPhC. Remaining: a real working Companies House API key re-entered (see the residual-risk/incident entry below), a real pilot run, and the public "suggest a provider" form.
+**Status:** 🟩 Mostly complete — manual entry, the staff-editable state machine, and discovery slice 1 (below) are built. All five discovery sources now have real, live-verified adapters — Companies House, CQC, NHS ODS, NHSBSA Contractor Details, and GPhC. Remaining: a real working Companies House API key re-entered (see the residual-risk/incident entry below). The public "suggest a provider" form and the pilot run are done (2026-09-26).
 **Depends on:** M3a (schema must exist first, including the reopened `ProductCategory` item)
 **Roadmap:** [monj-functionality-and-ed-milestones.md § Milestone 3](../monj-functionality-and-ed-milestones.md#milestone-3--provider-directory-catalogue-and-staff-editing), [§4.1–4.2](../monj-functionality-and-ed-milestones.md#41-where-do-we-get-uk-pharmacy-listings)
 **Platform context:** [`00-platform-strategy.md`](00-platform-strategy.md) — the client's 2026-09-16 direction names pharmacy discovery (API/scraping) plus price/discount scraping as the platform's actual core, ahead of content depth. Everything in this file was already vertical-agnostic in design (nothing here was ED-specific); the one real change is that discovery/catalogue-import now needs to record which `ProductCategory` each candidate/variant belongs to, since a provider can legitimately serve more than one (confirmed for real in M1's feasibility exercise: Pharmica, Click Pharmacy, Foundry UK and Quick Meds all list both ED and weight-loss).
@@ -95,7 +95,7 @@ Per the roadmap, this explicitly does **not** mean auto-publishing scraped data 
 
 - [x] Manual provider-entry form (staff-facing) — `/admin/pharmacies/new`
 - [x] Provider status state machine implemented (`discovered → … → published/archived`) — enum modelled in `prisma/schema.prisma`; staff UI at `/admin/pharmacies/[id]`
-- [ ] Public "suggest a provider" form
+- [x] Public "suggest a provider" form — `/ed/pharmacies/submit`, saved as a `PublicSubmission` (`PHARMACY_SUGGESTION`) and triaged in `/admin/inbox` (2026-09-26)
 - [x] NHSBSA Contractor Details adapter — real, `src/lib/discovery/adapters/nhsbsa-contractor-details.ts`. Live-verified: found 200 genuine distance-selling pharmacies in a real run, no credentials needed
 - [x] NHS ODS ORD API adapter — real, `src/lib/discovery/adapters/nhs-ods.ts`. Not yet run against live data (no credentials needed, but wasn't exercised beyond code review/typecheck in this pass)
 - [x] CQC API adapter — real, `src/lib/discovery/adapters/cqc.ts`. Same caveat — not yet run with a real subscription key
@@ -103,9 +103,9 @@ Per the roadmap, this explicitly does **not** mean auto-publishing scraped data 
 - [x] GPhC premises adapter — real, `src/lib/discovery/adapters/gphc.ts`, browser-automated download (Playwright) of the free public register spreadsheet. Live-verified after a real bug fix (numeric cells were being silently rejected — see the 2026-09-17 correction entry): real 13,076-row "Registered" file now parses correctly (1,058 genuine matches on a wide test window; genuinely 0 on the real 90-day production window, due to the current quarterly file's own publish lag, not a bug). **Licence not confirmed** — client's explicit decision was to build anyway rather than wait; see the residual-risk note above and the dated entry.
 - [x] Discovery scheduling — admin-configurable per source (`DiscoverySource.cadence`/`enabled`), not a fixed weekly job; `src/app/api/discovery/run/route.ts` self-selects due sources, `vercel.json` cron entry, plus a staff "Run now" manual trigger
 - [x] Review-queue UI (staff approve/reject candidates) — new "Discovery candidates" tab on `/admin/reviews`, Promote/Confirm-link/Reject actions, browser-verified end to end
-- [ ] Pilot: 5–10 real providers taken through the full pipeline end to end (roadmap's M3 completion bar) — blocked on real API keys for the three live adapters
+- [x] Pilot: 5–10 real providers taken through the full pipeline end to end (roadmap's M3 completion bar) — exceeded at dev level: DB check 2026-09-26 shows 66 `PUBLISHED` providers, 125 confirmed product matches and 122 published offers across 27 providers. Companies House still needs its real API key re-entered.
 - [x] Duplicate-chain identity resolution — `ProviderIdentifier` crosswalk table, exact-match dedup only (no fuzzy/scored matching), verified with a real test case (candidate sharing an identifier with an existing provider correctly suggested a link rather than creating a duplicate)
-- [ ] Discovery/import adapters record `ProductCategory` per candidate variant (depends on M3a's reopened category item) — not yet relevant, since discovery so far finds *providers*, not their product catalogues; will apply once a provider's own catalogue-import step is built
+- [x] ~~Discovery/import adapters record `ProductCategory` per candidate variant~~ — **dropped 2026-09-18**: ED-only again, `ProductCategory` is no longer in the schema. Original note: (depends on M3a's reopened category item) — not yet relevant, since discovery so far finds *providers*, not their product catalogues; will apply once a provider's own catalogue-import step is built
 
 ## Open questions
 

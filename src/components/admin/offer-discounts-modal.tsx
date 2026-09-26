@@ -30,6 +30,7 @@ function DiscountRow({ discount, providerId }: { discount: Discount; providerId:
     <li className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 text-sm">
       <div>
         <p className="font-medium">{discount.eligibility}</p>
+        {discount.code ? <p className="font-mono text-xs">Code: {discount.code}</p> : null}
         <p className="text-xs text-muted-foreground">
           {discount.valueType === "PERCENT" ? `${discount.valuePercent}%` : formatPence(discount.valuePence ?? 0)}
           {discount.stackable ? " · Stackable" : ""}
@@ -54,6 +55,11 @@ function AddDiscountForm({ offerId, providerId, onAdded }: { offerId: string; pr
         <Label htmlFor={`eligibility-${offerId}`}>Who qualifies</Label>
         <Input id={`eligibility-${offerId}`} name="eligibility" placeholder="First-time customers" required />
         {state.fieldErrors?.eligibility?.[0] ? <p className="text-sm text-destructive">{state.fieldErrors.eligibility[0]}</p> : null}
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor={`code-${offerId}`}>Discount code (leave blank if applied automatically)</Label>
+        <Input id={`code-${offerId}`} name="code" placeholder="WELCOME10" />
+        {state.fieldErrors?.code?.[0] ? <p className="text-sm text-destructive">{state.fieldErrors.code[0]}</p> : null}
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">

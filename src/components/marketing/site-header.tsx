@@ -62,9 +62,8 @@ export function SiteHeader() {
                   {group.label}<ChevronDown aria-hidden="true" className="size-3.5 transition-transform group-open:rotate-180" />
                 </summary>
                 <div className="p-3 lg:absolute lg:inset-x-4 lg:top-full lg:max-h-[70dvh] lg:overflow-y-auto lg:rounded-b-2xl lg:border lg:border-border lg:bg-background lg:p-6 lg:shadow-lg">
-                  <div className="mb-5 flex flex-wrap items-center justify-between gap-2 border-b border-border pb-4">
+                  <div className="mb-5 border-b border-border pb-4">
                     <p className="font-medium">{group.label} for ED treatment</p>
-                    <span className="rounded-full bg-secondary px-3 py-1 text-xs">{group.liveCount > 0 ? `${group.liveCount} live now · more coming soon` : "All pages coming soon"}</span>
                   </div>
                   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                     {group.sections.map((section) => (
@@ -72,13 +71,13 @@ export function SiteHeader() {
                         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{section.label}</p>
                         <ul className="space-y-1">
                           {section.pages.map((page) => (
-                            <li key={page.path}><Link href={edHref(page.path)} onClick={close} aria-current={pathname === edHref(page.path) ? "page" : undefined} className="flex items-center justify-between gap-2 rounded-lg px-2 py-2 text-sm transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring aria-[current=page]:bg-muted aria-[current=page]:font-semibold">{page.title}{page.readable ? <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium">Live</span> : null}</Link></li>
+                            <li key={page.path}><Link href={edHref(page.path)} onClick={close} aria-current={pathname === edHref(page.path) ? "page" : undefined} className="flex items-center justify-between gap-2 rounded-lg px-2 py-2 text-sm transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring aria-[current=page]:bg-muted aria-[current=page]:font-semibold">{page.title}</Link></li>
                           ))}
                         </ul>
                       </div>
                     ))}
                   </div>
-                  <Link href="/ed/roadmap" onClick={close} className="mt-5 inline-flex items-center gap-2 text-sm font-medium underline underline-offset-4">See what is built and what comes next <ArrowUpRight aria-hidden="true" className="size-4" /></Link>
+                  <Link href="/ed/site-map" onClick={close} className="mt-5 inline-flex items-center gap-2 text-sm font-medium underline underline-offset-4">Browse every page <ArrowUpRight aria-hidden="true" className="size-4" /></Link>
                 </div>
               </details>
             ))}

@@ -10,6 +10,8 @@ import { recordAuditLog } from "@/lib/audit-log";
 import { runCandidateEdCheck, type CandidateEdCheckResult } from "@/lib/discovery/run-candidate-ed-check";
 import { HumanVerificationError } from "@/lib/price-collection/human-browser";
 import { prisma } from "@/lib/prisma";
+import { getAllowedNextStatuses } from "@/lib/provider-status-transitions";
+import { revalidatePublicSite } from "@/lib/revalidate-public-site";
 import { requireStaffRole } from "@/lib/staff-auth";
 
 import type { z } from "zod";
@@ -392,4 +394,77 @@ export async function rejectDiscoveryCandidatesBulk(candidateIds: string[]): Pro
 
   revalidatePath("/admin/reviews");
   return { rejectedCount: candidates.length };
+}
+
+export type ChangeReviewedDiscoveryCandidateState = { error?: string };
+
+// Undoes a rejection: the candidate goes back into the pending queue exactly as it arrived — a
+// possible match if it still carries a suggested pharmacy, otherwise new — so staff can promote,
+// link or reject it again from there.
+export async function reopenRejectedDiscoveryCandidate(candidateId: string): Promise<ChangeReviewedDiscoveryCandidateState> {
+  let staffUser;
+  try {
+    staffUser = await requireStaffRole(["CATALOGUE_EDITOR", "ADMINISTRATOR"]);
+  } catch {
+    return { error: "You are not authorized to review discovery candidates." };
+  }
+
+  const candidate = await prisma.discoveryCandidate.findUnique({ where: { id: candidateId }, select: { status: true, matchedProviderId: true } });
+  if (!candidate) return { error: "Discovery candidate not found." };
+  if (candidate.status !== "REJECTED") return { error: "Only rejected candidates can be sent back to pending." };
+
+  const nextStatus = candidate.matchedProviderId ? "LINKED_EXISTING" : "NEW";
+  await prisma.discoveryCandidate.update({
+    where: { id: candidateId },
+    data: { status: nextStatus, reviewedByStaffId: null, reviewedAt: null },
+  });
+
+  await recordAuditLog({ actorId: staffUser.id, action: "UPDATE", entityType: "DiscoveryCandidate", entityId: candidateId, changes: { status: { from: "REJECTED", to: nextStatus }, reopened: true } });
+
+  revalidatePath("/admin/reviews");
+  return {};
+}
+
+// Reverses a promotion. The pharmacy it created is archived (not deleted — its evidence, prices
+// and history stay intact and it can be restored from the Pharmacies page), so archiving goes
+// through the same state machine/role rules as any other provider status change.
+export async function rejectPromotedDiscoveryCandidate(candidateId: string): Promise<ChangeReviewedDiscoveryCandidateState> {
+  let staffUser;
+  try {
+    staffUser = await requireStaffRole(["CATALOGUE_EDITOR", "ADMINISTRATOR"]);
+  } catch {
+    return { error: "You are not authorized to review discovery candidates." };
+  }
+
+  const candidate = await prisma.discoveryCandidate.findUnique({
+    where: { id: candidateId },
+    select: { status: true, matchedProvider: { select: { id: true, status: true } } },
+  });
+  if (!candidate) return { error: "Discovery candidate not found." };
+  if (candidate.status !== "PROMOTED") return { error: "Only promoted candidates can be rejected here." };
+
+  const provider = candidate.matchedProvider;
+  const archiveProvider = provider !== null && provider.status !== "ARCHIVED";
+  if (archiveProvider && !getAllowedNextStatuses(provider.status, staffUser.role).includes("ARCHIVED")) {
+    return { error: "Only an administrator can reject a promoted candidate, because it archives the pharmacy it created." };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    if (archiveProvider) await tx.provider.update({ where: { id: provider.id }, data: { status: "ARCHIVED" } });
+    await tx.discoveryCandidate.update({
+      where: { id: candidateId },
+      data: { status: "REJECTED", reviewedByStaffId: staffUser.id, reviewedAt: new Date() },
+    });
+  });
+
+  await recordAuditLog({ actorId: staffUser.id, action: "UPDATE", entityType: "DiscoveryCandidate", entityId: candidateId, changes: { status: { from: "PROMOTED", to: "REJECTED" } } });
+  if (archiveProvider) {
+    await recordAuditLog({ actorId: staffUser.id, action: "UPDATE", entityType: "Provider", entityId: provider.id, changes: { status: { from: provider.status, to: "ARCHIVED" }, fromDiscoveryCandidateId: candidateId } });
+    revalidatePath(`/admin/pharmacies/${provider.id}`);
+    revalidatePath("/admin/pharmacies");
+    revalidatePublicSite();
+  }
+
+  revalidatePath("/admin/reviews");
+  return {};
 }

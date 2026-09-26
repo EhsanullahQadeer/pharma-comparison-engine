@@ -23,7 +23,12 @@ export async function getPublicOffers(where: { providerId?: string } = {}): Prom
       retrievedAt: true,
       priceVerifiedAt: true,
       feeVerifiedAt: true,
-      provider: { select: { id: true, tradingName: true, websiteDomain: true } },
+      provider: { select: { id: true, tradingName: true, websiteDomain: true, logoUrl: true } },
+      discounts: {
+        where: { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+        orderBy: { createdAt: "asc" },
+        select: { id: true, eligibility: true, code: true, valueType: true, valuePence: true, valuePercent: true, stackable: true, expiresAt: true },
+      },
       productVariant: { select: { id: true, ingredient: true, brandName: true, strengthMg: true, formulation: true, packQuantity: true } },
     },
   });
@@ -39,6 +44,7 @@ export async function getPublicOffers(where: { providerId?: string } = {}): Prom
       providerName: displayName(offer.provider.tradingName),
       providerSlug: providerSlug(offer.provider.websiteDomain),
       providerDomain: offer.provider.websiteDomain,
+      providerLogoUrl: offer.provider.logoUrl,
       variant: offer.productVariant,
       itemPricePence: offer.itemPricePence,
       deliveryFeePence: offer.deliveryFeePence,
@@ -52,6 +58,7 @@ export async function getPublicOffers(where: { providerId?: string } = {}): Prom
       sourceUrl: offer.sourceUrl,
       checkedAt,
       freshness,
+      discounts: offer.discounts,
     }];
   });
 }

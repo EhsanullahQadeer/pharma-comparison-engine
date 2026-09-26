@@ -7,7 +7,8 @@ const freshnessStyles: Record<PublicOffer["freshness"], { pill: string; dot: str
   stale: { pill: "bg-secondary text-secondary-foreground", dot: "bg-muted-foreground", suffix: " · may have changed" },
 };
 
-export function FreshnessPill({ freshness, checkedAt, now }: { freshness: PublicOffer["freshness"]; checkedAt: Date; now: Date }) {
+// `compact` drops the stale suffix (tables show it on its own line to keep the column narrow).
+export function FreshnessPill({ freshness, checkedAt, now, compact = false }: { freshness: PublicOffer["freshness"]; checkedAt: Date; now: Date; compact?: boolean }) {
   const style = freshnessStyles[freshness];
   return (
     <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs", style.pill)}>
@@ -16,7 +17,7 @@ export function FreshnessPill({ freshness, checkedAt, now }: { freshness: Public
         <span className={cn("relative inline-flex size-2 rounded-full", style.dot)} />
       </span>
       <time dateTime={checkedAt.toISOString()}>Checked {formatCheckedAgo(checkedAt, now)}</time>
-      {style.suffix}
+      {compact ? null : style.suffix}
     </span>
   );
 }

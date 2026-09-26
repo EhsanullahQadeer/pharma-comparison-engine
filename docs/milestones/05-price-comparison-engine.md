@@ -1,6 +1,6 @@
 # M4/M5 — Price Comparison Engine: Collection & Calculation
 
-**Status:** ⬜ Not started
+**Status:** 🟨 In progress — collection adapters, manual/scheduled collection and the public comparison engine are built; remaining: supervised worker with retries, >20% guardrails, full filter set, §4.7 failure tests, 7-day production run
 **Depends on:** M3a (including the offer/discount history item), M3b (need providers before prices)
 **Roadmap:** [§ Milestone 4](../monj-functionality-and-ed-milestones.md#milestone-4--price-collection-and-freshness-monitoring), [§ Milestone 5](../monj-functionality-and-ed-milestones.md#milestone-5--comparison-calculations-filters-and-provider-pages)
 **Platform context:** the 2026-09-16 multi-vertical pivot ([`00-platform-strategy.md`](00-platform-strategy.md)) was reversed 2026-09-18 — this is an ED-only engine again, single database, no `ProductCategory` concept. First real pilot scoped to ED (sildenafil/tadalafil) only: product-detection (which providers sell which `ProductVariant`) then daily/12h price scraping on confirmed offers — see `docs/current-tasks.md`'s 2026-09-18 entry.
@@ -89,25 +89,25 @@ Roadmap §4.6's 50 providers × 20 variant pages × 2 checks/day ≈ 2,000 check
 - [x] Scheduling approach decided: VPS Node.js worker + node-cron + Postgres jobs
 - [x] Public-page extraction adapter (first real provider) (2026-09-18): `src/lib/price-collection/scrape-price.ts`, schema.org `Product`/`Offer` JSON-LD only (rejects non-GBP rather than guess) — live-verified against clickpharmacy.co.uk. Manual "Collect price"/"Refresh price" trigger per confirmed match, not yet on a schedule (see below). No Playwright fallback yet for pages without JSON-LD.
 - [x] `PriceHistory` written on every accepted change — written on every collect right now (not yet distinguishing "changed" from "unchanged but successful", since there's no scheduled recheck loop generating repeat observations yet).
-- [ ] Worker implemented and supervised; durable claims, retries and overdue-work recovery verified
-- [ ] Per-provider source-adapter interface defined (beyond the single JSON-LD adapter above)
+- [ ] Worker implemented and supervised; durable claims, retries and overdue-work recovery verified — **partial:** `npm run price-collection:run-due` (`scripts/run-price-collection-jobs.ts`) enqueues due matches into `PriceCollectionJob` and processes them, but there is no row claiming/locking, retry or process supervision, and the job table was still empty on 2026-09-26 (not yet run for real)
+- [x] Per-provider source-adapter interface defined (beyond the single JSON-LD adapter above) — `scrape-price.ts` tries tested platform extractors in order (WooCommerce, Shopify, BigCommerce, pharmacy plugins, Next.js data, per-tablet/grid price tables, price-checker dropdown, feed) plus a human-assisted browser fallback
 - [ ] Optional post-launch: direct/affiliate-feed adapter when real access and applicable rights exist (not a launch gate)
-- [ ] Manual price-entry flow (staff)
-- [ ] Freshness (`nextDueAt`) tracking per source
-- [ ] 24h/48h staleness rule enforced at query time
+- [x] Manual price-entry flow (staff) — `offer-form-modal.tsx` on the pharmacy detail page
+- [x] Freshness (`nextDueAt`) tracking per source — per-match cadence (`ProductMatch.nextScrapeAt`, Daily/Weekly/Monthly/Off) plus `Offer.nextDueAt`
+- [x] 24h/48h staleness rule enforced at query time — `freshnessTier` in `src/lib/comparison.ts` (fresh = ranked, stale = "Also listed", >48h hidden), tested
 - [ ] Validation guardrails (>20% move, new mapping, etc.) routing to review — deferred: nothing collected is published yet (`Offer.publishedAt` stays null until a staff member explicitly publishes), so there's no live page to protect yet
 - [ ] Retry/backoff for transient failures (5 / 15 / 60 min per roadmap §4.5)
 - [ ] Seven consecutive days of production-like runs with no data corruption (roadmap's M4 completion bar)
 
 ### Comparison engine
 
-- [ ] `deliveredTotal` / `unitPrice` calculation implemented in integer pence
-- [ ] Filter set implemented (medicine, brand/generic, strength, formulation, pack, delivery, purchase model)
-- [ ] Deterministic sort/tie-break
-- [ ] "Unknown fee never becomes zero" invariant enforced and tested
-- [ ] Regression tests from the roadmap's worked examples
+- [x] `deliveredTotal` / `unitPrice` calculation implemented in integer pence — `deliveredTotalPence` / `perTabletPence`
+- [ ] Filter set implemented (medicine, brand/generic, strength, formulation, pack, delivery, purchase model) — **partial:** `/ed/compare` filters by medicine, strength and pack size, plus sort; brand/generic, formulation, delivery and purchase model still to add
+- [x] Deterministic sort/tie-break — verified fees first, then price, then provider id (`compareOffers`), tested
+- [x] "Unknown fee never becomes zero" invariant enforced and tested — unverified fees show "Not listed" (`feeText`), and an indicative total never outranks a verified one (test in `comparison.test.ts`)
+- [x] Regression tests from the roadmap's worked examples — £16 + £3 delivery vs £18 inclusive case in `src/lib/comparison.test.ts`
 - [ ] Test coverage for every roadmap §4.7 failure scenario
-- [ ] Comparison page UI wired to the engine (depends on M2 routes existing)
+- [x] Comparison page UI wired to the engine (depends on M2 routes existing) — `/ed/compare`, `/ed/prices/sildenafil|tadalafil` and pharmacy profile pages; reads only published offers from `PUBLISHED` providers
 
 ## Open questions
 

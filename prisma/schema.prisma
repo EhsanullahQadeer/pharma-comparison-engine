@@ -225,6 +225,8 @@ model Provider {
   serviceRegions        String[]
   status                ProviderStatus @default(DISCOVERED)
   affiliateApproved     Boolean        @default(false)
+  // Path under /public (e.g. /pharmacy-logos/boots-com.png) or an https URL; null shows a monogram.
+  logoUrl               String?
   createdAt             DateTime       @default(now())
   updatedAt             DateTime       @updatedAt
 
@@ -234,6 +236,8 @@ model Provider {
   identifiers         ProviderIdentifier[]
   discoveryCandidates DiscoveryCandidate[]
   productMatches      ProductMatch[]
+  referralClicks      ReferralClick[]
+  affiliateProgramme  AffiliateProgramme?
 
   @@index([status])
 }
@@ -253,6 +257,7 @@ model ProductVariant {
 
   offers         Offer[]
   productMatches ProductMatch[]
+  referralClicks ReferralClick[]
 }
 
 // Money stored as integer pence per roadmap §4 "Fair price calculation" — never float.
@@ -279,11 +284,11 @@ model Offer {
   createdAt               DateTime       @default(now())
   updatedAt               DateTime       @updatedAt
 
-  discounts    Discount[]
-  priceHistory PriceHistory[]
-  evidence     Evidence[]
-  referrals    Referral[]
-  productMatch ProductMatch?
+  discounts      Discount[]
+  priceHistory   PriceHistory[]
+  evidence       Evidence[]
+  referralClicks ReferralClick[]
+  productMatch   ProductMatch?
 
   @@index([providerId])
   @@index([productVariantId])
@@ -294,6 +299,8 @@ model Discount {
   offerId      String
   offer        Offer             @relation(fields: [offerId], references: [id], onDelete: Cascade)
   eligibility  String
+  // Optional code the customer enters at the pharmacy's checkout; null when it applies automatically.
+  code         String?
   valueType    DiscountValueType
   valuePence   Int?
   valuePercent Int?
@@ -392,16 +399,88 @@ model Correction {
   updatedAt       DateTime         @updatedAt
 }
 
-// Non-sensitive offer reference, destination and aggregate counts (roadmap §4) — scaffolded for
-// when partner referral terms are agreed (M7); not wired into any public flow yet.
-model Referral {
-  id             String   @id @default(cuid())
-  offerId        String
-  offer          Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
-  destinationUrl String
-  clickCount     Int      @default(0)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+enum AffiliateNetwork {
+  AWIN
+  CJ
+  IMPACT
+  DIRECT
+  OTHER
+}
+
+enum AffiliateProgrammeStatus {
+  APPLIED
+  ACTIVE
+  PAUSED
+  REJECTED
+  ENDED
+}
+
+enum CommissionBasis {
+  FIXED
+  PERCENT
+}
+
+// A pharmacy's affiliate programme (referral-earnings-plan Phase 2), one per pharmacy. Only an
+// ACTIVE programme changes anything public: /go then sends the visitor through linkTemplate instead
+// of the plain product URL. Activation requires recorded evidence that the programme permits price
+// comparison of prescription-only ED medicines. Never read by ranking code.
+model AffiliateProgramme {
+  id                    String                   @id @default(cuid())
+  providerId            String                   @unique
+  provider              Provider                 @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  network               AffiliateNetwork
+  networkMerchantId     String?
+  status                AffiliateProgrammeStatus @default(APPLIED)
+  // https URL with {url} (the offer's product page, URL-encoded) and optional {clickRef} placeholders.
+  linkTemplate          String
+  commissionBasis       CommissionBasis
+  // Pence when FIXED, basis points (1/100 of a percent) when PERCENT.
+  commissionValue       Int
+  attributionDays       Int?
+  termsUrl              String?
+  termsNotes            String?
+  pomPromotionPermitted Boolean                  @default(false)
+  activatedAt           DateTime?
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+
+  clicks ReferralClick[]
+
+  @@index([status])
+}
+
+// Where on the public site an outbound "view at pharmacy" click came from.
+enum ReferralPlacement {
+  COMPARE
+  INGREDIENT_PRICES
+  PHARMACY_PROFILE
+  REPEAT_COSTS
+}
+
+// One row per outbound click through /go/[offerId] (M7). Deliberately non-sensitive (roadmap
+// §2.10): no IP, user agent, cookie or search terms. visitorHash is a salted daily hash used only
+// to spot repeat-click bots, and is cleared after 24h. The destination isn't stored — it's always
+// the offer's own validated sourceUrl at click time. Never read by ranking code.
+model ReferralClick {
+  id               String              @id @default(cuid())
+  offerId          String?
+  offer            Offer?              @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  providerId       String
+  provider         Provider            @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  productVariantId String?
+  productVariant   ProductVariant?     @relation(fields: [productVariantId], references: [id], onDelete: SetNull)
+  // Set when the click went through an ACTIVE programme's tracked link; the click id is the clickRef.
+  programmeId      String?
+  programme        AffiliateProgramme? @relation(fields: [programmeId], references: [id], onDelete: SetNull)
+  placement        ReferralPlacement?
+  rankPosition     Int?
+  isLikelyBot      Boolean             @default(false)
+  visitorHash      String?
+  createdAt        DateTime            @default(now())
+
+  @@index([createdAt])
+  @@index([providerId, createdAt])
+  @@index([visitorHash, createdAt])
 }
 
 // Generic "who changed what, when" trail for every model — separate from PriceHistory, which only

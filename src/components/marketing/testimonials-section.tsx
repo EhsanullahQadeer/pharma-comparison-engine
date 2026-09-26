@@ -19,7 +19,7 @@ const PRIORITIES = [
     name: "Costs with context",
     image: "/images/download.jpg",
     quote:
-      "See pack sizes, delivery fees and offer conditions together when price comparison launches.",
+      "See pack sizes, delivery fees and offer conditions together, ranked by price.",
   },
 ];
 
@@ -28,7 +28,7 @@ export function TestimonialsSection() {
     <section className="px-6 py-24">
       <div className="mx-auto max-w-3xl text-center">
         <Badge variant="secondary" className="rounded-full px-3 py-1">
-          What we’re designing for
+          What we focus on
         </Badge>
         <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
           A thoughtful approach to{" "}

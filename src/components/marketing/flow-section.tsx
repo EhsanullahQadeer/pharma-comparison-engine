@@ -29,7 +29,7 @@ export function FlowSection() {
     <section className="px-6 pb-8 pt-24">
       <div className="mx-auto max-w-3xl text-center">
         <Badge variant="secondary" className="rounded-full px-3 py-1">
-          Planned comparison journey
+          Your comparison journey
         </Badge>
         <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
           Clearer information.{" "}
@@ -38,8 +38,8 @@ export function FlowSection() {
           </span>
         </h2>
         <p className="mt-4 text-muted-foreground">
-          The planned journey brings ED pharmacy evidence and offer details
-          together. Clinical assessments and purchases stay with the pharmacy.
+          We bring ED pharmacy evidence and offer details together. Clinical
+          assessments and purchases stay with the pharmacy.
         </p>
       </div>
 

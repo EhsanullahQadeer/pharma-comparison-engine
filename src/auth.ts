@@ -23,19 +23,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         await prisma.staffUser.update({ where: { id: staffUser.id }, data: { lastLoginAt: new Date() } });
 
-        return { id: staffUser.id, email: staffUser.email, name: staffUser.name, role: staffUser.role };
+        return { kind: "staff", id: staffUser.id, email: staffUser.email, name: staffUser.name, role: staffUser.role };
       },
     }),
   ],
   callbacks: {
     jwt({ token, user }) {
       if (user) {
+        token.kind = user.kind;
         token.staffId = user.id as string;
         token.role = user.role;
       }
       return token;
     },
     session({ session, token }) {
+      session.user.kind = token.kind;
       session.user.id = token.staffId;
       session.user.role = token.role;
       return session;

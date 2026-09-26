@@ -242,8 +242,8 @@ export default function PharmacyEvidencePage() {
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {relatedTrustPages.map((entry) => (
             <Link key={entry.path} href={edHref(entry.path)} className="rounded-2xl border border-border p-5 hover:bg-muted">
-              <span className="block text-xs text-muted-foreground">{entry.readable ? "Available now" : "Coming soon"}</span>
-              <span className="mt-1 block font-medium">{entry.title}</span>
+              <span className="block font-medium">{entry.title}</span>
+              <span className="mt-1 block text-xs text-muted-foreground">{entry.description}</span>
             </Link>
           ))}
         </div>

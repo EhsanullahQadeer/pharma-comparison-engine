@@ -8,6 +8,7 @@ import type { Prisma, ProviderStatus } from "@/generated/prisma/client";
 import { recordAuditLog } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 import { getAllowedNextStatuses } from "@/lib/provider-status-transitions";
+import { revalidatePublicSite } from "@/lib/revalidate-public-site";
 import { requireStaffRole } from "@/lib/staff-auth";
 
 import type { z } from "zod";
@@ -104,6 +105,7 @@ export async function getProviders(search?: string, take?: number) {
       serviceRegions: true,
       regulatorReference: true,
       dispensingPartnerName: true,
+      logoUrl: true,
       createdAt: true,
       // Draft (unpublished) prices only — drives "Publish draft prices" on the Pharmacies list.
       _count: { select: { offers: { where: { publishedAt: null } } } },
@@ -154,6 +156,7 @@ export async function updateProvider(id: string, _prevState: UpdateProviderState
     regulatorReference: formData.get("regulatorReference"),
     dispensingPartnerName: formData.get("dispensingPartnerName") || undefined,
     serviceRegions: formData.get("serviceRegions"),
+    logoUrl: formData.get("logoUrl") ?? undefined,
   });
 
   if (!parsed.success) {
@@ -230,12 +233,42 @@ export async function transitionProviderStatus(
   return {};
 }
 
+export type SetProviderLinkedState = { error?: string };
+
+// Affiliate approval decides only whether public pages link to the pharmacy's website; it never
+// changes whether or where the pharmacy is listed. A commercial decision, so commercial roles only.
+export async function setProviderAffiliateApproved(providerId: string, approved: boolean): Promise<SetProviderLinkedState> {
+  let staffUser;
+  try {
+    staffUser = await requireStaffRole(["COMMERCIAL_MANAGER", "ADMINISTRATOR"]);
+  } catch {
+    return { error: "Only commercial managers and administrators can change website links." };
+  }
+
+  const provider = await prisma.provider.findUnique({ where: { id: providerId }, select: { affiliateApproved: true } });
+  if (!provider) return { error: "Provider not found." };
+  if (provider.affiliateApproved === approved) return {};
+
+  await prisma.provider.update({ where: { id: providerId }, data: { affiliateApproved: approved } });
+
+  await recordAuditLog({
+    actorId: staffUser.id,
+    action: "UPDATE",
+    entityType: "Provider",
+    entityId: providerId,
+    changes: { affiliateApproved: { from: provider.affiliateApproved, to: approved } },
+  });
+
+  revalidateProviderStatusPages([providerId]);
+  return {};
+}
+
 function revalidateProviderStatusPages(providerIds: string[]) {
   providerIds.forEach((id) => revalidatePath(`/admin/pharmacies/${id}`));
   revalidatePath("/admin/pharmacies");
   revalidatePath("/admin");
   // Entering or leaving PUBLISHED changes what the public directory and comparison pages show.
-  revalidatePath("/ed", "layout");
+  revalidatePublicSite();
 }
 
 export type BulkTransitionProviderStatusState = { error?: string; updated?: number; skipped?: number };

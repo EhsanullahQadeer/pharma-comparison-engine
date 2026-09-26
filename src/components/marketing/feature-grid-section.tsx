@@ -5,7 +5,7 @@ const FEATURES = [
     icon: ScanSearch,
     label: "Search",
     heading: "Find UK pharmacies offering ED treatment.",
-    bullets: ["Manual listings first", "Reviewed discovery imports"],
+    bullets: ["Checked against official registers", "Staff-reviewed before listing"],
   },
   {
     icon: CircleDot,
@@ -32,14 +32,14 @@ export function FeatureGridSection() {
     <section className="px-6 pb-24">
       <div className="mx-auto max-w-3xl text-center">
         <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          The planned journey,{" "}
+          How it works,{" "}
           <span className="bg-gradient-to-r from-[var(--chart-1)] via-[var(--chart-2)] to-[var(--chart-5)] bg-clip-text text-transparent">
             from discovery to comparison.
           </span>
         </h2>
         <p className="mt-4 text-muted-foreground">
-          These features are coming soon. Our initial catalogue will focus on
-          sildenafil and tadalafil for ED treatment.
+          Compare sildenafil and tadalafil from registered UK pharmacies, then
+          continue to the pharmacy you choose.
         </p>
       </div>
 

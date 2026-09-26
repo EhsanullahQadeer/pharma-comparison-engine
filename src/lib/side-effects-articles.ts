@@ -1,14 +1,9 @@
+import { cite } from "@/lib/article-citations";
 import { SOURCES } from "@/lib/article-sources";
 import type { ArticleContent } from "@/types/article";
 
-// Side-effects library content. Every statement below was checked on SIDE_EFFECTS_CHECKED_ON against
-// the source it cites (NHS medicine pages and the Viagra/Cialis SmPCs on emc); cite(n) points at the
-// nth entry of that article's `sources`. The public page shows this until a clinically reviewed
-// Article for the same slug is PUBLISHED, which then takes over. Also seeded as DRAFT articles
-// (scripts/seed-article-drafts.ts) so staff can edit and send them for review.
-export const SIDE_EFFECTS_CHECKED_ON = new Date("2026-09-26");
-
-const cite = (...numbers: number[]) => numbers.map((n) => `[[${n}]](#source-${n})`).join("");
+// Side-effects library content. Every statement was checked on SOURCES_CHECKED_ON (sourced-articles.ts)
+// against the source it cites; cite(n) points at the nth entry of that article's `sources`.
 
 export const sideEffectsArticles: ArticleContent[] = [
   {
@@ -261,7 +256,3 @@ Don't wait for a reply if you have any [urgent warning signs](/ed/side-effects/u
     sources: [SOURCES.nhsSildenafilSideEffects, SOURCES.nhsTadalafil, SOURCES.nhsSildenafilInteractions, SOURCES.nhsSildenafilWhoCan, SOURCES.yellowCard, SOURCES.nhs111],
   },
 ];
-
-export function getSideEffectsArticle(slug: string) {
-  return sideEffectsArticles.find((article) => article.slug === slug) ?? null;
-}

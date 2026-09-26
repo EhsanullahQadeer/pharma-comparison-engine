@@ -16,4 +16,11 @@ export const createProviderSchema = z.object({
   regulatorReference: z.string().trim().min(3, "Enter the regulator registration reference."),
   dispensingPartnerName: z.string().trim().optional(),
   serviceRegions: z.string().trim().min(1, "List at least one service region."),
+  // A file under /public (see `npm run pharmacies:fetch-logos`) or an https image URL; blank clears it.
+  logoUrl: z
+    .string()
+    .trim()
+    .refine((value) => value === "" || value.startsWith("/") || value.startsWith("https://"), "Use a path starting with / or an https:// URL.")
+    .transform((value) => value || null)
+    .optional(),
 });

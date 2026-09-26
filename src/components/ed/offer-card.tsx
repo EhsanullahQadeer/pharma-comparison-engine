@@ -3,8 +3,11 @@ import { ArrowUpRight, Trophy } from "lucide-react";
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
 import { FreshnessPill } from "@/components/ed/freshness-pill";
+import { LinkNote } from "@/components/ed/link-note";
+import { OutboundLink } from "@/components/ed/outbound-link";
 import { PriceBar } from "@/components/ed/price-bar";
 import Link from "@/components/Link";
+import type { ReferralPlacement } from "@/generated/prisma/client";
 import { availabilityBadgeVariant, availabilityLabels } from "@/lib/catalogue-labels";
 import { feeText, offerSortValue, variantLabel, variantTypeLabel } from "@/lib/comparison";
 import { formatPence } from "@/lib/money";
@@ -12,9 +15,12 @@ import { revealClass, revealStyle } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import type { ComparisonSort, PublicOffer } from "@/types/comparison";
 
-export function OfferCard({ offer, now, rank, best, max, sort, index, context = "comparison" }: {
+export function OfferCard({ offer, now, placement, linked, rank, best, max, sort, index, context = "comparison" }: {
   offer: PublicOffer;
   now: Date;
+  placement: ReferralPlacement;
+  // Only linked pharmacies get a "View at pharmacy" button; the rest are listed without a URL.
+  linked: boolean;
   rank?: number;
   best?: boolean;
   max: number;
@@ -78,19 +84,24 @@ export function OfferCard({ offer, now, rank, best, max, sort, index, context = 
             <p className="text-3xl font-semibold tracking-tight tabular-nums">{formatPence(offer.deliveredTotalPence)}</p>
             <p className="text-sm text-muted-foreground tabular-nums">{formatPence(offer.perTabletPence)} per tablet</p>
           </div>
-          <Button
-            size="lg"
-            variant={best ? "default" : "outline"}
-            className="rounded-full px-4 transition-transform active:scale-95"
-            nativeButton={false}
-            render={
-              <a href={offer.sourceUrl} target="_blank" rel="nofollow noopener noreferrer">
-                View at pharmacy
-                <ArrowUpRight aria-hidden="true" className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                <span className="sr-only"> (opens {offer.providerDomain} in a new tab)</span>
-              </a>
-            }
-          />
+          {linked ? (
+            <div className="space-y-1.5 md:text-right">
+              <Button
+                size="lg"
+                variant={best ? "default" : "outline"}
+                className="rounded-full px-4 transition-transform active:scale-95"
+                nativeButton={false}
+                render={
+                  <OutboundLink offerId={offer.id} placement={placement} rank={rank}>
+                    View at pharmacy
+                    <ArrowUpRight aria-hidden="true" className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    <span className="sr-only"> (opens {offer.providerDomain} in a new tab)</span>
+                  </OutboundLink>
+                }
+              />
+              <LinkNote linked />
+            </div>
+          ) : <LinkNote linked={false} className="md:text-right" />}
         </div>
       </div>
       <div className="mt-5">

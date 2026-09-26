@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 
+import { DiscoveryCandidateHistoryActions, hasDiscoveryCandidateHistoryAction } from "@/components/admin/discovery-candidate-history-actions";
 import { Badge } from "@/components/common/badge";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/common/card";
 import { EmptyState } from "@/components/common/empty-state";
@@ -29,10 +30,12 @@ type HistoryItem = {
   reviewedByStaff: { name: string } | null;
 };
 
-// Read-only view of candidates staff have already decided on — no drafts, selection or actions,
-// just what was decided, when and by whom, with a link through to the resulting pharmacy.
+// View of candidates staff have already decided on — what was decided, when and by whom, with a
+// link through to the resulting pharmacy. Promoted and rejected rows also get an action to change
+// that decision (see DiscoveryCandidateHistoryActions).
 export function DiscoveryCandidateHistoryTable({ title, items, emptyTitle }: { title: string; items: HistoryItem[]; emptyTitle: string }) {
   const [page, setPage] = useState(1);
+  const showActions = useMemo(() => items.some((item) => hasDiscoveryCandidateHistoryAction(item.status)), [items]);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   const pages = Math.max(1, Math.ceil(items.length / pageSize));
@@ -65,6 +68,7 @@ export function DiscoveryCandidateHistoryTable({ title, items, emptyTitle }: { t
                 <TableHead minWidth={180}>Pharmacy</TableHead>
                 <TableHead minWidth={110}>Status</TableHead>
                 <TableHead minWidth={150}>Reviewed</TableHead>
+                {showActions ? <TableHead minWidth={170} className="text-right">Actions</TableHead> : null}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -101,6 +105,11 @@ export function DiscoveryCandidateHistoryTable({ title, items, emptyTitle }: { t
                     <p>{item.reviewedAt ? new Date(item.reviewedAt).toLocaleString("en-GB") : "—"}</p>
                     {item.reviewedByStaff ? <p>by {item.reviewedByStaff.name}</p> : null}
                   </TableCell>
+                  {showActions ? (
+                    <TableCell className="text-right">
+                      <DiscoveryCandidateHistoryActions candidateId={item.id} status={item.status} />
+                    </TableCell>
+                  ) : null}
                 </TableRow>
               ))}
             </TableBody>

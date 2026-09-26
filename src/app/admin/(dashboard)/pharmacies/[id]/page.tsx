@@ -3,10 +3,12 @@ import { ArrowLeft, Globe, MapPin, ShieldCheck } from "lucide-react";
 import { getPendingPriceCollectionForProvider } from "@/actions/price-collection/price-collection";
 import { getAllProductVariants } from "@/actions/product-variants/product-variants";
 import { getProvider } from "@/actions/providers/providers";
-import { auth } from "@/auth";
+import { getAffiliateProgramme } from "@/actions/referrals/programmes";
+import { AffiliateProgrammeCard } from "@/components/admin/affiliate-programme-card";
 import { DetectProductsButton } from "@/components/admin/detect-products-button";
 import { EditPharmacyModal } from "@/components/admin/edit-pharmacy-modal";
 import { ProductMatchPricingSection } from "@/components/admin/product-match-pricing-section";
+import { ProviderLinkToggle } from "@/components/admin/provider-link-toggle";
 import { ProviderOffersSection } from "@/components/admin/provider-offers-section";
 import { ProviderStatusControl } from "@/components/admin/provider-status-control";
 import { Badge } from "@/components/common/badge";
@@ -14,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/ca
 import Link from "@/components/Link";
 import { regulatorTypeLabels } from "@/lib/provider-labels";
 import { correctionStatusBadgeVariant, correctionStatusLabels, evidenceApprovalStatusBadgeVariant, evidenceApprovalStatusLabels } from "@/lib/review-labels";
+import { getStaffUser } from "@/lib/staff-auth";
 
 import type { Metadata } from "next";
 
@@ -25,12 +28,14 @@ export async function generateMetadata(props: PageProps<"/admin/pharmacies/[id]"
 
 export default async function ProviderDetailPage(props: PageProps<"/admin/pharmacies/[id]">) {
   const { id } = await props.params;
-  const [provider, variants, session, pendingMatches] = await Promise.all([
+  const [provider, variants, staffUser, pendingMatches, programme] = await Promise.all([
     getProvider(id),
     getAllProductVariants(),
-    auth(),
+    getStaffUser(),
     getPendingPriceCollectionForProvider(id),
+    getAffiliateProgramme(id),
   ]);
+  const canEditCommercial = staffUser?.role === "COMMERCIAL_MANAGER" || staffUser?.role === "ADMINISTRATOR";
 
   return (
     <div className="space-y-6">
@@ -57,13 +62,25 @@ export default async function ProviderDetailPage(props: PageProps<"/admin/pharma
             )}
           </div>
 
-          {session?.user ? (
+          {staffUser ? (
             <div className="border-t border-border pt-4">
-              <ProviderStatusControl providerId={provider.id} status={provider.status} role={session.user.role} />
+              <ProviderStatusControl providerId={provider.id} status={provider.status} role={staffUser.role} />
             </div>
           ) : null}
+
+          <div className="border-t border-border pt-4">
+            <ProviderLinkToggle key={String(provider.affiliateApproved)} providerId={provider.id} affiliateApproved={provider.affiliateApproved} />
+          </div>
         </CardContent>
       </Card>
+
+      <AffiliateProgrammeCard
+        providerId={provider.id}
+        providerName={provider.tradingName}
+        programme={programme}
+        sampleUrl={provider.offers[0]?.sourceUrl ?? null}
+        canEdit={canEditCommercial}
+      />
 
       <div className="flex items-center justify-end">
         <DetectProductsButton providerId={provider.id} />

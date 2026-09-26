@@ -13,7 +13,7 @@ async function main() {
   const deletes = [
     { name: "PriceCollectionJob", fn: () => prisma.priceCollectionJob.deleteMany() },
     { name: "ProductMatch", fn: () => prisma.productMatch.deleteMany() },
-    { name: "Referral", fn: () => prisma.referral.deleteMany() },
+    { name: "ReferralClick", fn: () => prisma.referralClick.deleteMany() },
     { name: "PriceHistory", fn: () => prisma.priceHistory.deleteMany() },
     { name: "Evidence", fn: () => prisma.evidence.deleteMany() },
     { name: "Discount", fn: () => prisma.discount.deleteMany() },

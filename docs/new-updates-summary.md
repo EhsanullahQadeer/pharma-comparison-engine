@@ -2,6 +2,48 @@
 
 ## 2026-09-26
 
+- The price comparison table no longer has a last column that said "Listed for comparison" on every row. That column now appears only when a partner pharmacy is in the list, and then only partner rows show a "View" button.
+
+- The price comparison table now shows each pharmacy's logo where we have one (41 of the 66 listed pharmacies so far; the rest still show their initials).
+- The comparison table no longer has a separate Consultation column. Any consultation fee is still included in the total, and the total says so when there is one.
+- A new Offers column in the comparison table shows any checked discount for that price, with its code. It links to the pharmacy's page, and says "No discount listed" when we don't have one.
+- Each pharmacy's page has been redesigned around offers and discount codes: its logo, its best current offer, any checked codes with a copy button, how ordering works, its registration checks, a full-cost checklist and common questions.
+- There are now 10 different designs for pharmacy pages. Each pharmacy always gets the same one, so pages look varied across the site but never change for a given pharmacy.
+- Staff can now add a discount code when recording a discount, and set or change a pharmacy's logo from its edit form.
+
+- The staff dashboard now only accepts staff accounts, ready for pharmacy partner logins later. Everyone needs to sign in again once.
+- Switching off a staff account, or changing someone's role, now takes effect straight away instead of when they next sign in.
+
+- Partner pharmacies' "View" buttons are now labelled "Partner · we may earn commission", linking to the independence page.
+- The Independence page and the page for pharmacies now list our partner pharmacies automatically. While there are none, they say so, and they explain that partners get a link but never a better position.
+- The admin page for each pharmacy has a new Affiliate programme section. Staff can record the programme's network, commission, terms and tracked link, see an example of the finished link, and set it to Applied, Active, Paused, Rejected or Ended. Only commercial managers and administrators can change it, and every change is logged.
+- A programme can only be made active once staff confirm its terms allow comparing prescription medicines and add a link to those terms. Making it active also marks the pharmacy as a partner.
+- While a pharmacy's programme is active, clicks on its prices go through the programme's tracking link, so sales can be credited to us. Each click carries only an anonymous reference number, nothing about the visitor.
+- Public pages now update as soon as staff publish prices or change partners, instead of up to five minutes later.
+
+- Pharmacy pages now only link to a pharmacy's website if it is one of our partner pharmacies. Other pharmacies are still shown in full, with their prices, registration and checks, but with no link to their site. This works the same way on the comparison and price pages.
+- Being a partner never changes where a pharmacy appears in the price rankings.
+- On the admin page for each pharmacy there is a new "Affiliate partner" tick box to switch its website link on or off. Only commercial managers and administrators can change it, and every change is recorded in the activity log.
+- On the admin Reviews page, rejected candidates now have a "Send back to pending" button that returns them to the Pending list so they can be looked at again.
+- Promoted candidates now have a "Reject" button. It also archives the pharmacy that was created from that candidate, which takes it off the public site. The pharmacy's details and prices are kept, and it can be restored from the Pharmacies page. Only administrators can do this, because it archives a pharmacy.
+
+- When a visitor clicks "View" on a price, the site now counts that click before sending them on to the pharmacy. Only the pharmacy, product, page and price position are recorded; nothing that identifies the visitor or what they searched for.
+- The "View" button only ever sends people to the pharmacy's own website. If a price has been withdrawn since the page loaded, visitors are taken back to the comparison page.
+- The admin Analytics page has three new charts: clicks to pharmacies per day (with automated traffic filtered out and shown separately), the pharmacies people visit most, and which pages the clicks come from, including how often people choose the cheapest price.
+- The privacy policy now explains that clicks to pharmacies are counted and what is and isn't kept.
+
+- No page on the public site says "coming soon" any more. Every page now has its own content.
+- All 12 guides (understanding ED, heart health, options beyond tablets, talking about ED, the treatment overview, sildenafil, tadalafil, your first consultation, choosing a pharmacy, travel and storage, managing treatment, and news and safety alerts) and the 5 tool pages (sildenafil vs tadalafil, onset and duration, strengths, the IIEF-5 explainer and the heart-health checklist) now show full information. Every statement links to a numbered source: NHS pages, the official Viagra, Viagra Connect and Cialis product information, the British Heart Foundation, the MHRA, the pharmacy regulators and UK travel health guidance. Like the Side Effects pages, each one says it has been checked against its sources and is awaiting review by a named clinician.
+- New Privacy policy, Terms of use and About pages. The privacy policy describes exactly what the site does: no accounts, tracking or advertising, and only the details people type into a form are kept.
+- The "build progress" page has been replaced by an "All pages" site map listing every page with a short description. Old links to it forward automatically.
+- The home page, menus and footer now describe the live service instead of a preview, and the editorial policy now explains how guides show whether a clinician has reviewed them yet.
+
+- Viagra Connect is now shown and checked separately from prescription Viagra, so its prices are not mixed together. Four pharmacy prices were rechecked successfully; two pages were left unchanged because they did not clearly show the exact product and pack price. All refreshed prices are still waiting for staff approval before appearing publicly.
+
+- Prices on the comparison page are now ranked purely by price, however long ago they were checked. Prices checked more than 24 hours ago are no longer moved to a separate list. They take their place in the ranking and are marked "May have changed". Only out-of-stock prices are listed separately, at the bottom. Prices older than 48 hours are still hidden until they're checked again. The explanations on the price pages have been updated to match.
+
+- The public price comparison page now shows all prices in one table instead of two. Current, in-stock prices are ranked at the top, and older or out-of-stock prices follow under an "Also listed" divider in the same table, unranked and marked "May have changed".
+
 - The six Side Effects pages (urgent warning signs, common side effects, heart health before treatment, medicine interactions, vision and hearing changes, and contacting your prescriber) now show real information instead of "Coming soon". Every statement has a numbered reference linking to its source: NHS medicine pages and the official Viagra and Cialis product information. Each page clearly says it was checked against those sources and is still awaiting review by a named clinician. The pages stay hidden from search engines until that review is done, and a clinician-approved version replaces them automatically once one is published.
 
 - Search engines can now find every clinically reviewed guide through the site map, with the date each guide was last updated. Published guides also now provide clearer, safe article details for search results. Price-comparison and pharmacy-price pages remain hidden from search until their legal review is complete.

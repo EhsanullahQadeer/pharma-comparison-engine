@@ -11,11 +11,11 @@ const PAIN_POINTS = [
 ];
 
 const BENEFITS = [
-  "Planned: match medicine, strength and pack quantity",
-  "Planned: show known charges and the total payable cost",
-  "Planned: separate first-order offers from repeat prices",
-  "Planned: link to registration evidence and checked dates",
-  "Planned: label stale prices and explain update schedules",
+  "Matches medicine, strength and pack quantity",
+  "Adds known charges to show the total cost",
+  "Separates one-off prices from repeat prices",
+  "Links to registration evidence and checked dates",
+  "Labels older prices and explains update schedules",
 ];
 
 function ComparisonRing() {
@@ -54,7 +54,7 @@ export function ComparisonSection() {
         <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
           More context for ED prices.{" "}
           <span className="bg-linear-to-r from-chart-1 via-chart-2 to-chart-5 bg-clip-text text-transparent">
-            That’s what we’re building.
+            That’s what we do.
           </span>
         </h2>
       </div>

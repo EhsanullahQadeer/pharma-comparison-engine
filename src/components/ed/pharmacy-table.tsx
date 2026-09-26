@@ -28,7 +28,7 @@ export function PharmacyTable({ providers }: { providers: PublicProviderSummary[
           <TableRow key={provider.id}>
             <TableCell>
               <div className="flex items-center gap-3">
-                <PharmacyAvatar name={provider.name} />
+                <PharmacyAvatar name={provider.name} logoUrl={provider.logoUrl} />
                 <div className="min-w-0">
                   <Link href={`/ed/pharmacies/${provider.slug}`} className="font-semibold underline-offset-4 hover:underline">{provider.name}</Link>
                   <p className="text-xs text-muted-foreground">{provider.websiteDomain}</p>

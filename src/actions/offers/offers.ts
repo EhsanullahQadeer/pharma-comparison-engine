@@ -8,6 +8,7 @@ import { recordAuditLog } from "@/lib/audit-log";
 import { linkOfferToProductMatch, unlinkOfferFromProductMatch } from "@/lib/price-collection/offer-product-match";
 import { recordPriceHistorySnapshot } from "@/lib/price-history";
 import { prisma } from "@/lib/prisma";
+import { revalidatePublicSite } from "@/lib/revalidate-public-site";
 import { requireStaffRole } from "@/lib/staff-auth";
 
 const offerSchema = z.object({
@@ -150,7 +151,7 @@ export async function setOfferPublished(offerId: string, published: boolean): Pr
   await recordAuditLog({ actorId: staffUser.id, action: "UPDATE", entityType: "Offer", entityId: offerId, changes: { published } });
 
   revalidateOfferPages(offer.providerId, offer.productVariantId);
-  revalidatePath("/ed", "layout");
+  revalidatePublicSite();
   return {};
 }
 
@@ -171,7 +172,7 @@ export async function publishProviderOffers(providerId: string): Promise<Publish
 
   revalidatePath(`/admin/pharmacies/${providerId}`);
   revalidatePath("/admin/pharmacies");
-  revalidatePath("/ed", "layout");
+  revalidatePublicSite();
   return {};
 }
 
@@ -204,7 +205,7 @@ export async function setOffersPublished(offerIds: string[], published: boolean)
     await prisma.offer.updateMany({ where: { id: { in: changing.map((offer) => offer.id) } }, data: { publishedAt: published ? new Date() : null } });
     await Promise.all(changing.map((offer) => recordAuditLog({ actorId: staffUser.id, action: "UPDATE", entityType: "Offer", entityId: offer.id, changes: { published, bulk: true } })));
     changing.forEach((offer) => revalidateOfferPages(offer.providerId, offer.productVariantId));
-    revalidatePath("/ed", "layout");
+    revalidatePublicSite();
   }
   return { updated: changing.length, skipped: blocked.length };
 }
@@ -225,7 +226,7 @@ export async function deleteOffers(offerIds: string[]): Promise<BulkOfferState> 
   await Promise.all(offers.map((offer) => recordAuditLog({ actorId: staffUser.id, action: "DELETE", entityType: "Offer", entityId: offer.id, changes: { providerId: offer.providerId, bulk: true } })));
 
   offers.forEach((offer) => revalidateOfferPages(offer.providerId, offer.productVariantId));
-  if (offers.length > 0) revalidatePath("/ed", "layout");
+  if (offers.length > 0) revalidatePublicSite();
   return { updated: count };
 }
 
@@ -254,7 +255,7 @@ export async function publishProvidersOffers(providerIds: string[]): Promise<Bul
     await Promise.all(drafts.map((offer) => recordAuditLog({ actorId: staffUser.id, action: "UPDATE", entityType: "Offer", entityId: offer.id, changes: { published: true, bulk: true } })));
     drafts.forEach((offer) => revalidateOfferPages(offer.providerId, offer.productVariantId));
     revalidatePath("/admin/pharmacies");
-    revalidatePath("/ed", "layout");
+    revalidatePublicSite();
   }
   return { updated: drafts.length, skipped: ids.length - published.length };
 }

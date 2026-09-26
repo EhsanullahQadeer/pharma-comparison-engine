@@ -4,8 +4,8 @@ import { formatPence } from "@/lib/money";
 import type { ComparisonFilters, ComparisonSort, FreshnessTier, PublicOffer, PublicVariant, VariantPriceSummary } from "@/types/comparison";
 
 const HOUR_MS = 60 * 60 * 1000;
-// Roadmap §4.5: rank only totals verified within 24h; 24–48h is shown as stale outside the
-// ranking; beyond 48h the number is suppressed from public view entirely. Evaluated at read time,
+// Prices checked within 24h are "fresh"; 24–48h are "stale" (still ranked by price, but labelled
+// "may have changed"); beyond 48h the number is suppressed from public view entirely. Evaluated at read time,
 // never by mutating rows, so "just verified" and "about to display" can't race.
 export const FRESH_WINDOW_MS = 24 * HOUR_MS;
 export const STALE_WINDOW_MS = 48 * HOUR_MS;
@@ -28,9 +28,10 @@ export function freshnessTier(checkedAt: Date, now: Date): FreshnessTier {
   return "expired";
 }
 
-// Freshness and stock are eligibility gates, not ranking weights (milestone 05).
+// Every in-stock offer is ranked by price, whenever it was checked (stale ones are labelled, not
+// separated). Out-of-stock offers can't be bought, so they're listed after the ranking.
 export function isRankable(offer: PublicOffer) {
-  return offer.freshness === "fresh" && offer.availability !== "OUT_OF_STOCK";
+  return offer.availability !== "OUT_OF_STOCK";
 }
 
 export const offerSortValue: Record<ComparisonSort, (offer: PublicOffer) => number> = {

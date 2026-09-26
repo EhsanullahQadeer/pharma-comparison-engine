@@ -12,6 +12,8 @@ import { requireStaffRole } from "@/lib/staff-auth";
 const discountSchema = z
   .object({
     eligibility: z.string().trim().min(2, "Describe who this discount applies to."),
+    // Codes are case-sensitive at some checkouts, so kept exactly as entered (only trimmed).
+    code: z.string().trim().max(40, "Keep the code under 40 characters.").optional(),
     valueType: z.enum(DiscountValueType),
     valuePence: z.coerce.number().int().min(0).optional(),
     valuePercent: z.coerce.number().int().min(0).max(100).optional(),
@@ -38,6 +40,7 @@ export async function createDiscount(offerId: string, providerId: string, _prevS
 
   const parsed = discountSchema.safeParse({
     eligibility: formData.get("eligibility"),
+    code: formData.get("code") || undefined,
     valueType: formData.get("valueType"),
     valuePence: formData.get("valuePence") || undefined,
     valuePercent: formData.get("valuePercent") || undefined,
