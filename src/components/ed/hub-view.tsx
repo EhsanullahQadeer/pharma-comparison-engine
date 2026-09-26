@@ -1,4 +1,4 @@
-import { ArrowRight, BadgeCheck, Clock3 } from "lucide-react";
+import { ArrowRight, BadgeCheck, Clock3, FileSearch } from "lucide-react";
 
 import { getPublishedArticleSummaries } from "@/actions/articles/articles";
 import { GradientText } from "@/components/ed/gradient-text";
@@ -7,26 +7,29 @@ import Link from "@/components/Link";
 import { edHref, edPages } from "@/lib/ed-pages";
 import type { EdPage } from "@/lib/ed-pages";
 import { revealClass, revealStyle } from "@/lib/motion";
+import { getSideEffectsArticle } from "@/lib/side-effects-articles";
 import { cn } from "@/lib/utils";
 
 const hubPaths = new Set(["guides", "guides/safety", "tools"]);
 
-type CardStatus = "readable" | "live" | "review";
+type CardStatus = "readable" | "live" | "sourced" | "review";
 
 function cardStatus(entry: EdPage, published: Map<string, string>): CardStatus {
   if (entry.live) return "live";
-  return published.has(entry.path) ? "readable" : "review";
+  if (published.has(entry.path)) return "readable";
+  return getSideEffectsArticle(entry.path) ? "sourced" : "review";
 }
 
 // Registry descriptions are internal scope notes, so unpublished articles get a neutral line instead.
 function cardText(entry: EdPage, published: Map<string, string>) {
   if (entry.kind !== "article") return entry.description;
-  return published.get(entry.path) ?? "Being written and checked by a clinical reviewer before it's published.";
+  return published.get(entry.path) ?? getSideEffectsArticle(entry.path)?.summary ?? "Being written and checked by a clinical reviewer before it's published.";
 }
 
 const statusBadges: Record<CardStatus, { label: string; icon: typeof Clock3; className: string }> = {
   readable: { label: "Read now", icon: BadgeCheck, className: "bg-primary/15 text-foreground" },
   live: { label: "Live", icon: BadgeCheck, className: "bg-primary/15 text-foreground" },
+  sourced: { label: "Sourced · clinical review pending", icon: FileSearch, className: "bg-primary/15 text-foreground" },
   review: { label: "In clinical review", icon: Clock3, className: "bg-secondary text-secondary-foreground" },
 };
 
@@ -42,7 +45,7 @@ export async function HubView({ group, title, accent, eyebrow, description }: {
   const published = new Map((await getPublishedArticleSummaries()).map((article) => [article.slug, article.summary]));
   const pages = edPages.filter((entry) => entry.group === group && !hubPaths.has(entry.path));
   const sections = [...new Set(pages.map((entry) => entry.section))].map((section) => ({ section, pages: pages.filter((entry) => entry.section === section) }));
-  const readableCount = pages.filter((entry) => entry.live || published.has(entry.path)).length;
+  const readableCount = pages.filter((entry) => cardStatus(entry, published) !== "review").length;
 
   return (
     <PageShell
@@ -55,7 +58,7 @@ export async function HubView({ group, title, accent, eyebrow, description }: {
         <div className="w-full rounded-3xl border border-border bg-card/80 p-5 shadow-(--shadow) backdrop-blur lg:w-72">
           <p className="text-3xl font-semibold tracking-tight tabular-nums">{readableCount}<span className="text-base font-normal text-muted-foreground"> / {pages.length}</span></p>
           <p className="text-sm text-muted-foreground">pages available now</p>
-          <p className="mt-3 border-t border-border pt-3 text-xs text-muted-foreground">Health information is published only after a named clinical reviewer has checked it against its sources.</p>
+          <p className="mt-3 border-t border-border pt-3 text-xs text-muted-foreground">Every page cites its sources. A page marked as pending clinical review has been checked against those sources but not yet reviewed by a named clinician.</p>
         </div>
       )}
     >

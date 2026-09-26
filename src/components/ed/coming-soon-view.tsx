@@ -55,7 +55,7 @@ export function ComingSoonView({ page }: { page: EdPage }) {
       </div>
       <section className="mt-12">
         <h2 className="text-2xl font-semibold">More in {groupLabels[page.group]}</h2>
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{related.map((entry) => <Link key={entry.path} href={edHref(entry.path)} className="rounded-2xl border border-border p-5 transition-colors hover:bg-muted"><span className="block text-xs text-muted-foreground">{entry.live ? "Live now" : "Coming soon"}</span><span className="mt-1 block font-medium">{entry.title}</span></Link>)}</div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{related.map((entry) => <Link key={entry.path} href={edHref(entry.path)} className="rounded-2xl border border-border p-5 transition-colors hover:bg-muted"><span className="block text-xs text-muted-foreground">{entry.readable ? "Available now" : "Coming soon"}</span><span className="mt-1 block font-medium">{entry.title}</span></Link>)}</div>
       </section>
     </PageShell>
   );

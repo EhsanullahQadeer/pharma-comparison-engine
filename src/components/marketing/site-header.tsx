@@ -72,7 +72,7 @@ export function SiteHeader() {
                         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{section.label}</p>
                         <ul className="space-y-1">
                           {section.pages.map((page) => (
-                            <li key={page.path}><Link href={edHref(page.path)} onClick={close} aria-current={pathname === edHref(page.path) ? "page" : undefined} className="flex items-center justify-between gap-2 rounded-lg px-2 py-2 text-sm transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring aria-[current=page]:bg-muted aria-[current=page]:font-semibold">{page.title}{page.live ? <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium">Live</span> : null}</Link></li>
+                            <li key={page.path}><Link href={edHref(page.path)} onClick={close} aria-current={pathname === edHref(page.path) ? "page" : undefined} className="flex items-center justify-between gap-2 rounded-lg px-2 py-2 text-sm transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring aria-[current=page]:bg-muted aria-[current=page]:font-semibold">{page.title}{page.readable ? <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium">Live</span> : null}</Link></li>
                           ))}
                         </ul>
                       </div>

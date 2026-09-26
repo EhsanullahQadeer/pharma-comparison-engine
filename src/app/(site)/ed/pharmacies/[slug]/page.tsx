@@ -12,7 +12,7 @@ import Link from "@/components/Link";
 import { formatShortDate } from "@/lib/comparison";
 import { formatPence } from "@/lib/money";
 import { regulatorRegisterUrls, regulatorTypeLabels } from "@/lib/provider-labels";
-import { pomPricingRobots } from "@/lib/seo";
+import { pomPricingRobots, serializeJsonLd } from "@/lib/seo";
 import { siteUrl } from "@/lib/site-url";
 import type { PublicProviderProfile } from "@/types/comparison";
 
@@ -96,7 +96,7 @@ export default async function PharmacyProfilePage(props: PageProps<"/ed/pharmaci
         </div>
       )}
     >
-      {schema ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} /> : null}
+      {schema ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(schema) }} /> : null}
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="min-w-0 lg:col-span-2">
           {provider.offers.length === 0 ? (

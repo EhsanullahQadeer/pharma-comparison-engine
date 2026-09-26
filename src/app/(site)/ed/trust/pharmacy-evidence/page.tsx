@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { PageShell } from "@/components/ed/page-shell";
 import Link from "@/components/Link";
 import { edHref, edPages, groupLabels } from "@/lib/ed-pages";
+import { serializeJsonLd } from "@/lib/seo";
 
 import type { Metadata } from "next";
 
@@ -85,7 +86,7 @@ export default function PharmacyEvidencePage() {
       eyebrow={`${groupLabels.trust} / Our approach`}
       description="Every pharmacy we list is checked against its regulator's public register and its actual ED-service pathway — with a source link and a checked date attached to every claim. We don't compress that into a single invented safety score."
     >
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqSchema) }} />
 
       <ul className="mt-10 grid gap-3 sm:grid-cols-3">
         {VALUE_PROPS.map((point) => (
@@ -241,7 +242,7 @@ export default function PharmacyEvidencePage() {
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {relatedTrustPages.map((entry) => (
             <Link key={entry.path} href={edHref(entry.path)} className="rounded-2xl border border-border p-5 hover:bg-muted">
-              <span className="block text-xs text-muted-foreground">{entry.live ? "Live now" : "Coming soon"}</span>
+              <span className="block text-xs text-muted-foreground">{entry.readable ? "Available now" : "Coming soon"}</span>
               <span className="mt-1 block font-medium">{entry.title}</span>
             </Link>
           ))}

@@ -1,3 +1,5 @@
+import { sideEffectsArticles } from "@/lib/side-effects-articles";
+
 export const edGroups = ["pharmacies", "prices", "guides", "side-effects", "tools", "trust"] as const;
 
 export const groupLabels = { pharmacies: "Pharmacies", prices: "Prices", guides: "Guides", "side-effects": "Side Effects", tools: "Tools", trust: "Trust" };
@@ -13,7 +15,8 @@ export const deliveryStages = [
 // Every catalogue page is one of three kinds:
 // - "live": has its own route folder under src/app/(site)/ed and real content or data;
 // - "article": medical/educational content, shown only once a clinically reviewed Article for that
-//   path is PUBLISHED (served by /ed/[...slug]; otherwise it stays a coming-soon preview);
+//   path is PUBLISHED (served by /ed/[...slug]; otherwise it stays a coming-soon preview, except the
+//   side-effects pages, which show source-checked content from src/lib/side-effects-articles.ts);
 // - "preview": still a coming-soon page (e.g. privacy/terms, pending business details).
 export type EdPageKind = "live" | "article" | "preview";
 
@@ -35,6 +38,9 @@ const articlePaths = new Set([
 // Live pages that show prescription-only medicine prices stay noindex (see src/lib/seo.ts).
 const pomPricingPaths = new Set(["pharmacies", "compare", "prices/sildenafil", "prices/tadalafil", "prices/pack-sizes", "prices/repeat-costs"]);
 
+// Article pages that already show source-checked content while awaiting clinical review.
+const sourcedPaths = new Set(sideEffectsArticles.map((article) => article.slug));
+
 function pageKind(path: string): EdPageKind {
   if (livePaths.has(path)) return "live";
   return articlePaths.has(path) ? "article" : "preview";
@@ -43,7 +49,8 @@ function pageKind(path: string): EdPageKind {
 function page(path: string, title: string, group: (typeof edGroups)[number], section: string, stage: 1 | 2 | 3 | 4, description: string) {
   const kind = pageKind(path);
   const live = kind === "live";
-  return { path, title, group, section, stage, description, kind, live, indexable: live && !pomPricingPaths.has(path) };
+  // readable: a visitor gets real content (a live page or source-checked article), not a preview.
+  return { path, title, group, section, stage, description, kind, live, readable: live || sourcedPaths.has(path), indexable: live && !pomPricingPaths.has(path) };
 }
 
 // Navigation, route generation and previews share this catalogue.
@@ -108,7 +115,7 @@ export const articlePages = edPages.filter((entry) => entry.kind === "article");
 export const edHref = (path: string) => `/ed/${path}`;
 export const navigationGroups = edGroups.map((id) => ({
   id, label: groupLabels[id],
-  liveCount: edPages.filter((entry) => entry.group === id && entry.live).length,
+  liveCount: edPages.filter((entry) => entry.group === id && entry.readable).length,
   sections: [...new Set(edPages.filter((entry) => entry.group === id).map((entry) => entry.section))].map((label) => ({
     label, pages: edPages.filter((entry) => entry.group === id && entry.section === label),
   })),

@@ -2,6 +2,10 @@
 
 ## 2026-09-26
 
+- The six Side Effects pages (urgent warning signs, common side effects, heart health before treatment, medicine interactions, vision and hearing changes, and contacting your prescriber) now show real information instead of "Coming soon". Every statement has a numbered reference linking to its source: NHS medicine pages and the official Viagra and Cialis product information. Each page clearly says it was checked against those sources and is still awaiting review by a named clinician. The pages stay hidden from search engines until that review is done, and a clinician-approved version replaces them automatically once one is published.
+
+- Search engines can now find every clinically reviewed guide through the site map, with the date each guide was last updated. Published guides also now provide clearer, safe article details for search results. Price-comparison and pharmacy-price pages remain hidden from search until their legal review is complete.
+
 - The public pharmacy directory now shows pharmacies in a table instead of cards. Each row shows the pharmacy and its website, its registration number, where it delivers, its lowest price per tablet and how many prices it lists, when its registration was last checked, and a button to open its page. On phones, you can swipe the table sideways.
 
 - The public price comparison page now shows pharmacies in a table instead of large cards. Each row lists the pharmacy, the product, the medicine price, delivery, consultation, the total, the price per tablet and when the price was last checked, so it's easier to compare them side by side. The cheapest option is highlighted. On phones, you can swipe the table sideways.

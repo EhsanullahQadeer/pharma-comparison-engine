@@ -130,3 +130,13 @@ export async function getPublishedArticle(slug: string) {
 export async function getPublishedArticleSummaries() {
   return prisma.article.findMany({ where: { status: "PUBLISHED" }, select: { slug: true, summary: true } });
 }
+
+// Used only by the sitemap. Keep it separate from article bodies so generating the sitemap stays
+// lightweight as the editorial library grows.
+export async function getPublishedArticleSitemapEntries() {
+  return prisma.article.findMany({
+    where: { status: "PUBLISHED" },
+    select: { slug: true, updatedAt: true },
+    orderBy: { updatedAt: "desc" },
+  });
+}

@@ -5,7 +5,9 @@ import { getPublishedArticle } from "@/actions/articles/articles";
 import { ArticleView } from "@/components/ed/article-view";
 import { ComingSoonView, comingSoonMetadata, findComingSoonPage } from "@/components/ed/coming-soon-view";
 import { edHref, edPages } from "@/lib/ed-pages";
+import { serializeJsonLd } from "@/lib/seo";
 import { SIDE_EFFECTS_CHECKED_ON, getSideEffectsArticle } from "@/lib/side-effects-articles";
+import { siteUrl } from "@/lib/site-url";
 
 import type { Metadata } from "next";
 
@@ -43,7 +45,18 @@ export default async function EdCatalogPage({ params }: { params: Promise<{ slug
   const { page, article, sourced } = await resolvePage(params);
   if (article) {
     const vetting = { kind: "reviewed", authorName: article.author.name, reviewerName: article.reviewer?.name ?? null, reviewedAt: article.reviewedAt, revision: article.revision } as const;
-    return <ArticleView page={page} article={article} vetting={vetting} />;
+    const articleSchema = siteUrl ? {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: article.title,
+      description: article.summary,
+      mainEntityOfPage: new URL(edHref(page.path), siteUrl).href,
+      datePublished: article.publishedAt?.toISOString(),
+      dateModified: article.updatedAt.toISOString(),
+      author: { "@type": "Person", name: article.author.name },
+      ...(article.reviewer ? { reviewedBy: { "@type": "Person", name: article.reviewer.name } } : {}),
+    } : null;
+    return <>{articleSchema ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(articleSchema) }} /> : null}<ArticleView page={page} article={article} vetting={vetting} /></>;
   }
   if (sourced) return <ArticleView page={page} article={sourced} vetting={{ kind: "sourced", checkedOn: SIDE_EFFECTS_CHECKED_ON }} />;
   return <ComingSoonView page={page} />;
