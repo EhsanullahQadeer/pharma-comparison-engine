@@ -11,6 +11,13 @@ test("assigns the same source record to one stable AI worker", () => {
 test("uses both workers across a source batch", () => {
   const workers = new Set(Array.from({ length: 100 }, (_, index) => assignedEnrichmentWorker("source-one", {
     sourceRecordId: String(index), name: "Example Pharmacy", rawPayload: {},
-  })));
+  }, true)));
   assert.deepEqual(workers, new Set(["GOOGLE_AI_MODE", "DEEPSEEK_WEB"]));
+});
+
+test("sends every candidate to Google AI while DeepSeek is paused", () => {
+  const workers = new Set(Array.from({ length: 100 }, (_, index) => assignedEnrichmentWorker("source-one", {
+    sourceRecordId: String(index), name: "Example Pharmacy", rawPayload: {},
+  }, false)));
+  assert.deepEqual(workers, new Set(["GOOGLE_AI_MODE"]));
 });

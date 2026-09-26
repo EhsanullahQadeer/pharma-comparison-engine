@@ -1,14 +1,19 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 
 import { runPriceCollectionForMatch, updatePriceCollectionSchedule } from "@/actions/price-collection/price-collection";
+import { SelectAllCheckbox } from "@/components/admin/bulk-action-bar";
+import { PriceBulkActions } from "@/components/admin/price-bulk-actions";
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/card";
+import { Checkbox } from "@/components/common/checkbox";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/common/table";
 import type { Ingredient, PriceScrapeCadence, PriceScrapeStatus } from "@/generated/prisma/client";
+import { useRowSelection } from "@/hooks/useRowSelection";
 import { ingredientLabels } from "@/lib/catalogue-labels";
+import type { BulkPriceRow } from "@/types/pricing";
 
 type MatchItem = {
   id: string;
@@ -24,6 +29,8 @@ type MatchItem = {
   productVariant: { ingredient: Ingredient; brandName: string | null; strengthMg: number; packQuantity: number; formulation: string } | null;
   offer: { itemPricePence: number; deliveryFeePence: number; retrievedAt: Date; updatedAt: Date; publishedAt: Date | null } | null;
 };
+
+const bulkActions = ["schedule", "scrape"] as const;
 
 const scrapeStatusLabels: Record<PriceScrapeStatus, string> = {
   NOT_CONFIGURED: "Not configured",
@@ -51,7 +58,7 @@ function formatDate(value: Date | null): string {
   return value ? new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "Not set";
 }
 
-function MatchRow({ item }: { item: MatchItem }) {
+function MatchRow({ item, selected, onToggleSelected }: { item: MatchItem; selected: boolean; onToggleSelected: (id: string, checked: boolean) => void }) {
   const [isCollecting, startCollecting] = useTransition();
   const [isSavingSchedule, startSavingSchedule] = useTransition();
   const [error, setError] = useState<string>();
@@ -86,7 +93,10 @@ function MatchRow({ item }: { item: MatchItem }) {
   if (isCollecting) collectButtonLabel = "Collecting...";
 
   return (
-    <TableRow>
+    <TableRow data-state={selected ? "selected" : undefined}>
+      <TableCell className="align-top">
+        <Checkbox checked={selected} onCheckedChange={(checked) => onToggleSelected(item.id, checked === true)} aria-label="Select this product page" />
+      </TableCell>
       <TableCell className="align-top">
         <div className="space-y-1">
           <p className="font-medium">
@@ -171,6 +181,15 @@ function MatchRow({ item }: { item: MatchItem }) {
 }
 
 export function ProductMatchPricingSection({ items }: { items: MatchItem[] }) {
+  const ids = useMemo(() => items.map((item) => item.id), [items]);
+  const selection = useRowSelection(ids);
+  const selectedRows = useMemo<BulkPriceRow[]>(
+    () => items
+      .filter((item) => selection.selectedIds.includes(item.id))
+      .map((item) => ({ offerId: item.offerId, matchId: item.id, published: !!item.offer?.publishedAt, providerPublished: false })),
+    [items, selection.selectedIds],
+  );
+
   if (items.length === 0) return null;
 
   return (
@@ -179,9 +198,13 @@ export function ProductMatchPricingSection({ items }: { items: MatchItem[] }) {
         <CardTitle>Price collection ({items.length})</CardTitle>
       </CardHeader>
       <CardContent className="px-0">
+        <PriceBulkActions rows={selectedRows} actions={bulkActions} onClear={selection.clear} />
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10" resizable={false}>
+                <SelectAllCheckbox allSelected={selection.allSelected} someSelected={selection.someSelected} onToggleAll={selection.toggleAll} label="Select all product pages" />
+              </TableHead>
               <TableHead>Confirmed variant</TableHead>
               <TableHead>Scrape status</TableHead>
               <TableHead>Latest draft price</TableHead>
@@ -190,7 +213,15 @@ export function ProductMatchPricingSection({ items }: { items: MatchItem[] }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.map((item) => <MatchRow key={item.id} item={item} />)}
+            {/* Keyed on the schedule too, so the row's schedule form picks up a bulk change. */}
+            {items.map((item) => (
+              <MatchRow
+                key={`${item.id}-${item.scrapeEnabled}-${item.scrapeCadence}`}
+                item={item}
+                selected={selection.isSelected(item.id)}
+                onToggleSelected={selection.toggle}
+              />
+            ))}
           </TableBody>
         </Table>
       </CardContent>

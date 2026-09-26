@@ -23,6 +23,17 @@ export const regulatorTypeLabels: Record<RegulatorType, string> = {
   PSNI: "PSNI (Northern Ireland)",
 };
 
+export const regulatorShortLabels: Record<RegulatorType, string> = {
+  GPHC: "GPhC",
+  PSNI: "PSNI",
+};
+
+// Public registers a visitor can search to check a registration themselves.
+export const regulatorRegisterUrls: Record<RegulatorType, string> = {
+  GPHC: "https://www.pharmacyregulation.org/registers",
+  PSNI: "https://www.psni.org.uk/",
+};
+
 // Plain literal, not a value-import of the generated Prisma client — that pulls Node-only driver
 // adapter code into client bundles (Turbopack: "chunking context does not support external
 // modules (request: node:module)"). Keep this list in sync with the RegulatorType enum.

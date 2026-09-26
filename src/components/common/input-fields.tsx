@@ -312,7 +312,7 @@ export function SelectField({
 
   const control = (
     <div className="relative">
-      <BaseSelect name={name} value={value} onValueChange={(v) => onChange?.(v ?? "")} disabled={disabled}>
+      <BaseSelect name={name} value={value} items={options} onValueChange={(v) => onChange?.(v ?? "")} disabled={disabled}>
         <SelectTrigger
           id={inputId}
           className={cn(inputClassName, preIcon && "pl-10", postIcon && "pr-16")}

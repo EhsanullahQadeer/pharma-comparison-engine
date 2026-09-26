@@ -1,5 +1,51 @@
 # Product updates
 
+## 2026-09-26
+
+- Every page on the public site is now live except the privacy policy, terms of use and "About us" pages. Those stay as previews until your company details are confirmed.
+
+- New public pages: a pack-size comparison (price per tablet by pack size), repeat and subscription costs, where our prices come from, a pack-cost calculator, how the site works, our independence rules, how we verify and find pharmacies, information for pharmacies, our editorial policy, and three disclaimer and data pages.
+
+- Visitors can now suggest a pharmacy, report a wrong price or detail, and send a message through the contact page. Suggestions and messages appear in a new Inbox in the admin, and corrections go to the existing Corrections review list. The forms have built-in protection against spam.
+
+- There is now a Guides area, a Safety area and a Tools area. The guides, safety and reference pages show only once they have been clinically reviewed; until then each shows a "being written and clinically reviewed" notice.
+
+- New admin Articles section for writing and reviewing these pages. Each article has a named author and a list of sources. It appears on the website only after a different staff member approves it as clinical reviewer, and any later edit takes it off the site until it's reviewed again.
+
+- First drafts of all 23 guide, safety and reference articles have been written from NHS and other official sources and are waiting in the admin for clinical review. None of them is public yet.
+
+- Pages that show prescription medicine prices are hidden from search engines again, as agreed until the legal check on showing these prices is done. The rest of the site can appear in search results once the site goes live.
+
+- The Pharmacies list now has a toolbar on top of the table at all times. After ticking pharmacies, you can move them all to a new status or publish all of their draft prices in one go. Only pharmacies that are already published have their prices published; the rest are skipped and counted.
+
+- Each row on the Pharmacies list now has the same quick actions as the pharmacy's own page: edit its details, publish all of its draft prices (shown only when it has drafts), and change its status.
+
+- The admin Product variants page now has a Schedule column. Pick Daily, Weekly, Monthly or Off for a product, and every pharmacy page confirmed for that product follows that schedule. The button shows the current setting ("Mixed" when pharmacies differ) and when the next automatic check is due.
+
+- On a product's prices page, each pharmacy now has its own Schedule button, so you can set how often that one pharmacy's price is re-checked. Pharmacies still waiting for their first price can be scheduled there too.
+
+- The Pharmacies list now supports bulk status changes. Tick the pharmacies you want (or tick the box at the top to select them all), then use "Move to" to move them all at once, for example to Identity verified or Published. The menu only offers moves the selected pharmacies can actually make and shows how many can make each one. Pharmacies still go through each check in order, so any that can't make the move yet are skipped and counted. Moving pharmacies to Temporarily withheld or Archived asks you to confirm first.
+
+- The public website now has a price comparison page. Visitors can filter by medicine (sildenafil or tadalafil), strength and pack size, and sort by price per tablet or by total price. Each price shows the medicine cost, delivery and consultation charges, the total to pay, the price per tablet, when it was last checked, and a link to the pharmacy's own page.
+
+- New public pages for sildenafil prices and tadalafil prices show every strength and pack side by side, with the lowest price and the price range for each, plus the five lowest prices right now.
+
+- The public pharmacy directory is now live, with a search box. Each pharmacy has its own profile page showing its registration number, the evidence our team checked (with dates), where it delivers, and all of its current prices.
+
+- Only pharmacies set to "Published" in the admin appear on the public site, and only prices a staff member has published. Prices checked in the last 24 hours are ranked. Prices 24–48 hours old are shown separately and marked "may have changed". Older prices are hidden until they're checked again.
+
+- Where a pharmacy's page doesn't show a delivery or consultation fee, the public site says "Not listed" instead of implying it's free, and calls that total "indicative".
+
+- In the admin, each pharmacy's Offers list now has a "Public site" column (Published or Draft), a publish/unpublish button on every price, and a "Publish all" button. Prices can only be published once the pharmacy itself is published.
+
+- The public site's menus now mark which pages are live, and the site banner links straight to the price comparison.
+
+- DeepSeek is paused for pharmacy discovery until its account is available again (planned for 29 September). Until then every new pharmacy is looked up with Google AI, and the Discovery sources page says DeepSeek is paused.
+
+- Prices can now be updated in bulk. On a product's prices page, and in a pharmacy's Offers and Price collection lists, tick the rows you want (or tick the box at the top to select all). A toolbar then lets you publish or unpublish them, set how often they refresh automatically (daily, weekly, monthly or off), refresh them now, or remove them. Refreshing runs one pharmacy at a time, shows its progress and can be stopped part way.
+
+- A product's prices page now shows whether each price is published on the public site or still a draft.
+
 ## 2026-09-25
 
 - Pharmacy discovery and price scraping now let go of the Chrome window when they finish. You can sign into Google or DeepSeek in that window between runs without its "are you a robot" check repeating endlessly.

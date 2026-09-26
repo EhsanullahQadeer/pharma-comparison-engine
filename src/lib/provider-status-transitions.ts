@@ -13,6 +13,9 @@ export const providerStatusTransitions: Record<ProviderStatus, ProviderStatus[]>
   ARCHIVED: ["DISCOVERED"],
 };
 
+// Moves that take a pharmacy off the public site — staff confirm these first.
+export const destructiveProviderStatuses: ProviderStatus[] = ["TEMPORARILY_WITHHELD", "ARCHIVED"];
+
 const administratorOnlyStatuses: ProviderStatus[] = ["ARCHIVED"];
 
 export function getAllowedNextStatuses(current: ProviderStatus, role: StaffRole): ProviderStatus[] {

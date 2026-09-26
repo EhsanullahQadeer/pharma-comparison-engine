@@ -10,8 +10,40 @@ export const deliveryStages = [
   { id: 5, title: "Optional later features", milestone: "M9–M10", status: "Deferred", description: "Accounts, alerts and any clinical-service expansion require a separate scope decision.", remaining: ["Decide whether saved comparisons and alerts are needed", "Review consent before retaining sensitive preferences", "Scope prescribing separately from this comparison platform"] },
 ] as const;
 
+// Every catalogue page is one of three kinds:
+// - "live": has its own route folder under src/app/(site)/ed and real content or data;
+// - "article": medical/educational content, shown only once a clinically reviewed Article for that
+//   path is PUBLISHED (served by /ed/[...slug]; otherwise it stays a coming-soon preview);
+// - "preview": still a coming-soon page (e.g. privacy/terms, pending business details).
+export type EdPageKind = "live" | "article" | "preview";
+
+const livePaths = new Set([
+  "pharmacies", "pharmacies/verification", "pharmacies/submit", "pharmacies/discovery", "pharmacies/claim", "pharmacies/partners",
+  "compare", "prices/sildenafil", "prices/tadalafil", "prices/pack-sizes", "prices/repeat-costs", "prices/data",
+  "guides", "guides/safety", "tools", "tools/pack-cost",
+  "how-it-works", "independence", "trust/pharmacy-evidence", "trust/editorial-policy", "contact",
+  "trust/disclaimer", "trust/listing-disclaimer", "trust/data-transparency",
+]);
+const articlePaths = new Set([
+  "guides/understanding-ed", "guides/ed-and-heart-health", "guides/beyond-medication", "guides/talking-about-ed",
+  "treatments", "treatments/sildenafil", "treatments/tadalafil", "guides/first-consultation", "guides/choosing-a-pharmacy",
+  "guides/travel-and-delivery", "guides/managing-treatment", "guides/news",
+  "side-effects/contact-your-prescriber", "side-effects/urgent-warning-signs", "side-effects/cardiovascular-safety",
+  "side-effects/interactions", "side-effects/common", "side-effects/vision-and-hearing",
+  "tools/medicine-comparison", "tools/onset-and-duration", "tools/strengths", "tools/iief-5", "tools/heart-health-checklist",
+]);
+// Live pages that show prescription-only medicine prices stay noindex (see src/lib/seo.ts).
+const pomPricingPaths = new Set(["pharmacies", "compare", "prices/sildenafil", "prices/tadalafil", "prices/pack-sizes", "prices/repeat-costs"]);
+
+function pageKind(path: string): EdPageKind {
+  if (livePaths.has(path)) return "live";
+  return articlePaths.has(path) ? "article" : "preview";
+}
+
 function page(path: string, title: string, group: (typeof edGroups)[number], section: string, stage: 1 | 2 | 3 | 4, description: string) {
-  return { path, title, group, section, stage, description, indexable: false };
+  const kind = pageKind(path);
+  const live = kind === "live";
+  return { path, title, group, section, stage, description, kind, live, indexable: live && !pomPricingPaths.has(path) };
 }
 
 // Navigation, route generation and previews share this catalogue.
@@ -68,9 +100,15 @@ export const edPages = [
   page("trust/data-transparency", "Listing and price data transparency", "trust", "Policies", 3, "Describe sources, reuse permissions, checked dates, correction requests and missing or outdated information."),
 ];
 
+export type EdPage = (typeof edPages)[number];
+
+// Paths an Article can be written for (the admin editor's slug picker and the article route).
+export const articlePages = edPages.filter((entry) => entry.kind === "article");
+
 export const edHref = (path: string) => `/ed/${path}`;
 export const navigationGroups = edGroups.map((id) => ({
   id, label: groupLabels[id],
+  liveCount: edPages.filter((entry) => entry.group === id && entry.live).length,
   sections: [...new Set(edPages.filter((entry) => entry.group === id).map((entry) => entry.section))].map((label) => ({
     label, pages: edPages.filter((entry) => entry.group === id && entry.section === label),
   })),

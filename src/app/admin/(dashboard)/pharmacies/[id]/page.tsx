@@ -69,7 +69,7 @@ export default async function ProviderDetailPage(props: PageProps<"/admin/pharma
         <DetectProductsButton providerId={provider.id} />
       </div>
 
-      <ProviderOffersSection providerId={provider.id} offers={provider.offers} variants={variants} />
+      <ProviderOffersSection providerId={provider.id} providerPublished={provider.status === "PUBLISHED"} offers={provider.offers} variants={variants} />
 
       <ProductMatchPricingSection items={pendingMatches} />
 

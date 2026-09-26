@@ -12,7 +12,7 @@ export default function RoadmapPage() {
   return <PageShell title="What we’re building" eyebrow="ED platform / Build progress" description="A clear view of the ED comparison platform: the preview is ready, pharmacy listings come first, and the remaining features are planned below.">
     <section className="mt-10 rounded-3xl border border-border bg-card p-6 sm:p-8">
       <div className="flex items-center gap-3"><CheckCircle2 aria-hidden="true" className="size-6" /><h2 className="text-2xl font-semibold">Built: the platform preview</h2></div>
-      <p className="mt-4 text-muted-foreground">Landing design, shared navigation, mobile menus and {edPages.length} ED coming-soon destinations. These are page previews; pharmacy listings, automatic imports and price comparisons are still to be built.</p>
+      <p className="mt-4 text-muted-foreground">Landing design, shared navigation, mobile menus and {edPages.length} ED coming-soon destinations. The pharmacy directory, pharmacy profiles and sildenafil and tadalafil price comparisons are now live, showing only pharmacies and prices our team has checked; the remaining pages are previews.</p>
     </section>
     <div className="mt-8 space-y-6">{deliveryStages.map((stage) => <section key={stage.id} className="rounded-3xl border border-border p-6 sm:p-8">
       <div className="flex flex-wrap items-center gap-3"><span className="flex size-9 items-center justify-center rounded-full bg-secondary font-semibold">{stage.id}</span><span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">{stage.status}</span><span className="text-xs text-muted-foreground">Roadmap {stage.milestone}</span></div>

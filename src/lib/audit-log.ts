@@ -13,7 +13,8 @@ type AuditEntityType =
   | "StaffUser"
   | "DiscoverySource"
   | "DiscoveryCandidate"
-  | "ProductMatch";
+  | "ProductMatch"
+  | "PublicSubmission";
 
 type RecordAuditLogInput = {
   actorId: string | null;

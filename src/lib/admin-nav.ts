@@ -1,4 +1,4 @@
-import { BarChart3, ClipboardList, History, LayoutDashboard, Pill, Radar, ShieldCheck, Users } from "lucide-react";
+import { BarChart3, ClipboardList, FileText, History, Inbox, LayoutDashboard, Pill, Radar, ShieldCheck, Users } from "lucide-react";
 
 import type { LucideIcon } from "lucide-react";
 
@@ -9,7 +9,14 @@ export const adminNavSections: AdminNavSection[] = [
   { label: "Overview", items: [{ href: "/admin", label: "Dashboard", icon: LayoutDashboard }] },
   { label: "Directory", items: [{ href: "/admin/pharmacies", label: "Pharmacies", icon: Pill }] },
   { label: "Catalogue", items: [{ href: "/admin/catalogue/product-variants", label: "Product variants", icon: ClipboardList }] },
-  { label: "Reviews", items: [{ href: "/admin/reviews", label: "Evidence & corrections", icon: ShieldCheck }] },
+  {
+    label: "Reviews",
+    items: [
+      { href: "/admin/reviews", label: "Evidence & corrections", icon: ShieldCheck },
+      { href: "/admin/inbox", label: "Inbox", icon: Inbox },
+    ],
+  },
+  { label: "Content", items: [{ href: "/admin/articles", label: "Articles", icon: FileText }] },
   {
     label: "Reports",
     items: [

@@ -5,11 +5,13 @@ import { z } from "zod";
 
 import { Ingredient, Prisma, SupplyClassification } from "@/generated/prisma/client";
 import { recordAuditLog } from "@/lib/audit-log";
+import { effectivePriceCadence } from "@/lib/catalogue-labels";
 import { DEFAULT_PAGE_SIZE } from "@/lib/pagination";
 import { HumanVerificationError } from "@/lib/price-collection/human-browser";
 import { runVariantScrape } from "@/lib/price-collection/run-variant-scrape";
 import { prisma } from "@/lib/prisma";
 import { requireStaffRole } from "@/lib/staff-auth";
+import type { VariantScheduleSummary } from "@/types/pricing";
 
 const productVariantSchema = z.object({
   ingredient: z.enum(Ingredient),
@@ -106,7 +108,26 @@ export async function getProductVariants(search?: string, page = 1, pageSize: nu
     prisma.productVariant.count({ where }),
   ]);
 
-  return { variants, total, pages: Math.max(1, Math.ceil(total / pageSize)) };
+  return { variants, total, pages: Math.max(1, Math.ceil(total / pageSize)), schedules: await getVariantScheduleSummaries(variants.map((variant) => variant.id)) };
+}
+
+// One summary per variant across its confirmed product pages, for the list's Schedule column.
+async function getVariantScheduleSummaries(variantIds: string[]): Promise<Record<string, VariantScheduleSummary>> {
+  const matches = await prisma.productMatch.findMany({
+    where: { productVariantId: { in: variantIds }, status: "CONFIRMED" },
+    select: { productVariantId: true, scrapeEnabled: true, scrapeCadence: true, nextScrapeAt: true },
+  });
+  return Object.fromEntries(variantIds.map((id) => {
+    const own = matches.filter((match) => match.productVariantId === id);
+    const cadences = new Set(own.map(effectivePriceCadence));
+    const due = own.flatMap((match) => (match.scrapeEnabled && match.nextScrapeAt ? [match.nextScrapeAt.getTime()] : []));
+    const summary: VariantScheduleSummary = {
+      tracked: own.length,
+      cadence: cadences.size > 1 ? "MIXED" : ([...cadences][0] ?? null),
+      nextScrapeAt: due.length > 0 ? new Date(Math.min(...due)) : null,
+    };
+    return [id, summary];
+  }));
 }
 
 // Unpaginated list for use in <select> pickers (offer forms) — catalogue size is small (roadmap
@@ -158,6 +179,9 @@ export async function getProductVariantPricePage(productVariantId: string) {
             select: {
               id: true,
               candidateUrl: true,
+              scrapeEnabled: true,
+              scrapeCadence: true,
+              nextScrapeAt: true,
             },
           },
         },

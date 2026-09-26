@@ -46,8 +46,8 @@ export function SiteHeader() {
   return (
     <header ref={headerRef} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) close(); }} className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
       <div className="border-b border-border bg-secondary px-4 py-2 text-center text-xs text-secondary-foreground">
-        ED platform preview <span aria-hidden="true">·</span> Pharmacy listings first
-        <Link href="/ed/roadmap" onClick={close} className="ml-3 font-medium underline underline-offset-4">View build progress</Link>
+        New <span aria-hidden="true">·</span> Compare ED treatment prices from checked UK pharmacies
+        <Link href="/ed/compare" onClick={close} className="ml-3 font-medium underline underline-offset-4">Compare prices</Link>
       </div>
       <div className="relative mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-4 lg:px-6">
         <Link href="/" onClick={close} className="flex shrink-0 items-center gap-2 font-semibold">
@@ -64,7 +64,7 @@ export function SiteHeader() {
                 <div className="p-3 lg:absolute lg:inset-x-4 lg:top-full lg:max-h-[70dvh] lg:overflow-y-auto lg:rounded-b-2xl lg:border lg:border-border lg:bg-background lg:p-6 lg:shadow-lg">
                   <div className="mb-5 flex flex-wrap items-center justify-between gap-2 border-b border-border pb-4">
                     <p className="font-medium">{group.label} for ED treatment</p>
-                    <span className="rounded-full bg-secondary px-3 py-1 text-xs">All pages coming soon</span>
+                    <span className="rounded-full bg-secondary px-3 py-1 text-xs">{group.liveCount > 0 ? `${group.liveCount} live now · more coming soon` : "All pages coming soon"}</span>
                   </div>
                   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                     {group.sections.map((section) => (
@@ -72,7 +72,7 @@ export function SiteHeader() {
                         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{section.label}</p>
                         <ul className="space-y-1">
                           {section.pages.map((page) => (
-                            <li key={page.path}><Link href={edHref(page.path)} onClick={close} aria-current={pathname === edHref(page.path) ? "page" : undefined} className="block rounded-lg px-2 py-2 text-sm hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring aria-[current=page]:bg-muted aria-[current=page]:font-semibold">{page.title}</Link></li>
+                            <li key={page.path}><Link href={edHref(page.path)} onClick={close} aria-current={pathname === edHref(page.path) ? "page" : undefined} className="flex items-center justify-between gap-2 rounded-lg px-2 py-2 text-sm transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring aria-[current=page]:bg-muted aria-[current=page]:font-semibold">{page.title}{page.live ? <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium">Live</span> : null}</Link></li>
                           ))}
                         </ul>
                       </div>

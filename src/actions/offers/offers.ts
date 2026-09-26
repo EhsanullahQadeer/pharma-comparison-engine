@@ -130,6 +130,135 @@ export async function updateOffer(offerId: string, _prevState: OfferState, formD
   return {};
 }
 
+export type PublishOfferState = { error?: string };
+
+// Explicit staff decision — scraped/entered offers stay drafts (publishedAt: null) until this runs.
+// A price can only go public once its pharmacy is itself PUBLISHED.
+export async function setOfferPublished(offerId: string, published: boolean): Promise<PublishOfferState> {
+  let staffUser;
+  try {
+    staffUser = await requireStaffRole(["CATALOGUE_EDITOR", "ADMINISTRATOR"]);
+  } catch {
+    return { error: "You are not authorized to publish offers." };
+  }
+
+  const offer = await prisma.offer.findUnique({ where: { id: offerId }, select: { providerId: true, productVariantId: true, provider: { select: { status: true } } } });
+  if (!offer) return { error: "Offer not found." };
+  if (published && offer.provider.status !== "PUBLISHED") return { error: "Publish the pharmacy before publishing its prices." };
+
+  await prisma.offer.update({ where: { id: offerId }, data: { publishedAt: published ? new Date() : null } });
+  await recordAuditLog({ actorId: staffUser.id, action: "UPDATE", entityType: "Offer", entityId: offerId, changes: { published } });
+
+  revalidateOfferPages(offer.providerId, offer.productVariantId);
+  revalidatePath("/ed", "layout");
+  return {};
+}
+
+export async function publishProviderOffers(providerId: string): Promise<PublishOfferState> {
+  let staffUser;
+  try {
+    staffUser = await requireStaffRole(["CATALOGUE_EDITOR", "ADMINISTRATOR"]);
+  } catch {
+    return { error: "You are not authorized to publish offers." };
+  }
+
+  const provider = await prisma.provider.findUnique({ where: { id: providerId }, select: { status: true } });
+  if (!provider) return { error: "Pharmacy not found." };
+  if (provider.status !== "PUBLISHED") return { error: "Publish the pharmacy before publishing its prices." };
+
+  const { count } = await prisma.offer.updateMany({ where: { providerId, publishedAt: null }, data: { publishedAt: new Date() } });
+  await recordAuditLog({ actorId: staffUser.id, action: "UPDATE", entityType: "Provider", entityId: providerId, changes: { publishedOffers: count } });
+
+  revalidatePath(`/admin/pharmacies/${providerId}`);
+  revalidatePath("/admin/pharmacies");
+  revalidatePath("/ed", "layout");
+  return {};
+}
+
+const offerIdsSchema = z.array(z.string().trim().min(1)).min(1, "Select at least one price.").max(500, "Select 500 prices or fewer.");
+
+export type BulkOfferState = { error?: string; updated?: number; skipped?: number };
+
+// Same rule as setOfferPublished, applied per row: prices of unpublished pharmacies are skipped
+// (reported back) rather than failing the whole selection. Rows already in the target state are
+// left alone so an existing publish date isn't reset.
+export async function setOffersPublished(offerIds: string[], published: boolean): Promise<BulkOfferState> {
+  let staffUser;
+  try {
+    staffUser = await requireStaffRole(["CATALOGUE_EDITOR", "ADMINISTRATOR"]);
+  } catch {
+    return { error: "You are not authorized to publish offers." };
+  }
+
+  const parsed = offerIdsSchema.safeParse(offerIds);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message };
+
+  const offers = await prisma.offer.findMany({
+    where: { id: { in: parsed.data } },
+    select: { id: true, providerId: true, productVariantId: true, publishedAt: true, provider: { select: { status: true } } },
+  });
+  const blocked = published ? offers.filter((offer) => offer.provider.status !== "PUBLISHED") : [];
+  const changing = offers.filter((offer) => !blocked.includes(offer) && !!offer.publishedAt !== published);
+
+  if (changing.length > 0) {
+    await prisma.offer.updateMany({ where: { id: { in: changing.map((offer) => offer.id) } }, data: { publishedAt: published ? new Date() : null } });
+    await Promise.all(changing.map((offer) => recordAuditLog({ actorId: staffUser.id, action: "UPDATE", entityType: "Offer", entityId: offer.id, changes: { published, bulk: true } })));
+    changing.forEach((offer) => revalidateOfferPages(offer.providerId, offer.productVariantId));
+    revalidatePath("/ed", "layout");
+  }
+  return { updated: changing.length, skipped: blocked.length };
+}
+
+export async function deleteOffers(offerIds: string[]): Promise<BulkOfferState> {
+  let staffUser;
+  try {
+    staffUser = await requireStaffRole(["CATALOGUE_EDITOR", "ADMINISTRATOR"]);
+  } catch {
+    return { error: "You are not authorized to remove offers." };
+  }
+
+  const parsed = offerIdsSchema.safeParse(offerIds);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message };
+
+  const offers = await prisma.offer.findMany({ where: { id: { in: parsed.data } }, select: { id: true, providerId: true, productVariantId: true } });
+  const { count } = await prisma.offer.deleteMany({ where: { id: { in: offers.map((offer) => offer.id) } } });
+  await Promise.all(offers.map((offer) => recordAuditLog({ actorId: staffUser.id, action: "DELETE", entityType: "Offer", entityId: offer.id, changes: { providerId: offer.providerId, bulk: true } })));
+
+  offers.forEach((offer) => revalidateOfferPages(offer.providerId, offer.productVariantId));
+  if (offers.length > 0) revalidatePath("/ed", "layout");
+  return { updated: count };
+}
+
+// Bulk form of publishProviderOffers for the Pharmacies list: publishes every draft price of the
+// selected pharmacies that are themselves PUBLISHED; the others are skipped and counted.
+export async function publishProvidersOffers(providerIds: string[]): Promise<BulkOfferState> {
+  let staffUser;
+  try {
+    staffUser = await requireStaffRole(["CATALOGUE_EDITOR", "ADMINISTRATOR"]);
+  } catch {
+    return { error: "You are not authorized to publish offers." };
+  }
+
+  const ids = [...new Set(providerIds.filter(Boolean))];
+  if (ids.length === 0) return { error: "Select at least one pharmacy." };
+  if (ids.length > 500) return { error: "Select 500 pharmacies or fewer." };
+
+  const providers = await prisma.provider.findMany({ where: { id: { in: ids } }, select: { id: true, status: true } });
+  const published = providers.filter((provider) => provider.status === "PUBLISHED").map((provider) => provider.id);
+  const drafts = published.length > 0
+    ? await prisma.offer.findMany({ where: { providerId: { in: published }, publishedAt: null }, select: { id: true, providerId: true, productVariantId: true } })
+    : [];
+
+  if (drafts.length > 0) {
+    await prisma.offer.updateMany({ where: { id: { in: drafts.map((offer) => offer.id) } }, data: { publishedAt: new Date() } });
+    await Promise.all(drafts.map((offer) => recordAuditLog({ actorId: staffUser.id, action: "UPDATE", entityType: "Offer", entityId: offer.id, changes: { published: true, bulk: true } })));
+    drafts.forEach((offer) => revalidateOfferPages(offer.providerId, offer.productVariantId));
+    revalidatePath("/admin/pharmacies");
+    revalidatePath("/ed", "layout");
+  }
+  return { updated: drafts.length, skipped: ids.length - published.length };
+}
+
 export async function deleteOffer(offerId: string) {
   const staffUser = await requireStaffRole(["CATALOGUE_EDITOR", "ADMINISTRATOR"]);
   const offer = await prisma.offer.delete({ where: { id: offerId }, select: { providerId: true, productVariantId: true } });

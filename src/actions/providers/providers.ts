@@ -102,7 +102,11 @@ export async function getProviders(search?: string, take?: number) {
       regulatorType: true,
       status: true,
       serviceRegions: true,
+      regulatorReference: true,
+      dispensingPartnerName: true,
       createdAt: true,
+      // Draft (unpublished) prices only — drives "Publish draft prices" on the Pharmacies list.
+      _count: { select: { offers: { where: { publishedAt: null } } } },
     },
   });
 }
@@ -222,8 +226,53 @@ export async function transitionProviderStatus(
     changes: { status: { from: provider.status, to: nextStatus } },
   });
 
-  revalidatePath(`/admin/pharmacies/${providerId}`);
+  revalidateProviderStatusPages([providerId]);
+  return {};
+}
+
+function revalidateProviderStatusPages(providerIds: string[]) {
+  providerIds.forEach((id) => revalidatePath(`/admin/pharmacies/${id}`));
   revalidatePath("/admin/pharmacies");
   revalidatePath("/admin");
-  return {};
+  // Entering or leaving PUBLISHED changes what the public directory and comparison pages show.
+  revalidatePath("/ed", "layout");
+}
+
+export type BulkTransitionProviderStatusState = { error?: string; updated?: number; skipped?: number };
+
+// Bulk form of transitionProviderStatus: each pharmacy still goes through the state machine, so
+// ones that can't make this move from where they are (e.g. skipping a verification step) are
+// skipped and counted rather than failing the whole selection.
+export async function transitionProviderStatuses(providerIds: string[], nextStatus: ProviderStatus): Promise<BulkTransitionProviderStatusState> {
+  let staffUser;
+  try {
+    staffUser = await requireStaffRole(["CATALOGUE_EDITOR", "ADMINISTRATOR"]);
+  } catch {
+    return { error: "You are not authorized to change a provider's status." };
+  }
+
+  const ids = [...new Set(providerIds.filter(Boolean))];
+  if (ids.length === 0) return { error: "Select at least one pharmacy." };
+  if (ids.length > 500) return { error: "Select 500 pharmacies or fewer." };
+
+  const role = staffUser.role;
+  const moved = await prisma.$transaction(async (tx) => {
+    const providers = await tx.provider.findMany({ where: { id: { in: ids } }, select: { id: true, status: true } });
+    const eligible = providers.filter((provider) => getAllowedNextStatuses(provider.status, role).includes(nextStatus));
+    if (eligible.length > 0) {
+      await tx.provider.updateMany({ where: { id: { in: eligible.map((provider) => provider.id) } }, data: { status: nextStatus } });
+    }
+    return eligible;
+  });
+
+  await Promise.all(moved.map((provider) => recordAuditLog({
+    actorId: staffUser.id,
+    action: "UPDATE",
+    entityType: "Provider",
+    entityId: provider.id,
+    changes: { status: { from: provider.status, to: nextStatus }, bulk: true },
+  })));
+
+  if (moved.length > 0) revalidateProviderStatusPages(moved.map((provider) => provider.id));
+  return { updated: moved.length, skipped: ids.length - moved.length };
 }

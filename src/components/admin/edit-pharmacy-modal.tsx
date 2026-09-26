@@ -13,9 +13,11 @@ type EditPharmacyModalProps = {
     Provider,
     "id" | "tradingName" | "legalName" | "websiteDomain" | "regulatorType" | "regulatorReference" | "dispensingPartnerName" | "serviceRegions"
   >;
+  /** Icon-only trigger, for a table row. */
+  compact?: boolean;
 };
 
-export function EditPharmacyModal({ provider }: EditPharmacyModalProps) {
+export function EditPharmacyModal({ provider, compact = false }: EditPharmacyModalProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -23,10 +25,16 @@ export function EditPharmacyModal({ provider }: EditPharmacyModalProps) {
       open={open}
       onOpenChange={setOpen}
       trigger={
-        <Button type="button" variant="outline">
-          <Pencil aria-hidden="true" className="size-4" />
-          Edit details
-        </Button>
+        compact ? (
+          <Button type="button" variant="ghost" size="icon-sm" aria-label={`Edit ${provider.tradingName}`}>
+            <Pencil aria-hidden="true" className="size-4" />
+          </Button>
+        ) : (
+          <Button type="button" variant="outline">
+            <Pencil aria-hidden="true" className="size-4" />
+            Edit details
+          </Button>
+        )
       }
     >
       <DialogContent className="sm:max-w-lg">

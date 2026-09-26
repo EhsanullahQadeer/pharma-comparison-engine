@@ -12,7 +12,6 @@ export const metadata: Metadata = {
   title: "Pharmacy evidence and checks — not an invented score",
   description: "How we check a pharmacy's regulator registration and ED-service evidence before listing it, and why we publish sourced evidence instead of a single composite score.",
   alternates: { canonical: "/ed/trust/pharmacy-evidence" },
-  robots: { index: false, follow: true },
 };
 
 const VALUE_PROPS = [
@@ -64,7 +63,7 @@ const FAQS = [
   { q: "Is this the same as a customer review rating?", a: "No. Customer reviews tell you about service experience; regulator evidence tells you whether a pharmacy is genuinely registered and running the service it claims to. Check both before you buy." },
   { q: "Can a pharmacy pay to improve its evidence status?", a: "No. Evidence status reflects what a reviewer has confirmed against the regulator register and our ED-service checks, independent of any commercial relationship." },
   { q: "What if a pharmacy has no published inspection outcome?", a: "That's an explicit “not yet available” state, not a fail. Registration on the regulator's register is the baseline check; a published inspection report adds detail when the regulator has published one." },
-  { q: "Is the pharmacy directory live yet?", a: "Not yet — see our build progress. This page explains the approach we're building toward, ahead of the directory itself going live." },
+  { q: "Where can I see the evidence for a pharmacy?", a: "Every pharmacy in our directory has a profile showing its registration number, a link to the regulator's register and the evidence we checked, with dates." },
 ];
 
 const faqSchema = {
@@ -207,7 +206,7 @@ export default function PharmacyEvidencePage() {
       <section className="mt-14 flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-border p-6 sm:p-8">
         <div>
           <h2 className="text-xl font-semibold">Check the evidence before you compare prices</h2>
-          <p className="mt-2 max-w-xl text-sm text-muted-foreground">The pharmacy directory isn&apos;t live yet. When it is, every profile will carry this same evidence trail.</p>
+          <p className="mt-2 max-w-xl text-sm text-muted-foreground">Every pharmacy profile in the directory carries this same evidence trail.</p>
         </div>
         <Button
           size="lg"
@@ -215,7 +214,7 @@ export default function PharmacyEvidencePage() {
           nativeButton={false}
           render={
             <Link href="/ed/pharmacies" className="inline-flex items-center gap-2">
-              See the directory plan
+              Browse the directory
               <ArrowRight aria-hidden="true" className="size-4" />
             </Link>
           }
@@ -242,7 +241,7 @@ export default function PharmacyEvidencePage() {
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {relatedTrustPages.map((entry) => (
             <Link key={entry.path} href={edHref(entry.path)} className="rounded-2xl border border-border p-5 hover:bg-muted">
-              <span className="block text-xs text-muted-foreground">Coming soon</span>
+              <span className="block text-xs text-muted-foreground">{entry.live ? "Live now" : "Coming soon"}</span>
               <span className="mt-1 block font-medium">{entry.title}</span>
             </Link>
           ))}

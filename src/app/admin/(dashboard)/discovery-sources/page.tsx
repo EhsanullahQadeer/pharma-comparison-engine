@@ -1,6 +1,7 @@
 import { getAvailableDiscoverySourceTypesForCreate, getDiscoverySources } from "@/actions/discovery/discovery-sources";
 import { CreateDiscoverySourceModal } from "@/components/admin/discovery-source-form-modal";
 import { DiscoverySourcesTable } from "@/components/admin/discovery-sources-table";
+import { isDeepSeekEnabled } from "@/lib/discovery/enrichment-worker";
 
 import type { Metadata } from "next";
 
@@ -19,7 +20,9 @@ export default async function DiscoverySourcesPage() {
             credentials are per-source settings — turn a source on once its credentials are configured.
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            New candidates are split between Google AI and the signed-in DeepSeek Web Search session, never sent to both.
+            {isDeepSeekEnabled()
+              ? "New candidates are split between Google AI and the signed-in DeepSeek Web Search session, never sent to both."
+              : "DeepSeek Web Search is paused — all new candidates are looked up with Google AI."}
           </p>
         </div>
         <CreateDiscoverySourceModal availableTypes={availableTypes} />

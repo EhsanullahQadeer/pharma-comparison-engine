@@ -69,9 +69,23 @@ enum EvidenceApprovalStatus {
   REJECTED
 }
 
+// DRAFT → IN_REVIEW → PUBLISHED. Only a reviewer who isn't the author can publish; any edit to a
+// published article sends it back to IN_REVIEW (a new revision needs a fresh clinical review).
 enum ArticleStatus {
   DRAFT
+  IN_REVIEW
   PUBLISHED
+}
+
+enum PublicSubmissionKind {
+  PHARMACY_SUGGESTION
+  CONTACT
+}
+
+enum PublicSubmissionStatus {
+  NEW
+  HANDLED
+  SPAM
 }
 
 enum CorrectionStatus {
@@ -188,6 +202,7 @@ model StaffUser {
   reviewedEvidence            Evidence[]           @relation("EvidenceReviewer")
   authoredArticles            Article[]            @relation("ArticleAuthor")
   reviewedArticles            Article[]            @relation("ArticleReviewer")
+  handledSubmissions          PublicSubmission[]   @relation("PublicSubmissionHandler")
   ownedCorrections            Correction[]         @relation("CorrectionOwner")
   auditLogs                   AuditLog[]           @relation("AuditLogActor")
   triggeredDiscoveryRuns      DiscoveryRun[]       @relation("DiscoveryRunTrigger")
@@ -343,6 +358,12 @@ model Article {
   topic       String
   language    String        @default("en")
   sources     String[]
+  // Markdown (GFM). Rendered without raw HTML.
+  body        String        @default("")
+  summary     String        @default("")
+  keyFacts    String[]
+  // Reviewer's notes when returning an article to the author.
+  reviewNotes String?
   revision    Int           @default(1)
   status      ArticleStatus @default(DRAFT)
   authorId    String
@@ -513,31 +534,31 @@ model ProviderIdentifier {
 // A staff-entered offer instead creates/claims its CONFIRMED match at save time
 // (src/lib/price-collection/offer-product-match.ts).
 model ProductMatch {
-  id                String                 @id @default(cuid())
-  providerId        String
-  provider          Provider               @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  candidateUrl      String
-  matchedIngredient Ingredient
-  matchedTokens     String[]
-  confidence        ProductMatchConfidence
-  status            ProductMatchStatus     @default(NEW)
-  productVariantId  String?
-  productVariant    ProductVariant?        @relation(fields: [productVariantId], references: [id], onDelete: SetNull)
-  offerId           String?                @unique
-  offer             Offer?                 @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  id                  String                 @id @default(cuid())
+  providerId          String
+  provider            Provider               @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  candidateUrl        String
+  matchedIngredient   Ingredient
+  matchedTokens       String[]
+  confidence          ProductMatchConfidence
+  status              ProductMatchStatus     @default(NEW)
+  productVariantId    String?
+  productVariant      ProductVariant?        @relation(fields: [productVariantId], references: [id], onDelete: SetNull)
+  offerId             String?                @unique
+  offer               Offer?                 @relation(fields: [offerId], references: [id], onDelete: SetNull)
   priceCollectionJobs PriceCollectionJob[]
-  reviewedByStaffId String?
-  reviewedByStaff   StaffUser?             @relation("ProductMatchReviewer", fields: [reviewedByStaffId], references: [id], onDelete: SetNull)
-  reviewedAt        DateTime?
-  scrapeEnabled     Boolean                @default(false)
-  scrapeCadence     PriceScrapeCadence     @default(MANUAL)
-  nextScrapeAt      DateTime?
-  lastScrapedAt     DateTime?
-  lastScrapeStatus  PriceScrapeStatus      @default(NOT_CONFIGURED)
-  lastScrapeError   String?
-  requiresHumanAssist Boolean              @default(false)
-  detectedAt        DateTime               @default(now())
-  updatedAt         DateTime               @updatedAt
+  reviewedByStaffId   String?
+  reviewedByStaff     StaffUser?             @relation("ProductMatchReviewer", fields: [reviewedByStaffId], references: [id], onDelete: SetNull)
+  reviewedAt          DateTime?
+  scrapeEnabled       Boolean                @default(false)
+  scrapeCadence       PriceScrapeCadence     @default(MANUAL)
+  nextScrapeAt        DateTime?
+  lastScrapedAt       DateTime?
+  lastScrapeStatus    PriceScrapeStatus      @default(NOT_CONFIGURED)
+  lastScrapeError     String?
+  requiresHumanAssist Boolean                @default(false)
+  detectedAt          DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
 
   // One match per page per exact variant, so a page listing several strengths/pack sizes can carry a
   // confirmed match (and linked offer) for each. Undecided detection rows have no variant yet; code
@@ -562,4 +583,25 @@ model PriceCollectionJob {
 
   @@index([status, scheduledFor])
   @@index([productMatchId])
+}
+
+// Messages from the public site that aren't listing corrections (those go to Correction):
+// "suggest a pharmacy" and the general contact form. Staff triage them in /admin/inbox.
+model PublicSubmission {
+  id                 String                 @id @default(cuid())
+  kind               PublicSubmissionKind
+  status             PublicSubmissionStatus @default(NEW)
+  name               String?
+  email              String?
+  subject            String?
+  message            String
+  pharmacyName       String?
+  websiteUrl         String?
+  regulatorReference String?
+  handledById        String?
+  handledBy          StaffUser?             @relation("PublicSubmissionHandler", fields: [handledById], references: [id], onDelete: SetNull)
+  handledAt          DateTime?
+  createdAt          DateTime               @default(now())
+
+  @@index([kind, status])
 }

@@ -3,14 +3,10 @@ import { Search } from "lucide-react";
 import { getProviders } from "@/actions/providers/providers";
 import { auth } from "@/auth";
 import { AddPharmacyModal } from "@/components/admin/add-pharmacy-modal";
-import { ProviderStatusControl } from "@/components/admin/provider-status-control";
-import { Badge } from "@/components/common/badge";
+import { PharmaciesTable } from "@/components/admin/pharmacies-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/card";
 import { EmptyState } from "@/components/common/empty-state";
 import { Input } from "@/components/common/input";
-import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/common/table";
-import Link from "@/components/Link";
-import { providerStatusLabels, providerStatusBadgeVariant, regulatorTypeLabels } from "@/lib/provider-labels";
 
 import type { Metadata } from "next";
 
@@ -42,51 +38,7 @@ export default async function AdminPharmaciesPage(props: PageProps<"/admin/pharm
           {providers.length === 0 ? (
             <EmptyState title={query ? "No providers match that search." : "No providers yet. Add the first pharmacy manually to start the catalogue."} />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Trading name</TableHead>
-                  <TableHead>Website</TableHead>
-                  <TableHead>Regulator</TableHead>
-                  <TableHead>Service regions</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {providers.map((provider) => (
-                  <TableRow key={provider.id} className="hover:bg-muted/50">
-                    <TableCell className="font-medium">
-                      <Link href={`/admin/pharmacies/${provider.id}`} className="block hover:underline">
-                        {provider.tradingName}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      <a
-                        href={/^https?:\/\//.test(provider.websiteDomain) ? provider.websiteDomain : `https://${provider.websiteDomain}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hover:underline"
-                      >
-                        {provider.websiteDomain}
-                      </a>
-                    </TableCell>
-                    <TableCell>{regulatorTypeLabels[provider.regulatorType]}</TableCell>
-                    <TableCell className="text-muted-foreground">{provider.serviceRegions.join(", ") || "—"}</TableCell>
-                    {session?.user ? (
-                      <ProviderStatusControl providerId={provider.id} status={provider.status} role={session.user.role} variant="menu" />
-                    ) : (
-                      <>
-                        <TableCell>
-                          <Badge variant={providerStatusBadgeVariant[provider.status]}>{providerStatusLabels[provider.status]}</Badge>
-                        </TableCell>
-                        <TableCell />
-                      </>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <PharmaciesTable providers={providers} role={session?.user?.role ?? null} />
           )}
         </CardContent>
       </Card>
