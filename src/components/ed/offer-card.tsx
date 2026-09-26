@@ -6,18 +6,11 @@ import { FreshnessPill } from "@/components/ed/freshness-pill";
 import { PriceBar } from "@/components/ed/price-bar";
 import Link from "@/components/Link";
 import { availabilityBadgeVariant, availabilityLabels } from "@/lib/catalogue-labels";
-import { offerSortValue, variantLabel, variantTypeLabel } from "@/lib/comparison";
+import { feeText, offerSortValue, variantLabel, variantTypeLabel } from "@/lib/comparison";
 import { formatPence } from "@/lib/money";
 import { revealClass, revealStyle } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import type { ComparisonSort, PublicOffer } from "@/types/comparison";
-
-// A zero fee is only "Free" once staff have verified the fees; until then it may simply be
-// missing from the pharmacy's page, so say so instead of implying it costs nothing.
-function feeText(pence: number, verified: boolean) {
-  if (pence > 0) return formatPence(pence);
-  return verified ? "Free" : "Not listed";
-}
 
 export function OfferCard({ offer, now, rank, best, max, sort, index, context = "comparison" }: {
   offer: PublicOffer;

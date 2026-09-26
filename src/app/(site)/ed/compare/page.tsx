@@ -62,7 +62,7 @@ export default async function ComparePage(props: PageProps<"/ed/compare">) {
                 <StatTile index={2} icon={Store} label="Pharmacies" value={String(new Set(offers.map((offer) => offer.providerId)).size)} hint={`${offers.length} price${offers.length === 1 ? "" : "s"} in view`} />
                 <StatTile index={3} icon={Clock3} label="Latest check" value={formatCheckedAgo(new Date(Math.max(...offers.map((offer) => offer.checkedAt.getTime()))), now)} />
               </div>
-              <OfferResults offers={offers} sort={filters.sort} now={now} />
+              <OfferResults offers={offers} sort={filters.sort} now={now} layout="table" />
             </>
           )}
         </>

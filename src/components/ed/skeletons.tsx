@@ -38,6 +38,18 @@ function OfferRowsSkeleton({ rows }: { rows: number }) {
   );
 }
 
+function TableSkeleton({ rows, heading = false }: { rows: number; heading?: boolean }) {
+  return (
+    <div className="mt-10">
+      {heading ? <Skeleton className="mb-7 h-7 w-64" /> : null}
+      <div className="overflow-hidden rounded-xl border border-border">
+        <Skeleton className="h-10 w-full rounded-none" />
+        {Array.from({ length: rows }, (_, index) => <Skeleton key={index} className="mt-px h-20 w-full rounded-none" />)}
+      </div>
+    </div>
+  );
+}
+
 function CardGridSkeleton({ cards, height }: { cards: number; height: string }) {
   return (
     <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -53,7 +65,7 @@ export function ComparisonPageSkeleton() {
       <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-28 rounded-2xl" />)}
       </div>
-      <OfferRowsSkeleton rows={4} />
+      <TableSkeleton rows={5} heading />
     </PageFrame>
   );
 }
@@ -70,7 +82,7 @@ export function IngredientPageSkeleton() {
 export function DirectoryPageSkeleton() {
   return (
     <PageFrame label="Loading pharmacies">
-      <CardGridSkeleton cards={6} height="h-64" />
+      <TableSkeleton rows={6} />
     </PageFrame>
   );
 }

@@ -2,7 +2,7 @@ import { runCandidateEdCheck, type CandidateEdCheckResult } from "@/lib/discover
 import { prisma } from "@/lib/prisma";
 
 // Batch driver over the whole NEW DiscoveryCandidate backlog, behind the Discovery candidates
-// queue's "Filter for ED medicine"/"Human filter" buttons. Every per-candidate decision still goes
+// queue's "Filter for ED medicine" button. Every per-candidate decision still goes
 // through runCandidateEdCheck — the exact same function the single-row "Check for ED medicine"
 // buttons and scripts/filter-discovery-candidates-by-ed-medicine.ts call — so this is purely a
 // concurrency/aggregation wrapper, not a second copy of the decision rule (see that module's own
@@ -25,8 +25,13 @@ function tally(totals: BacklogEdCheckTotals, kind: CandidateEdCheckResult["kind"
   else totals.blocked++;
 }
 
+type BacklogCandidate = { id: string; name: string; websiteDomain: string | null };
+
+// Two passes behind the single "Filter for ED medicine" button: a fast concurrent plain-fetch pass
+// over the whole backlog, then a sequential human-assisted (patchright/Chrome) retry of only the
+// candidates the plain pass couldn't check — so the visible browser only opens for sites that
+// actually need it. Candidates with no website domain are never retried; a browser can't help them.
 export async function runBacklogEdCheck(
-  humanAssist: boolean,
   staffUserId: string,
   onProgress: BacklogEdCheckProgress = noopProgress,
 ): Promise<BacklogEdCheckResult> {
@@ -37,27 +42,36 @@ export async function runBacklogEdCheck(
   onProgress(`Found ${candidates.length} pending candidate${candidates.length === 1 ? "" : "s"} to check.`);
 
   const totals: BacklogEdCheckTotals = { promoted: 0, needsGphc: 0, rejected: 0, blocked: 0 };
+  const blockedForRetry: BacklogCandidate[] = [];
 
-  async function checkOne(candidate: { id: string; name: string; websiteDomain: string | null }) {
-    onProgress(`Checking ${candidate.name} (${candidate.websiteDomain ?? "no domain"})…`);
+  async function checkOne(candidate: BacklogCandidate, humanAssist: boolean) {
+    onProgress(`Checking ${candidate.name} (${candidate.websiteDomain ?? "no domain"})${humanAssist ? " in the browser" : ""}…`);
+    let kind: CandidateEdCheckResult["kind"] | "BLOCKED";
+    let detail = "";
     try {
-      const result = await runCandidateEdCheck(candidate.id, humanAssist, staffUserId, (message) => onProgress(`${candidate.name}: ${message}`));
-      tally(totals, result.kind);
-      onProgress(`${candidate.name} -> ${result.kind}`);
+      kind = (await runCandidateEdCheck(candidate.id, humanAssist, staffUserId, (message) => onProgress(`${candidate.name}: ${message}`))).kind;
     } catch (error) {
-      tally(totals, "BLOCKED");
-      onProgress(`${candidate.name} -> BLOCKED (${error instanceof Error ? error.message : "unknown error"})`);
+      kind = "BLOCKED";
+      detail = ` (${error instanceof Error ? error.message : "unknown error"})`;
     }
+    if (kind === "BLOCKED" && !humanAssist && candidate.websiteDomain) {
+      blockedForRetry.push(candidate);
+      onProgress(`${candidate.name} -> BLOCKED${detail}, will retry in the browser`);
+      return;
+    }
+    tally(totals, kind);
+    onProgress(`${candidate.name} -> ${kind}${detail}`);
   }
 
-  if (humanAssist) {
-    for (const candidate of candidates) await checkOne(candidate);
-  } else {
-    let cursor = 0;
-    async function worker() {
-      while (cursor < candidates.length) await checkOne(candidates[cursor++]);
-    }
-    await Promise.all(Array.from({ length: Math.min(MAX_CONCURRENT, candidates.length) }, worker));
+  let cursor = 0;
+  async function worker() {
+    while (cursor < candidates.length) await checkOne(candidates[cursor++], false);
+  }
+  await Promise.all(Array.from({ length: Math.min(MAX_CONCURRENT, candidates.length) }, worker));
+
+  if (blockedForRetry.length > 0) {
+    onProgress(`Retrying ${blockedForRetry.length} blocked site${blockedForRetry.length === 1 ? "" : "s"} in a visible Chrome window — complete any verification there.`);
+    for (const candidate of blockedForRetry) await checkOne(candidate, true);
   }
 
   onProgress(`Finished — ${totals.promoted} promoted, ${totals.needsGphc} need a GPhC number, ${totals.rejected} rejected, ${totals.blocked} could not be checked.`);

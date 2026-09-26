@@ -1,6 +1,5 @@
-import { BadgeCheck, BookOpen, CircleAlert, Lightbulb } from "lucide-react";
+import { BadgeCheck, BookOpen, CircleAlert, FileSearch, Lightbulb } from "lucide-react";
 
-import type { getPublishedArticle } from "@/actions/articles/articles";
 import { ArticleMarkdown } from "@/components/ed/article-markdown";
 import { PageShell } from "@/components/ed/page-shell";
 import Link from "@/components/Link";
@@ -8,8 +7,7 @@ import { formatShortDate } from "@/lib/comparison";
 import { edHref, edPages, groupLabels } from "@/lib/ed-pages";
 import type { EdPage } from "@/lib/ed-pages";
 import { revealClass, revealStyle } from "@/lib/motion";
-
-type PublishedArticle = NonNullable<Awaited<ReturnType<typeof getPublishedArticle>>>;
+import type { ArticleContent, ArticleVetting } from "@/types/article";
 
 // Sources are stored one per line as "Title — https://…" (or a bare URL).
 function parseSource(source: string) {
@@ -24,7 +22,35 @@ const hubByGroup: Partial<Record<EdPage["group"], { href: string; label: string 
   tools: { href: "/ed/tools", label: "Tools" },
 };
 
-export function ArticleView({ page, article }: { page: EdPage; article: PublishedArticle }) {
+function ReviewedByline({ vetting }: { vetting: Extract<ArticleVetting, { kind: "reviewed" }> }) {
+  return (
+    <>
+      <span>Written by <span className="font-medium text-foreground">{vetting.authorName}</span></span>
+      {vetting.reviewerName && vetting.reviewedAt ? (
+        <span className="inline-flex items-center gap-1.5">
+          <BadgeCheck aria-hidden="true" className="size-4 text-primary" />
+          Clinically reviewed by <span className="font-medium text-foreground">{vetting.reviewerName}</span> on <time dateTime={vetting.reviewedAt.toISOString()}>{formatShortDate(vetting.reviewedAt)}</time>
+        </span>
+      ) : null}
+      <span>Revision {vetting.revision}</span>
+    </>
+  );
+}
+
+// Source-checked content that no named clinician has reviewed yet — said plainly, never implied.
+function SourcedByline({ vetting }: { vetting: Extract<ArticleVetting, { kind: "sourced" }> }) {
+  return (
+    <>
+      <span className="inline-flex items-center gap-1.5">
+        <FileSearch aria-hidden="true" className="size-4 text-primary" />
+        Every statement checked against the numbered sources below on <time dateTime={vetting.checkedOn.toISOString()}>{formatShortDate(vetting.checkedOn)}</time>
+      </span>
+      <span>Awaiting review by a named clinician</span>
+    </>
+  );
+}
+
+export function ArticleView({ page, article, vetting }: { page: EdPage; article: Omit<ArticleContent, "slug">; vetting: ArticleVetting }) {
   const hub = hubByGroup[page.group];
   const related = edPages.filter((entry) => entry.group === page.group && entry.path !== page.path && entry.kind === "article").slice(0, 3);
 
@@ -36,14 +62,7 @@ export function ArticleView({ page, article }: { page: EdPage; article: Publishe
       crumbs={[{ label: "Home", href: "/" }, ...(hub ? [hub] : [])]}
     >
       <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 border-y border-border py-4 text-sm text-muted-foreground">
-        <span>Written by <span className="font-medium text-foreground">{article.author.name}</span></span>
-        {article.reviewer && article.reviewedAt ? (
-          <span className="inline-flex items-center gap-1.5">
-            <BadgeCheck aria-hidden="true" className="size-4 text-primary" />
-            Clinically reviewed by <span className="font-medium text-foreground">{article.reviewer.name}</span> on <time dateTime={article.reviewedAt.toISOString()}>{formatShortDate(article.reviewedAt)}</time>
-          </span>
-        ) : null}
-        <span>Revision {article.revision}</span>
+        {vetting.kind === "reviewed" ? <ReviewedByline vetting={vetting} /> : <SourcedByline vetting={vetting} />}
       </div>
 
       <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_18rem]">
@@ -62,9 +81,9 @@ export function ArticleView({ page, article }: { page: EdPage; article: Publishe
           <section aria-labelledby="sources-heading" className="mt-14 border-t border-border pt-8">
             <h2 id="sources-heading" className="flex items-center gap-2 text-lg font-semibold"><BookOpen aria-hidden="true" className="size-4" />Sources</h2>
             <ol className="mt-4 list-decimal space-y-2 pl-6 text-sm text-muted-foreground">
-              {article.sources.map((source) => {
+              {article.sources.map((source, index) => {
                 const { label, url } = parseSource(source);
-                return <li key={source}>{url ? <a href={url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">{label}</a> : label}</li>;
+                return <li key={source} id={`source-${index + 1}`} className="scroll-mt-40 target:text-foreground">{url ? <a href={url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">{label}</a> : label}</li>;
               })}
             </ol>
           </section>

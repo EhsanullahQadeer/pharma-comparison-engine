@@ -1,4 +1,5 @@
-import { SOURCES, reviewerNote } from "./article-draft-sources";
+import { SOURCES } from "../../src/lib/article-sources";
+import { reviewerNote } from "./article-draft-sources";
 import type { ArticleDraft } from "./article-draft-sources";
 
 // First drafts for the Guides and Treatments pages. DRAFT status only: none of this is public until

@@ -4,7 +4,7 @@ import { getPublicProviders } from "@/actions/providers/public-providers";
 import { Input } from "@/components/common/input";
 import { GradientText } from "@/components/ed/gradient-text";
 import { PageShell } from "@/components/ed/page-shell";
-import { PharmacyCard } from "@/components/ed/pharmacy-card";
+import { PharmacyTable } from "@/components/ed/pharmacy-table";
 import { PublicEmptyState } from "@/components/ed/public-empty-state";
 import Link from "@/components/Link";
 import { pomPricingRobots } from "@/lib/seo";
@@ -46,9 +46,9 @@ export default async function PharmaciesPage(props: PageProps<"/ed/pharmacies">)
           {providers.length} result{providers.length === 1 ? "" : "s"} for &ldquo;{query}&rdquo; · <Link href="/ed/pharmacies" className="underline underline-offset-4 hover:text-foreground">Show all</Link>
         </p> : null}
       {providers.length === 0 ? emptyStates[query ? "search" : "none"] : (
-        <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {providers.map((provider, index) => <PharmacyCard key={provider.id} provider={provider} index={index} />)}
-        </ul>
+        <div className="mt-10">
+          <PharmacyTable providers={providers} />
+        </div>
       )}
     </PageShell>
   );

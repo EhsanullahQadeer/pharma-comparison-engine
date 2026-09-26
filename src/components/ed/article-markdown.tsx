@@ -18,9 +18,12 @@ const components: Components = {
   strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
   blockquote: ({ children }) => <blockquote className="mt-6 rounded-2xl border border-border bg-card px-5 py-1 text-sm">{children}</blockquote>,
   hr: () => <hr className="my-10 border-border" />,
-  a: ({ href = "", children }) => href.startsWith("/")
-    ? <Link href={href} className="font-medium underline underline-offset-4 hover:text-muted-foreground">{children}</Link>
-    : <a href={href} target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-4 hover:text-muted-foreground">{children}</a>,
+  a: ({ href = "", children }) => {
+    // "[[2]](#source-2)" cites the article's numbered source list.
+    if (href.startsWith("#")) return <a href={href} className="ml-0.5 align-super text-xs font-medium text-muted-foreground hover:text-foreground hover:underline">{children}</a>;
+    if (href.startsWith("/")) return <Link href={href} className="font-medium underline underline-offset-4 hover:text-muted-foreground">{children}</Link>;
+    return <a href={href} target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-4 hover:text-muted-foreground">{children}</a>;
+  },
   table: ({ children }) => (
     <div className="mt-6 overflow-x-auto rounded-2xl border border-border">
       <table className="w-full text-left text-sm">{children}</table>

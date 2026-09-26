@@ -7,11 +7,12 @@ import { cn } from "@/lib/utils";
 
 type BacklogCheckResult = { attempted: number; totals: { promoted: number; needsGphc: number; rejected: number; blocked: number } };
 
-// Page-level "Filter for ED medicine"/"Human filter" buttons above the Discovery candidates queue —
-// runs the same check as scripts/filter-discovery-candidates-by-ed-medicine.ts across the whole NEW
-// backlog, from the browser, streamed via app/api/discovery-candidates/ed-check-stream so this long
-// (many-minute, especially in human mode) run can narrate itself instead of leaving the button
-// spinning with no feedback. Same EventSource pattern as DiscoveryCandidateEdCheckActions.
+// Page-level "Filter for ED medicine" button above the Discovery candidates queue — runs the same
+// check as scripts/filter-discovery-candidates-by-ed-medicine.ts across the whole NEW backlog (plain
+// fetch first, then an automatic human-assisted browser retry of just the blocked sites), streamed
+// via app/api/discovery-candidates/ed-check-stream so this long (many-minute) run can narrate
+// itself instead of leaving the button spinning with no feedback. Same EventSource pattern as
+// DiscoveryCandidateEdCheckActions.
 export function DiscoveryCandidatesBacklogCheckActions() {
   const [isPending, setIsPending] = useState(false);
   const [log, setLog] = useState<string[]>([]);
@@ -28,14 +29,14 @@ export function DiscoveryCandidatesBacklogCheckActions() {
     return () => eventSourceRef.current?.close();
   }, []);
 
-  function handleRun(assisted: boolean) {
+  function handleRun() {
     eventSourceRef.current?.close();
     setIsPending(true);
     setLog([]);
     setResult(undefined);
     setError(undefined);
 
-    const source = new EventSource(`/api/discovery-candidates/ed-check-stream?assisted=${assisted}`);
+    const source = new EventSource("/api/discovery-candidates/ed-check-stream");
     eventSourceRef.current = source;
 
     source.addEventListener("progress", (event) => {
@@ -67,16 +68,11 @@ export function DiscoveryCandidatesBacklogCheckActions() {
           <p className="text-sm font-medium">Filter pending candidates for ED medicine</p>
           <p className="text-xs text-muted-foreground">Checks every pending candidate&apos;s own website for a real ED medicine product page, promoting confirmed matches with a GPhC number and rejecting the rest — same rule as the per-row check.</p>
         </div>
-        <div className="flex gap-1">
-          <Button type="button" size="sm" variant="outline" disabled={isPending} onClick={() => handleRun(false)}>
-            {isPending ? "Filtering…" : "Filter for ED medicine"}
-          </Button>
-          <Button type="button" size="sm" variant="outline" disabled={isPending} onClick={() => handleRun(true)}>
-            Human filter
-          </Button>
-        </div>
+        <Button type="button" size="sm" variant="outline" disabled={isPending} onClick={handleRun}>
+          {isPending ? "Filtering…" : "Filter for ED medicine"}
+        </Button>
       </div>
-      {isPending ? <p className="text-xs text-muted-foreground">CAPTCHA-gated sites open a visible Chrome window on the server computer during a human filter — complete any verification there.</p> : null}
+      {isPending ? <p className="text-xs text-muted-foreground">Sites that block the quick check are retried in a visible Chrome window on the server computer — complete any verification there.</p> : null}
       {log.length > 0 ? (
         <div role="status" aria-live="polite" className="max-h-56 space-y-0.5 overflow-y-auto rounded-md border border-border bg-background p-2 text-left text-xs text-muted-foreground">
           {log.map((line, index) => (

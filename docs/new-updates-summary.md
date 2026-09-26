@@ -2,6 +2,14 @@
 
 ## 2026-09-26
 
+- The public pharmacy directory now shows pharmacies in a table instead of cards. Each row shows the pharmacy and its website, its registration number, where it delivers, its lowest price per tablet and how many prices it lists, when its registration was last checked, and a button to open its page. On phones, you can swipe the table sideways.
+
+- The public price comparison page now shows pharmacies in a table instead of large cards. Each row lists the pharmacy, the product, the medicine price, delivery, consultation, the total, the price per tablet and when the price was last checked, so it's easier to compare them side by side. The cheapest option is highlighted. On phones, you can swipe the table sideways.
+
+- Tick boxes across the admin area now display properly. They were showing as a thin line with nothing to click, and ticked boxes weren't filling in. This affected the Pharmacies list, the price tables and the Reviews page.
+
+- On the admin Reviews page, the two "Filter for ED medicine" and "Human filter" buttons are now one "Filter for ED medicine" button. It checks every pending pharmacy quickly first, then opens the Chrome window only for the sites that blocked the quick check, so you only have to complete verification where it's really needed.
+
 - Every page on the public site is now live except the privacy policy, terms of use and "About us" pages. Those stay as previews until your company details are confirmed.
 
 - New public pages: a pack-size comparison (price per tablet by pack size), repeat and subscription costs, where our prices come from, a pack-cost calculator, how the site works, our independence rules, how we verify and find pharmacies, information for pharmacies, our editorial policy, and three disclaimer and data pages.

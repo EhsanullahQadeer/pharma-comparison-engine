@@ -1,5 +1,6 @@
 import type { Ingredient } from "@/generated/prisma/client";
 import { ingredientLabels, ingredientSlugs, ingredientValues } from "@/lib/catalogue-labels";
+import { formatPence } from "@/lib/money";
 import type { ComparisonFilters, ComparisonSort, FreshnessTier, PublicOffer, PublicVariant, VariantPriceSummary } from "@/types/comparison";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -142,4 +143,11 @@ const dateFormatter = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: 
 
 export function formatShortDate(date: Date) {
   return dateFormatter.format(date);
+}
+
+// A zero fee is only "Free" once staff have verified the fees; until then it may simply be
+// missing from the pharmacy's page, so say so instead of implying it costs nothing.
+export function feeText(pence: number, verified: boolean) {
+  if (pence > 0) return formatPence(pence);
+  return verified ? "Free" : "Not listed";
 }

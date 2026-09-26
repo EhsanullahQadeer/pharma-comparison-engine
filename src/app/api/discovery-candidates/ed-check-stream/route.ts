@@ -4,13 +4,12 @@ import { runBacklogEdCheck } from "@/lib/discovery/run-candidate-backlog-ed-chec
 import { requireStaffRole } from "@/lib/staff-auth";
 
 // Server-Sent Events endpoint behind DiscoveryCandidatesBacklogCheckActions' page-level "Filter for
-// ED medicine"/"Human filter" buttons — same streaming pattern as the single-row
-// app/api/discovery-candidates/[id]/ed-check-stream and app/api/product-variants/[id]/scrape-stream:
-// a plain server action can only return once, so this streams runBacklogEdCheck's onProgress
-// callback out as it happens instead, across the whole NEW backlog rather than one candidate.
-export async function GET(request: Request) {
-  const humanAssist = new URL(request.url).searchParams.get("assisted") === "true";
-
+// ED medicine" button (plain pass, then automatic browser retry of blocked sites) — same streaming
+// pattern as the single-row app/api/discovery-candidates/[id]/ed-check-stream and
+// app/api/product-variants/[id]/scrape-stream: a plain server action can only return once, so this
+// streams runBacklogEdCheck's onProgress callback out as it happens instead, across the whole NEW
+// backlog rather than one candidate.
+export async function GET() {
   let staffUser;
   try {
     staffUser = await requireStaffRole(["CATALOGUE_EDITOR", "ADMINISTRATOR"]);
@@ -27,7 +26,7 @@ export async function GET(request: Request) {
         controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
       }
       try {
-        const result = await runBacklogEdCheck(humanAssist, staffUser.id, (message) => send("progress", { message }));
+        const result = await runBacklogEdCheck(staffUser.id, (message) => send("progress", { message }));
         revalidatePath("/admin/reviews");
         send("done", result);
       } catch (error) {
