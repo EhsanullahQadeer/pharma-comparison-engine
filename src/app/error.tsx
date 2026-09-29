@@ -15,7 +15,7 @@ export default function RootError({ error, reset }: { error: Error & { digest?: 
       <p className="text-sm text-muted-foreground">Something went wrong</p>
       <h1 className="mt-4 text-3xl font-semibold">This page could not be shown</h1>
       <p className="mt-4 max-w-md text-muted-foreground">An unexpected error occurred. Nothing was saved or changed as a result.</p>
-      <button type="button" onClick={reset} className="mt-6 rounded-full bg-primary px-5 py-3 font-medium text-foreground hover:bg-primary/80">Try again</button>
+      <button type="button" onClick={reset} className="mt-6 rounded-full bg-primary px-5 py-3 font-medium text-primary-foreground hover:bg-primary/80">Try again</button>
     </div>
   );
 }

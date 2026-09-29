@@ -8,8 +8,13 @@ export type ComparisonSort = "tablet" | "total";
 
 export type ComparisonFilters = {
   ingredient?: Ingredient;
+  // Slug of variantTypeLabel ("viagra", "viagra-connect", "cialis", "generic").
+  productType?: string;
   strengthMg?: number;
+  // Slug of the base formulation, qualifiers dropped ("film-coated-tablet", "orodispersible-tablet").
+  formulation?: string;
   packQuantity?: number;
+  purchaseModel?: PurchaseModel;
   sort: ComparisonSort;
 };
 

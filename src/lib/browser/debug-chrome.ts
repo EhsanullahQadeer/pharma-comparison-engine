@@ -4,9 +4,9 @@ import { join, resolve } from "node:path";
 
 // The project's visible "debug Chrome": ordinary Google Chrome on the project's persistent, signed-in
 // profile with remote debugging on, which Google AI / DeepSeek discovery and human-assisted price
-// scraping attach to over CDP with their own Playwright/patchright client. If an admin closes the
+// scraping attach to over CDP with their own patchright client. If an admin closes the
 // window, the next "Run now" / scrape starts it again here instead of failing until someone reopens
-// it by hand. Chrome is started as its own detached process (not by Playwright), so it looks like a
+// it by hand. Chrome is started as its own detached process (not by patchright), so it looks like a
 // normal browser to sites and a person can complete security checks in it, and it survives dev-server
 // restarts. The profile keeps Google/DeepSeek sign-ins and cleared checks between launches.
 export const DEBUG_CHROME_CDP_URL = process.env.HUMAN_SCRAPE_CDP_URL ?? process.env.GOOGLE_AI_CDP_URL ?? "http://127.0.0.1:9222";

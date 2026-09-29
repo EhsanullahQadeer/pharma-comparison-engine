@@ -657,10 +657,15 @@ model PriceCollectionJob {
   finishedAt     DateTime?
   errorMessage   String?
   humanAssist    Boolean                  @default(false)
+  // Claims made so far (first run + retries). A claim sets a lease; a RUNNING job whose lease has
+  // expired belonged to a worker that died mid-run and is requeued (or failed once out of attempts).
+  attempts       Int                      @default(0)
+  leaseExpiresAt DateTime?
   createdAt      DateTime                 @default(now())
   updatedAt      DateTime                 @updatedAt
 
   @@index([status, scheduledFor])
+  @@index([status, leaseExpiresAt])
   @@index([productMatchId])
 }
 

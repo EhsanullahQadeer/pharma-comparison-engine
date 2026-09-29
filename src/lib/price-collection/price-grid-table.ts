@@ -4,7 +4,10 @@ import { brandSideMatches, labelMatchesVariant, type VariantSpec } from "@/lib/p
 // A strength × pack-size price table on the product page (e.g. Oxford Online Pharmacy's "Our
 // Prices": strengths across the header, "4 tablets"/"8 tablets" rows, "-" where a pack isn't sold).
 // Either orientation is read: strengths in the header and packs in the first column, or the reverse.
-// The product's own heading decides branded vs generic and supplies the ingredient/brand token.
+// Some sites (e.g. Somer Pharmacy's TablePress table) label the pack column "Quantity" with bare
+// counts ("4", "8") and give prices as bare amounts ("29.99") — accepted only in that exact shape.
+// The product's own heading (or, with no <h1>, its page title) decides branded vs generic and
+// supplies the ingredient/brand token.
 
 function cellText(html: string) {
   return html
@@ -12,16 +15,34 @@ function cellText(html: string) {
     .replace(/&pound;|&#163;|&#xa3;/gi, "£")
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
+    .replace(/&#8211;|&#8212;|&ndash;|&mdash;/gi, "–")
     .replace(/\s+/g, " ")
     .trim();
 }
 
 const STRENGTH = /(\d{1,3}(?:\.\d+)?)\s*mg\b/i;
 const PACK = /\b(\d{1,3})\s*(?:x\s*)?(?:tablets?|tabs?|pills?|capsules?)\b/i;
-const PRICE = /£\s*(\d+(?:\.\d{1,2})?)/;
+const PRICE = /£\s*(\d+(?:\.\d{1,2})?)|^(\d{1,4}\.\d{2})$/;
+const BARE_COUNT = /^(\d{1,3})$/;
+const QUANTITY_HEADING = /\b(?:quantity|qty|pack(?:\s*size)?|tablets?|pills?|capsules?)\b/i;
+
+// "Viagra – Somer Pharmacy" → "Viagra": the site-name suffix would otherwise sit in the name.
+function productName(html: string) {
+  const heading = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1];
+  if (heading) return cellText(heading);
+  return cellText(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "").split(/\s+[–|-]\s+/)[0];
+}
+
+// A pack cell as a label labelMatchesVariant can read: "4 tablets" as-is, or a bare "4" when the
+// column is headed "Quantity"/"Pack size".
+function packLabel(cell: string, bareCountsAllowed: boolean) {
+  if (PACK.test(cell)) return cell;
+  const count = bareCountsAllowed ? cell.match(BARE_COUNT)?.[1] : undefined;
+  return count ? `${count} tablets` : undefined;
+}
 
 export function pickPriceGridTable(html: string, matchedTokens: string[], variant: VariantSpec, sourceUrl: string): ScrapedPrice | undefined {
-  const name = cellText(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? "");
+  const name = productName(html);
   const token = matchedTokens.find((candidate) => name.toLowerCase().includes(candidate.toLowerCase()));
   if (!token || !brandSideMatches(name, "", matchedTokens[0], variant.generic)) return undefined;
 
@@ -32,15 +53,19 @@ export function pickPriceGridTable(html: string, matchedTokens: string[], varian
     if (rows.length < 2) continue;
     const [header, ...body] = rows;
     // Strengths across the top and packs down the side, or packs across the top and strengths down.
-    const strengthsAcross = header.slice(1).some((cell) => STRENGTH.test(cell)) && body.some((row) => PACK.test(row[0] ?? ""));
+    // Bare pack counts down the side only when the first header cell names that column a quantity.
+    const bareCounts = QUANTITY_HEADING.test(header[0] ?? "") && !STRENGTH.test(header[0] ?? "");
+    const strengthsAcross = header.slice(1).some((cell) => STRENGTH.test(cell)) && body.some((row) => packLabel(row[0] ?? "", bareCounts));
     const packsAcross = header.slice(1).some((cell) => PACK.test(cell)) && body.some((row) => STRENGTH.test(row[0] ?? ""));
     if (!strengthsAcross && !packsAcross) continue;
     for (const row of body) {
       for (let column = 1; column < row.length; column += 1) {
-        const price = row[column].match(PRICE)?.[1];
+        const priceMatch = row[column].match(PRICE);
+        const price = priceMatch?.[1] ?? priceMatch?.[2];
         if (!price) continue;
         const strength = strengthsAcross ? header[column] : row[0];
-        const pack = strengthsAcross ? row[0] : header[column];
+        const pack = strengthsAcross ? packLabel(row[0], bareCounts) : header[column];
+        if (!pack) continue;
         const label = `${token} ${strength} ${pack}`;
         if (!labelMatchesVariant(label, matchedTokens, variant)) continue;
         matches.push({ itemPricePence: Math.round(Number(price) * 100), evidence: `${name}: ${strength} × ${pack}` });

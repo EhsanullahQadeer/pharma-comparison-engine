@@ -1,0 +1,29 @@
+# Sample systemd unit for the price-collection worker (milestone 5). Adjust User, WorkingDirectory
+# and EnvironmentFile to the VPS layout, then:
+#   sudo cp deploy/price-collection-worker.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now price-collection-worker
+#   journalctl -u price-collection-worker -f     # heartbeat + per-job log
+# Run exactly one instance, separate from the web app process.
+[Unit]
+Description=Pharma comparison price-collection worker
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pharma
+WorkingDirectory=/srv/pharma-comparison-engine
+EnvironmentFile=/srv/pharma-comparison-engine/.env
+Environment=NODE_ENV=production
+ExecStart=/srv/pharma-comparison-engine/node_modules/.bin/tsx scripts/price-collection-worker.ts
+Restart=on-failure
+RestartSec=10
+# SIGTERM lets the worker finish the page it is on; a human-assisted page can take minutes.
+KillSignal=SIGTERM
+TimeoutStopSec=300
+# Keep headless browsers from starving the website on the same VPS.
+MemoryMax=1500M
+CPUQuota=100%
+
+[Install]
+WantedBy=multi-user.target

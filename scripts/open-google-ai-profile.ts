@@ -1,10 +1,10 @@
 import { stdin as input, stdout as output } from "node:process";
 import { createInterface } from "node:readline/promises";
 
-import { chromium } from "playwright";
+import { chromium } from "patchright";
 
 const AI_MODE_URL = "https://www.google.com/ai";
-const profileDir = process.env.GOOGLE_AI_PROFILE_DIR ?? "tmp/playwright-google-profile";
+const profileDir = process.env.GOOGLE_AI_PROFILE_DIR ?? "tmp/patchright-google-profile";
 const browserChannel = process.env.GOOGLE_AI_BROWSER_CHANNEL ?? "chrome";
 
 async function main() {
@@ -17,7 +17,7 @@ async function main() {
 
   output.write([
     "",
-    `Opened Google AI Mode with local Playwright profile: ${profileDir}`,
+    `Opened Google AI Mode with local patchright profile: ${profileDir}`,
     `Browser channel: ${browserChannel}`,
     "Sign in manually in the browser window and complete Authenticator/2FA.",
     "When AI Mode shows the prompt box, come back here and press Enter to close the browser.",

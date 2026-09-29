@@ -20,7 +20,7 @@ export default function SiteError({ error, reset }: { error: Error & { digest?: 
         An unexpected error stopped this page from loading. Nothing was saved or changed as a result — try again, or browse every page on the site.
       </p>
       <div className="mt-6 flex flex-wrap gap-3">
-        <button type="button" onClick={reset} className="rounded-full bg-primary px-5 py-3 font-medium text-foreground hover:bg-primary/80">Try again</button>
+        <button type="button" onClick={reset} className="rounded-full bg-primary px-5 py-3 font-medium text-primary-foreground hover:bg-primary/80">Try again</button>
         <Link href="/ed/site-map" className="rounded-full border border-border px-5 py-3 font-medium hover:bg-muted">Browse all pages</Link>
       </div>
     </div>

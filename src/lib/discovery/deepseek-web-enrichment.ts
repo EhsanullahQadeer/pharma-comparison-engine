@@ -1,7 +1,7 @@
-import { chromium, type Browser, type Page } from "playwright";
+import { chromium, type Browser, type Page } from "patchright";
 
 import { cdpUrlVariants, ensureDebugChrome } from "@/lib/browser/debug-chrome";
-import { googleAiCitationUrls } from "@/lib/discovery/google-ai-citations";
+import { googleAiCitationUrls, readPageLinks } from "@/lib/discovery/google-ai-citations";
 import { isManualReviewCollectionStop } from "@/lib/discovery/google-ai-enrichment";
 import { collectDiscoveryHomepage } from "@/lib/discovery/homepage-collection";
 import { homepageEvidence } from "@/lib/discovery/homepage-evidence";
@@ -66,8 +66,7 @@ async function waitForCompletedCitationUrls(page: Page) {
   let previousBody = "";
   let stableReads = 0;
   for (let attempt = 0; attempt < 120; attempt += 1) {
-    const links = await page.locator("a[href]").evaluateAll(elements => elements.map(element => (element as HTMLAnchorElement).href));
-    const urls = googleAiCitationUrls(links);
+    const urls = googleAiCitationUrls(await readPageLinks(page));
     const body = await page.locator("body").innerText();
     stableReads = body === previousBody ? stableReads + 1 : 0;
     previousBody = body;
@@ -76,7 +75,7 @@ async function waitForCompletedCitationUrls(page: Page) {
     if (urls.size && stableReads >= 5) return urls;
     await page.waitForTimeout(1_000);
   }
-  return googleAiCitationUrls(await page.locator("a[href]").evaluateAll(elements => elements.map(element => (element as HTMLAnchorElement).href)));
+  return googleAiCitationUrls(await readPageLinks(page));
 }
 
 export async function enrichWithDeepSeekWeb(candidate: NormalizedCandidate): Promise<NormalizedCandidate | null> {

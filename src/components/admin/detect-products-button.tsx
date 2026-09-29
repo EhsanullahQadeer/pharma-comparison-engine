@@ -2,14 +2,14 @@
 
 import { useState, useTransition } from "react";
 
-import { runProductDetectionForProvider } from "@/actions/product-matches/product-matches";
+import { runProductDetectionForProvider, type RunProductDetectionState } from "@/actions/product-matches/product-matches";
 import { Button } from "@/components/common/button";
 import Link from "@/components/Link";
 
 export function DetectProductsButton({ providerId }: { providerId: string }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string>();
-  const [result, setResult] = useState<{ candidatesSeen: number; newMatches: number }>();
+  const [result, setResult] = useState<RunProductDetectionState["result"]>();
 
   function handleRun() {
     setError(undefined);
@@ -29,10 +29,16 @@ export function DetectProductsButton({ providerId }: { providerId: string }) {
       <Button type="button" size="sm" variant="outline" disabled={isPending} onClick={handleRun}>
         {isPending ? "Detecting…" : "Detect products"}
       </Button>
+      {isPending ? (
+        <p className="max-w-xs text-right text-xs text-muted-foreground">
+          If a Chrome window opens with a security check, complete it there.
+        </p>
+      ) : null}
       {error ? <p className="max-w-xs text-right text-xs text-destructive">{error}</p> : null}
       {result ? (
         <p className="text-right text-xs text-muted-foreground">
-          {result.newMatches} new of {result.candidatesSeen} page{result.candidatesSeen === 1 ? "" : "s"} matched.{" "}
+          {result.newMatches} new of {result.candidatesSeen} page{result.candidatesSeen === 1 ? "" : "s"} matched
+          {result.method === "browser" ? " (read in the Chrome window)" : ""}.{" "}
           {result.newMatches > 0 ? <Link href="/admin/reviews" className="text-primary hover:underline">Review →</Link> : null}
         </p>
       ) : null}

@@ -1,13 +1,16 @@
 import type { Ingredient } from "@/generated/prisma/client";
 
 // Matches docs/implementation-plan.md §6's "match tokens against URL slugs only, never body text"
-// rule. Order doesn't matter for correctness (all matched tokens are collected), just readability.
+// rule (feed titles and link text are the named exceptions below). Order doesn't matter for correctness (all matched tokens are collected), just readability.
 const edIngredientTokens: [string, Ingredient][] = [
   ["sildenafil", "SILDENAFIL"],
   ["viagra", "SILDENAFIL"],
   ["tadalafil", "TADALAFIL"],
   ["cialis", "TADALAFIL"],
 ];
+
+// Any ED token as a whole word — for scanning text shown in a browser page.
+export const edTokenPattern = new RegExp(`\\b(?:${edIngredientTokens.map(([token]) => token).join("|")})\\b`, "i");
 
 // A token only counts on a path that looks like an actual product/treatment listing — never a
 // blog/guide/news path, per the same rule (avoids "viagra" matching an unrelated blog post).
@@ -30,6 +33,13 @@ const blockedPathSegments = new Set(["blog", "blogs", "news", "guide", "guides",
 // below to be a safe fallback (see that function's comment for why "products"/"treatments" alone
 // aren't included here).
 export const edCategoryRootSegments = new Set(["erectile-dysfunction", "erectile-dysfunction-ed", "ed"]);
+
+// A single-segment ED condition page ("/erectile-dysfunction") — where combined storefronts list
+// every drug on one page.
+export function isEdCategoryRootPath(pathname: string): boolean {
+  const segments = pathname.split("/").filter(Boolean).map((segment) => segment.toLowerCase());
+  return segments.length === 1 && edCategoryRootSegments.has(segments[0]);
+}
 
 export type EdPathMatch = {
   ingredient: Ingredient;
@@ -106,4 +116,18 @@ export function matchEdProductTitle(title: string): EdPathMatch | undefined {
   }
   if (!ingredient) return undefined;
   return { ingredient, matchedTokens, confidence: "HIGH" };
+}
+
+// The product name a site shows on a link (its anchor text) names what the linked page sells, so
+// it's exempt from the body-text ban like a feed title — catching opaque slugs such as
+// "/products/hezkue" linked as "Hezkue (Sildenafil)". Weaker than a feed title (a menu link
+// "Viagra vs Cialis" can lead to a comparison page), so MEDIUM; never for the homepage, a
+// blog/guide path, or a long block of card copy rather than a name.
+export function matchEdProductLinkText(text: string, pathname: string): EdPathMatch | undefined {
+  const segments = pathname.split("/").filter(Boolean).map((segment) => segment.toLowerCase());
+  if (segments.length === 0 || segments.some((segment) => blockedPathSegments.has(segment))) return undefined;
+  const name = text.replace(/\s+/g, " ").trim();
+  if (!name || name.length > 200) return undefined;
+  const match = matchEdProductTitle(name);
+  return match && { ...match, confidence: "MEDIUM" };
 }

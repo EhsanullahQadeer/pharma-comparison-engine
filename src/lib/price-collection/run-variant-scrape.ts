@@ -3,12 +3,13 @@ import { recordAuditLog } from "@/lib/audit-log";
 import { normalizePublicUrl } from "@/lib/discovery/public-web-policy";
 import { pickFeedVariantPrice } from "@/lib/price-collection/feed-price";
 import { HumanVerificationError, openHumanBrowser, waitForHumanVerification } from "@/lib/price-collection/human-browser";
+import { impossiblePriceReason } from "@/lib/price-collection/price-sanity";
 import { assertRobotsAllowInBrowser } from "@/lib/price-collection/robots-in-browser";
 import { scrapeProductPrice, type ScrapedPrice } from "@/lib/price-collection/scrape-price";
 import { isGenericFormulation, variantTokens, type VariantSpec } from "@/lib/price-collection/variant-label";
 import { prisma } from "@/lib/prisma";
 import { collectHomepageLinks } from "@/lib/product-detection/detect-products";
-import { edCategoryRootSegments, matchEdProductPath } from "@/lib/product-detection/ed-tokens";
+import { isEdCategoryRootPath, matchEdProductPath } from "@/lib/product-detection/ed-tokens";
 import { collectFeedCandidates, type FeedCandidate } from "@/lib/product-detection/site-feeds";
 
 import type { Page } from "patchright";
@@ -47,11 +48,6 @@ function needsVerification(error: unknown) {
   return error instanceof HumanVerificationError || isSecurityCheck(error);
 }
 
-function isEdCategoryRoot(url: string) {
-  const segments = new URL(url).pathname.split("/").filter(Boolean).map((segment) => segment.toLowerCase());
-  return segments.length === 1 && edCategoryRootSegments.has(segments[0]);
-}
-
 // Robots refusals never escalate to the browser; other plain-request blocks (403, CAPTCHA
 // markers) do once a visible-browser page is supplied, where a person can clear the check.
 async function collectProviderHomepageLinks(websiteDomain: string, page?: Page) {
@@ -77,7 +73,7 @@ function rankVariantCandidateUrls(urls: string[], ingredient: Ingredient, tokens
     const pathMatch = matchEdProductPath(new URL(url).pathname);
     if (pathMatch?.ingredient === ingredient) {
       candidates.push({ candidateUrl: url, matchedTokens: pathMatch.matchedTokens, confidence: pathMatch.confidence });
-    } else if (isEdCategoryRoot(url)) {
+    } else if (isEdCategoryRootPath(new URL(url).pathname)) {
       candidates.push({ candidateUrl: url, matchedTokens: tokens, confidence: "MEDIUM" });
     }
   }
@@ -104,10 +100,13 @@ async function saveVariantScrapedOffer(providerId: string, productVariantId: str
   return prisma.$transaction(async (tx) => {
     const offers = await tx.offer.findMany({
       where: { providerId, productVariantId },
-      select: { id: true, productMatch: { select: { id: true } } },
+      select: { id: true, itemPricePence: true, productMatch: { select: { id: true } } },
       orderBy: { updatedAt: "desc" },
     });
     const existing = offers.find((offer) => offer.productMatch) ?? offers[0];
+    const { packQuantity } = await tx.productVariant.findUniqueOrThrow({ where: { id: productVariantId }, select: { packQuantity: true } });
+    const rejected = impossiblePriceReason({ itemPricePence: scraped.itemPricePence, packQuantity, previousItemPricePence: existing?.itemPricePence });
+    if (rejected) throw new Error(rejected);
     const offer = existing
       ? await tx.offer.update({
         where: { id: existing.id },

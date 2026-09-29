@@ -1,14 +1,14 @@
-import { chromium, type Browser, type Page } from "playwright";
+import { chromium, type Browser, type Page } from "patchright";
 
 import { cdpUrlVariants, ensureDebugChrome } from "@/lib/browser/debug-chrome";
-import { assertGoogleAiRequestLimit, waitForGoogleAiCitationUrls } from "@/lib/discovery/google-ai-citations";
+import { assertGoogleAiRequestLimit, readPageLinks, waitForGoogleAiCitationUrls } from "@/lib/discovery/google-ai-citations";
 import { collectDiscoveryHomepage } from "@/lib/discovery/homepage-collection";
 import { homepageEvidence } from "@/lib/discovery/homepage-evidence";
 import type { NormalizedCandidate } from "@/types/discovery";
 
 const AI_MODE_URL = "https://www.google.com/ai";
 const GOOGLE_AI_CDP_URL = process.env.GOOGLE_AI_CDP_URL ?? "http://127.0.0.1:9222";
-const GOOGLE_AI_PROFILE_DIR = process.env.GOOGLE_AI_PROFILE_DIR ?? "tmp/playwright-google-profile";
+const GOOGLE_AI_PROFILE_DIR = process.env.GOOGLE_AI_PROFILE_DIR ?? "tmp/patchright-google-profile";
 const GOOGLE_AI_BROWSER_CHANNEL = process.env.GOOGLE_AI_BROWSER_CHANNEL ?? "chrome";
 const unavailablePattern = /not (?:currently )?available|unusual traffic|captcha|verify you are human|couldn.t sign you in|this browser or app may not be secure/i;
 const signedOutPattern = /\bsign in\b|to continue|choose an account|use your google account/i;
@@ -162,7 +162,7 @@ export async function enrichWithGoogleAi(candidate: NormalizedCandidate): Promis
     const citationUrls = await waitForGoogleAiCitationUrls(
       async () => {
         assertGoogleAiRequestLimit(await page.locator("body").innerText());
-        return page.locator("a[href]").evaluateAll(elements => elements.map(element => (element as HTMLAnchorElement).href));
+        return readPageLinks(page);
       },
       () => page.waitForTimeout(500),
     );

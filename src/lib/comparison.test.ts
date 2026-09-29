@@ -2,12 +2,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-import type { PublicOffer } from "@/types/comparison";
+import type { ComparisonFilters, PublicOffer } from "@/types/comparison";
 
 import {
   comparisonHref,
   deliveredTotalPence,
   displayName,
+  filterOffers,
   freshnessTier,
   parseComparisonFilters,
   perTabletPence,
@@ -80,11 +81,32 @@ test("an indicative total never outranks a verified one, even when cheaper", () 
 });
 
 test("filters round-trip through the URL and ignore junk", () => {
-  const filters = parseComparisonFilters({ medicine: "tadalafil", strength: "20", pack: "4", sort: "total" });
-  assert.deepEqual(filters, { ingredient: "TADALAFIL", strengthMg: 20, packQuantity: 4, sort: "total" });
-  assert.equal(comparisonHref(filters), "/ed/compare?medicine=tadalafil&strength=20&pack=4&sort=total");
-  assert.deepEqual(parseComparisonFilters({ medicine: "aspirin", strength: "-5", pack: "x" }), { ingredient: undefined, strengthMg: undefined, packQuantity: undefined, sort: "tablet" });
+  const filters = parseComparisonFilters({ medicine: "tadalafil", type: "cialis", strength: "20", form: "film-coated-tablet", pack: "4", plan: "subscription", sort: "total" });
+  assert.deepEqual(filters, { ingredient: "TADALAFIL", productType: "cialis", strengthMg: 20, formulation: "film-coated-tablet", packQuantity: 4, purchaseModel: "RECURRING", sort: "total" });
+  assert.equal(comparisonHref(filters), "/ed/compare?medicine=tadalafil&type=cialis&strength=20&form=film-coated-tablet&pack=4&plan=subscription&sort=total");
+  assert.deepEqual(parseComparisonFilters({ medicine: "aspirin", type: "<script>", strength: "-5", form: "Film Coated", pack: "x", plan: "RECURRING" }), {
+    ingredient: undefined, productType: undefined, strengthMg: undefined, formulation: undefined, packQuantity: undefined, purchaseModel: undefined, sort: "tablet",
+  });
   assert.equal(comparisonHref({ sort: "tablet" }), "/ed/compare");
+});
+
+test("brand/generic, form and purchase-model filters use the real catalogue wording", () => {
+  const variant = (id: string, brandName: string, formulation: string) => ({ id, ingredient: "SILDENAFIL" as const, brandName, strengthMg: 50, formulation, packQuantity: 4 });
+  const offers = [
+    offer({ id: "viagra", providerId: "a", deliveredTotalPence: 2400, variant: variant("v1", "Viagra", "Film-coated tablet") }),
+    offer({ id: "generic", providerId: "b", deliveredTotalPence: 800, variant: variant("v2", "Viagra", "Film-coated tablet (generic)") }),
+    offer({ id: "melt", providerId: "c", deliveredTotalPence: 2000, variant: variant("v3", "Viagra", "Orodispersible tablet") }),
+    offer({ id: "connect", providerId: "d", deliveredTotalPence: 2200, variant: variant("v4", "Viagra Connect", "Film-coated tablet"), purchaseModel: "RECURRING" }),
+  ];
+  const ids = (filters: Partial<ComparisonFilters>) => filterOffers(offers, { sort: "tablet", ...filters }).map((entry) => entry.id);
+  assert.deepEqual(ids({ productType: "generic" }), ["generic"]);
+  assert.deepEqual(ids({ productType: "viagra" }), ["viagra", "melt"]);
+  assert.deepEqual(ids({ productType: "viagra-connect" }), ["connect"]);
+  // "(generic)" is a qualifier, not a different form of tablet.
+  assert.deepEqual(ids({ formulation: "film-coated-tablet" }), ["viagra", "generic", "connect"]);
+  assert.deepEqual(ids({ formulation: "orodispersible-tablet" }), ["melt"]);
+  assert.deepEqual(ids({ purchaseModel: "RECURRING" }), ["connect"]);
+  assert.deepEqual(ids({ productType: "unknown-brand" }), []);
 });
 
 test("slugs and display names", () => {

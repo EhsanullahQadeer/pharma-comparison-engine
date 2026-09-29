@@ -301,6 +301,18 @@ for what's actually built vs. in progress.
     (`initialData`). Exceptions: imperative one-shot reads triggered only by
     a button/scan event and pure server components' direct `await` in the
     async page body (the current norm per Rule 4).
+18. **Browser automation uses `patchright` only — never `playwright`.**
+    This is mandatory. Import `chromium`/`Page`/`Browser` etc. from
+    `"patchright"` in app code, scripts, tests and throwaway checks alike;
+    never add `playwright`, `playwright-core` or any `@*/playwright`
+    integration package (e.g. `@axe-core/playwright`) as a dependency — use
+    the underlying library directly through a patchright page instead (see
+    `scripts/a11y-scan.ts`, which injects `axe-core` itself). Note that
+    patchright's `page.evaluate` runs in an **isolated world by default**:
+    DOM reads work as usual, but anything injected into the page's own JS
+    (`addScriptTag`, page globals like `window.axe`) is only visible if you
+    pass `isolatedContext = false` as the 4th argument
+    (`page.evaluate(fn, arg, undefined, false)`).
 
 ## SEO Rules
 
@@ -421,3 +433,13 @@ Rules:
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

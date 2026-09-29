@@ -159,6 +159,25 @@ function pickStructuredVariantPrice(html: string, matchedTokens: string[], varia
   };
 }
 
+// A shop platform's own price data embedded in the page (WooCommerce variations, a pharmacy
+// plugin's price list, Next.js/Shopify variant lists, price tables), for the exact variant only.
+function pickEmbeddedVariantPrice(html: string, matchedTokens: string[], variant: VariantSpec, sourceUrl: string): ScrapedPrice | undefined {
+  return pickWooCommercePrice(html, matchedTokens, variant, sourceUrl)
+    ?? pickPharmacyPluginPrice(html, matchedTokens, variant, sourceUrl)
+    ?? pickNextDataVariantPrice(html, matchedTokens, variant, sourceUrl)
+    ?? pickPerTabletPriceTable(html, matchedTokens, variant, sourceUrl)
+    ?? pickShopifyMetaPrice(html, matchedTokens, variant, sourceUrl)
+    ?? pickPriceGridTable(html, matchedTokens, variant, sourceUrl);
+}
+
+// Every reader that works from a page's HTML alone, for one exact variant: schema.org data first,
+// then embedded platform data. Shared by price collection and product detection's per-variant check.
+export function pickPageVariantPrice(html: string, matchedTokens: string[], variant: VariantSpec, sourceUrl: string): ScrapedPrice | undefined {
+  return pickStructuredVariantPrice(html, matchedTokens, variant, sourceUrl)
+    ?? pickEmbeddedVariantPrice(html, matchedTokens, variant, sourceUrl)
+    ?? pickBigCommercePrice(html, matchedTokens, variant, sourceUrl);
+}
+
 function readVariantFromRenderedText(text: string, matchedTokens: string[], variant: NonNullable<ScrapeProductPriceOptions["variant"]>) {
   const primaryToken = matchedTokens[0];
   if (!primaryToken) return undefined;
@@ -210,14 +229,7 @@ async function collectRenderedProductCard(url: string, matchedTokens: string[], 
     // Pages only reachable in the browser (e.g. behind a Cloudflare check) still carry their
     // platform's embedded price data — read that before falling back to the visible card.
     const html = await page.content();
-    const embedded = (variant
-      ? pickWooCommercePrice(html, matchedTokens, variant, page.url())
-        ?? pickPharmacyPluginPrice(html, matchedTokens, variant, page.url())
-        ?? pickNextDataVariantPrice(html, matchedTokens, variant, page.url())
-        ?? pickPerTabletPriceTable(html, matchedTokens, variant, page.url())
-        ?? pickShopifyMetaPrice(html, matchedTokens, variant, page.url())
-        ?? pickPriceGridTable(html, matchedTokens, variant, page.url())
-      : undefined)
+    const embedded = (variant ? pickEmbeddedVariantPrice(html, matchedTokens, variant, page.url()) : undefined)
       ?? pickBigCommercePrice(html, matchedTokens, variant, page.url());
     if (embedded) return embedded;
     // A price checker that only loads the chosen strength's packs on selection (e.g. Treated).
@@ -395,18 +407,9 @@ export async function scrapeProductPrice(url: string, options: ScrapeProductPric
   try {
     options.onProgress?.("Checking the page's structured price data…");
     const page = await collectPublicWebsite(url);
-    const structured = (options.variant
-      ? pickStructuredVariantPrice(page.html, matchedTokens, options.variant, page.finalUrl)
-      : pickStructuredPrice(page.html, matchedTokens, page.finalUrl))
-      ?? (options.variant
-        ? pickWooCommercePrice(page.html, matchedTokens, options.variant, page.finalUrl)
-          ?? pickPharmacyPluginPrice(page.html, matchedTokens, options.variant, page.finalUrl)
-          ?? pickNextDataVariantPrice(page.html, matchedTokens, options.variant, page.finalUrl)
-          ?? pickPerTabletPriceTable(page.html, matchedTokens, options.variant, page.finalUrl)
-          ?? pickShopifyMetaPrice(page.html, matchedTokens, options.variant, page.finalUrl)
-          ?? pickPriceGridTable(page.html, matchedTokens, options.variant, page.finalUrl)
-        : undefined)
-      ?? pickBigCommercePrice(page.html, matchedTokens, options.variant, page.finalUrl);
+    const structured = options.variant
+      ? pickPageVariantPrice(page.html, matchedTokens, options.variant, page.finalUrl)
+      : pickStructuredPrice(page.html, matchedTokens, page.finalUrl) ?? pickBigCommercePrice(page.html, matchedTokens, undefined, page.finalUrl);
     if (structured) return structured;
   } catch (error) {
     // A robots refusal is final — never retried in a browser, visible or not.

@@ -20,7 +20,7 @@ const components: Components = {
   hr: () => <hr className="my-10 border-border" />,
   a: ({ href = "", children }) => {
     // "[[2]](#source-2)" cites the article's numbered source list.
-    if (href.startsWith("#")) return <a href={href} className="ml-0.5 align-super text-xs font-medium text-muted-foreground hover:text-foreground hover:underline">{children}</a>;
+    if (href.startsWith("#")) return <a href={href} aria-label={href.startsWith("#source-") ? `Source ${href.slice("#source-".length)}` : undefined} className="ml-0.5 inline-block min-h-6 min-w-6 text-center leading-6 align-super text-xs font-medium text-muted-foreground hover:text-foreground hover:underline">{children}</a>;
     if (href.startsWith("/")) return <Link href={href} className="font-medium underline underline-offset-4 hover:text-muted-foreground">{children}</Link>;
     return <a href={href} target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-4 hover:text-muted-foreground">{children}</a>;
   },
@@ -33,6 +33,9 @@ const components: Components = {
   th: ({ children }) => <th className="px-4 py-3 font-semibold">{children}</th>,
   td: ({ children }) => <td className="border-t border-border px-4 py-3 align-top text-foreground/90">{children}</td>,
   img: () => null,
+  // GFM task lists ("- [ ] item") render disabled, unlabelled checkboxes. They can't be ticked, so
+  // draw a decorative box instead of an unlabelled form control; the item text is read as usual.
+  input: ({ type }) => (type === "checkbox" ? <span aria-hidden="true" className="mr-2 inline-block size-4 translate-y-0.5 rounded border border-border bg-background" /> : null),
 };
 
 export function ArticleMarkdown({ children }: { children: string }) {

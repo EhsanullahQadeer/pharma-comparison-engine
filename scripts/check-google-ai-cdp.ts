@@ -1,6 +1,6 @@
 import { stdout } from "node:process";
 
-import { chromium } from "playwright";
+import { chromium } from "patchright";
 
 const AI_MODE_URL = "https://www.google.com/ai";
 const cdpUrl = process.env.GOOGLE_AI_CDP_URL ?? "http://127.0.0.1:9222";

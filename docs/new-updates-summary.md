@@ -1,5 +1,39 @@
 # Product updates
 
+## 2026-09-29
+
+- Price collection and "Detect products" now recognise Viagra Connect and Cialis Together pages that don't state the strength (for example Withaid's "Viagra Connect 4 Tablets" at £36.09). These products are only sold in one strength, 50mg and 10mg.
+- Prices for Viagra Connect and Cialis Together are now always kept separate from prescription Viagra and Cialis, so one can never be recorded as the other.
+- "Detect products" now suggests every strength and pack size a pharmacy's product page sells that is in our catalogue, instead of one match per page. For example, My Private Pharmacist's Viagra page now gives three suggestions: Viagra 50mg × 4, Viagra 100mg × 4 and generic sildenafil 100mg × 8. Each suggestion still needs a staff member to confirm it on the Reviews page, where its strength and pack size are already selected.
+- These suggestions keep melt-in-the-mouth tablets and over-the-counter Viagra Connect apart from ordinary prescription tablets. A page whose prices can't be read still gets a single match for staff to fill in by hand, as before.
+- Fixed "Collect price" on a pharmacy's admin page failing for branded products (for example Viagra) on pages that sell both branded and generic versions. It now finds the branded price the same way the catalogue-wide price check does.
+- Price collection can now read product pages where the shopper picks branded or generic, strength and pack size with buttons, such as My Private Pharmacist's Viagra page. It takes the price for the exact combination being checked, and keeps branded Viagra and generic sildenafil apart.
+- Price collection can now read price tables that list pack sizes as plain numbers under a "Quantity" heading and show prices without a £ sign, such as Somer Pharmacy's Viagra page. Each price is still taken only from the exact strength and pack size it belongs to.
+- "Detect products" on a pharmacy's admin page now finds products on more websites. It first reads the site quickly in the background as before. If the site blocks that or shows no products, it opens the site in the Chrome window and looks again once the page has fully loaded, including the site's erectile dysfunction page.
+- If that Chrome window shows a security check, a staff member completes it there. The system never tries to get past it on its own, and sites whose rules refuse automated visits are still skipped.
+- Product detection now also recognises products by the name shown on a link (for example "Hezkue (Sildenafil)"), not just by the page address. These are marked as medium confidence for staff to check.
+- After a run, the message under the button says when the Chrome window was used.
+- "Detect products" now also works for pharmacies whose online shop is on a separate part of their website (for example a "Pharmacy Shop" button leading to a different address), and for shops that ask for a postcode before showing products. It enters the pharmacy's own postcode.
+- It can now find products in shops where product cards open when clicked instead of being ordinary links. For example, it now finds five Viagra Connect and sildenafil products at Oxford e-Pharmacy, where it previously found none.
+- Products whose names don't mention the medicine (for example "Erectile Dysfunction Relief 50 mg") still need to be added by staff, because the system can't tell which medicine they contain.
+- Fixed pharmacy discovery's "Run now" sometimes stopping with a browser error while it looked up a pharmacy's website through Google AI Mode or DeepSeek. It now waits for the AI answer to finish loading instead of failing.
+- The homepage has been redesigned with a clearer, more modern layout. The main message and "Compare prices" and "Browse pharmacies" buttons now sit at the top, with live counts of how many pharmacies and prices are available.
+- A new row of headline numbers shows how many pharmacies we've checked, how many are listed, that no price is ever more than 48 hours old, and that the site is free to use.
+- New homepage sections: a four-step "How it works", a side-by-side "Why compare with us", an "About us" section explaining how we stay independent, a testimonials section and a contact form.
+- The testimonials are sample wording for now and are labelled on the page as examples. They should be replaced with real, permission-given feedback before launch.
+- The contact form on the homepage works the same way as the one on the Contact page, with quick links to report a wrong price or suggest a pharmacy.
+- Cards and sections now fade in gently as you scroll and lift slightly when you hover over them. Visitors who have reduced motion turned on in their device settings see everything without animation.
+- The homepage works in both light and dark mode and on phones, tablets and desktops.
+- Automatic price checking is now ready to run on the server around the clock. If a pharmacy website is briefly down or slow, the check is tried again after 5, 15 and 60 minutes instead of being given up on.
+- Pages that block automatic checks, or where no matching price can be found, are no longer checked over and over again. They wait until their next scheduled check and are shown to staff to look at.
+- Once automatic checking is switched on, price changes for pharmacies already on the site will go live straight away, with no staff approval needed.
+- Prices that can't be real are now refused automatically: £0, less than 10p a tablet, or more than five times higher or lower than the current price. The current price stays up, and the pharmacy's page in the admin shows the check as failed with the reason. This would have stopped an earlier mistake where one pharmacy's £24 Viagra pack was briefly recorded at 24p.
+- If a pharmacy really does change a price by that much, staff can enter the new price by hand.
+- The price comparison page has three new filters: brand (Viagra, Viagra Connect, Cialis or generic), tablet form (standard or melt-in-the-mouth) and one-off or subscription. The form and one-off/subscription filters only appear when there's a real choice to make.
+- There's no delivery filter yet. Most pharmacies' delivery charges and delivery areas haven't been confirmed, so a "free delivery" filter could show prices whose delivery cost we don't actually know. It will be added once staff have confirmed delivery details.
+- The whole public site was checked against the web accessibility standard (WCAG AA) in light and dark mode, and every problem found was fixed. Dark mode's green "Compare prices" and "Browse pharmacies" buttons now have dark, readable text. Grey table headings and red "Out of stock" labels are a little stronger. Numbered source links in articles are easier to tap on a phone and are read out as "Source 1", "Source 2" and so on. The heart-health checklist no longer shows tick boxes that screen readers announced without a name.
+- Closed a gap where the admin's price-collection function could, in principle, be triggered from outside without signing in. Only signed-in staff and the scheduled price checker can run it now.
+
 ## 2026-09-26
 
 - The price comparison table no longer has a last column that said "Listed for comparison" on every row. That column now appears only when a partner pharmacy is in the list, and then only partner rows show a "View" button.

@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 
+import { createProviderRecord } from "@/actions/providers/create-provider-record";
 import { createProviderSchema } from "@/actions/providers/provider-schema";
-import { createProviderRecord, type CreateProviderState } from "@/actions/providers/providers";
+import type { CreateProviderState } from "@/actions/providers/providers";
 import type { DiscoveryCandidate, DiscoverySourceType, ProviderIdentifierType } from "@/generated/prisma/client";
 import { recordAuditLog } from "@/lib/audit-log";
 import { runCandidateEdCheck, type CandidateEdCheckResult } from "@/lib/discovery/run-candidate-ed-check";

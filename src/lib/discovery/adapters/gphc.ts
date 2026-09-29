@@ -1,13 +1,13 @@
 import { readFileSync } from "node:fs";
 
-import { chromium } from "playwright";
+import { chromium } from "patchright";
 import { read as readWorkbook, utils as sheetUtils } from "xlsx";
 
 import type { DiscoveryAdapter, NormalizedCandidate } from "@/types/discovery";
 
 const REGISTERS_PAGE_URL = "https://www.pharmacyregulation.org/registers";
 const HEADER_CELL = "Pharmacy Registration Number";
-// Confirmed live: this site's bot-protection blocks Playwright's *default* headless User-Agent
+// Confirmed live: this site's bot-protection blocks the automation browser's *default* headless User-Agent
 // (which includes "HeadlessChrome") with a 403, on both the page and the file download — a plain
 // browser-shaped UA string is what actually gets through, not headless-vs-headed mode itself.
 const BROWSER_USER_AGENT =

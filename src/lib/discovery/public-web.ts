@@ -67,8 +67,14 @@ async function collectPublicResource(input: string, accept: RegExp, { detectChal
       continue;
     }
     if (robots.status !== 404 && robots.status !== 200 && (robots.challenge || challengeMarkers.test(robots.text))) throw new Error(ROBOTS_BEHIND_CHALLENGE);
-    if (robots.status !== 404 && (robots.status !== 200 || !/text\/plain/i.test(robots.type) || !robotsAllows(robots.text, url.pathname))) {
-      throw new Error("Collection stopped: robots rules could not be confirmed or do not permit this page. Review it manually.");
+    // Kept distinct: an unreadable robots.txt (e.g. a 403 for visitors outside the UK) can still be
+    // read in a browser, while rules that refuse are final. Both say "robots rules" so callers that
+    // never escalate on either keep matching.
+    if (robots.status !== 404 && (robots.status !== 200 || !/text\/plain/i.test(robots.type))) {
+      throw new Error(`Collection stopped: robots rules could not be confirmed (HTTP ${robots.status}). Review it manually.`);
+    }
+    if (robots.status !== 404 && !robotsAllows(robots.text, url.pathname)) {
+      throw new Error("Collection stopped: robots rules do not permit this page. Review it manually.");
     }
     const page = await readPage(url, signal);
     if ([301, 302, 303, 307, 308].includes(page.status) && page.location) {

@@ -1,69 +1,52 @@
-import { CircleDot, ScanSearch, ShieldCheck, Truck } from "lucide-react";
+import { ArrowUpRight, ExternalLink, Scale, ScanSearch, ShieldCheck } from "lucide-react";
 
-const FEATURES = [
-  {
-    icon: ScanSearch,
-    label: "Search",
-    heading: "Find UK pharmacies offering ED treatment.",
-    bullets: ["Checked against official registers", "Staff-reviewed before listing"],
-  },
-  {
-    icon: CircleDot,
-    label: "Compare",
-    heading: "Compare matching ED offers side by side.",
-    bullets: ["Sildenafil & tadalafil", "Pack and total-cost comparisons"],
-  },
-  {
-    icon: ShieldCheck,
-    label: "Verify",
-    heading: "See the evidence behind each listing.",
-    bullets: ["Registration source links", "Clearly labelled checked dates"],
-  },
-  {
-    icon: Truck,
-    label: "Continue",
-    heading: "Continue to the pharmacy for assessment.",
-    bullets: ["Pharmacy consultation", "Purchase on the provider’s site"],
-  },
+import Link from "@/components/Link";
+import { Reveal } from "@/components/marketing/reveal";
+import { SectionHeading } from "@/components/marketing/section-heading";
+import { hoverCardClass } from "@/lib/motion";
+import { cn } from "@/lib/utils";
+
+const STEPS = [
+  { icon: ScanSearch, title: "Search", body: "Pick sildenafil or tadalafil, then the strength and pack size you're after.", href: "/ed/compare" },
+  { icon: Scale, title: "Compare", body: "See each pharmacy's total cost, with delivery and consultation fees added in, plus price per tablet.", href: "/ed/compare" },
+  { icon: ShieldCheck, title: "Verify", body: "Check the pharmacy's registration evidence and when we last confirmed its price.", href: "/ed/pharmacies/verification" },
+  { icon: ExternalLink, title: "Continue", body: "Go to the pharmacy you choose for its own consultation. Purchases happen on its site.", href: "/ed/how-it-works" },
 ];
 
 export function FeatureGridSection() {
   return (
-    <section className="px-6 pb-24">
-      <div className="mx-auto max-w-3xl text-center">
-        <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          How it works,{" "}
-          <span className="bg-gradient-to-r from-[var(--chart-1)] via-[var(--chart-2)] to-[var(--chart-5)] bg-clip-text text-transparent">
-            from discovery to comparison.
-          </span>
-        </h2>
-        <p className="mt-4 text-muted-foreground">
-          Compare sildenafil and tadalafil from registered UK pharmacies, then
-          continue to the pharmacy you choose.
-        </p>
-      </div>
+    <section id="how-it-works" aria-labelledby="how-it-works-heading" className="scroll-mt-28 px-4 py-24 sm:px-6 lg:py-32">
+      <SectionHeading
+        id="how-it-works-heading"
+        eyebrow="How it works"
+        title="Four steps to a"
+        accent="clearer choice."
+        description="We bring registration evidence and verified prices together. The clinical assessment and your purchase stay with the pharmacy."
+      />
 
-      <div className="mx-auto mt-14 grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {FEATURES.map(({ icon: Icon, label, heading, bullets }) => (
-          <div
-            key={label}
-            className="flex flex-col rounded-2xl border border-border bg-card p-6 shadow-(--shadow)"
-          >
-            <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground">
-              <Icon className="size-3.5 text-primary" />
-              {label}
-            </span>
-            <h3 className="mt-8 text-lg font-semibold">{heading}</h3>
-            <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-              {bullets.map((bullet) => (
-                <li key={bullet} className="flex items-start gap-2">
-                  <span className="mt-1.5 size-1 shrink-0 rounded-full bg-primary" />
-                  {bullet}
-                </li>
-              ))}
-            </ul>
-          </div>
+      <div className="relative mx-auto mt-16 max-w-6xl">
+        <div aria-hidden="true" className="absolute top-12 right-[12%] left-[12%] hidden h-px bg-linear-to-r from-transparent via-primary/50 to-transparent lg:block" />
+        <ol className="relative grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {STEPS.map(({ icon: Icon, title, body, href }, index) => (
+          <li key={title}>
+            <Reveal delay={index * 100} className="h-full">
+              <Link href={href} className={cn(hoverCardClass, "flex flex-col p-6 focus-visible:outline-2 focus-visible:outline-ring")}>
+                <div className="flex items-center justify-between">
+                  <span className="relative flex size-12 items-center justify-center rounded-2xl bg-primary/15 transition-all duration-300 group-hover:scale-110 group-hover:bg-primary">
+                    <Icon aria-hidden="true" className="size-5 text-foreground transition-colors group-hover:text-primary-foreground" />
+                  </span>
+                  <span aria-hidden="true" className="text-4xl font-semibold text-muted-foreground tabular-nums transition-colors group-hover:text-foreground">0{index + 1}</span>
+                </div>
+                <h3 className="mt-6 text-lg font-semibold">{title}</h3>
+                <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">{body}</p>
+                <span className="mt-5 inline-flex items-center gap-1 text-sm font-medium transition-all group-hover:gap-2">
+                  Learn more<ArrowUpRight aria-hidden="true" className="size-4" />
+                </span>
+              </Link>
+            </Reveal>
+          </li>
         ))}
+        </ol>
       </div>
     </section>
   );

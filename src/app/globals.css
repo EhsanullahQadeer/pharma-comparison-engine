@@ -63,10 +63,10 @@
   --secondary: #e9e6dc;
   --secondary-foreground: #535146;
   --muted: #ede9de;
-  --muted-foreground: #6e6d68;
+  --muted-foreground: #676661;
   --accent: #e9e6dc;
   --accent-foreground: #535146;
-  --destructive: oklch(0.577 0.245 27.325);
+  --destructive: oklch(0.505 0.213 27.518);
   --border: #dad9d4;
   --input: #b4b2a7;
   --ring: #47c940;
@@ -173,6 +173,20 @@
     to {
       background-position: 200% center;
     }
+  }
+}
+
+/* Scroll reveal for <Reveal> (src/components/marketing/reveal.tsx). The hidden state only applies when
+   motion is allowed and scripts run, so content is never stuck invisible. */
+[data-reveal] {
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (prefers-reduced-motion: no-preference) and (scripting: enabled) {
+  [data-reveal="pending"] {
+    opacity: 0;
+    transform: translateY(24px);
   }
 }
 

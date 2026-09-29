@@ -1,6 +1,9 @@
 import { Check, X } from "lucide-react";
 
-import { Badge } from "@/components/common/badge";
+import { Reveal } from "@/components/marketing/reveal";
+import { SectionHeading } from "@/components/marketing/section-heading";
+import { hoverCardClass } from "@/lib/motion";
+import { cn } from "@/lib/utils";
 
 const PAIN_POINTS = [
   "Comparing different pack sizes can hide the actual cost",
@@ -15,76 +18,40 @@ const BENEFITS = [
   "Adds known charges to show the total cost",
   "Separates one-off prices from repeat prices",
   "Links to registration evidence and checked dates",
-  "Labels older prices and explains update schedules",
+  "Labels older prices and removes them after 48 hours",
 ];
 
-function ComparisonRing() {
-  return (
-    <div className="relative mx-auto flex size-56 items-center justify-center">
-      <div
-        className="absolute inset-0 rounded-full opacity-70 blur-2xl"
-        style={{
-          background:
-            "radial-gradient(circle, var(--chart-1) 0%, var(--chart-2) 60%, transparent 75%)",
-        }}
-      />
-      <div
-        className="absolute inset-0 rounded-full"
-        style={{
-          background:
-            "conic-gradient(from 0deg, var(--chart-1), var(--chart-2), var(--chart-5), var(--chart-1))",
-          mask: "radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px))",
-          WebkitMask:
-            "radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px))",
-        }}
-      />
-      <div className="absolute inset-8 rounded-full border border-dashed border-border" />
-      <div className="size-3 rounded-full bg-primary" />
-    </div>
-  );
-}
+const COLUMNS = [
+  { title: "Shopping around alone", icon: X, items: PAIN_POINTS, highlighted: false },
+  { title: "With our comparison", icon: Check, items: BENEFITS, highlighted: true },
+];
 
 export function ComparisonSection() {
   return (
-    <section className="px-6 py-24">
-      <div className="mx-auto max-w-3xl text-center">
-        <Badge variant="secondary" className="rounded-full px-3 py-1">
-          Clarity
-        </Badge>
-        <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
-          More context for ED prices.{" "}
-          <span className="bg-linear-to-r from-chart-1 via-chart-2 to-chart-5 bg-clip-text text-transparent">
-            That’s what we do.
-          </span>
-        </h2>
-      </div>
+    <section aria-labelledby="why-us-heading" className="bg-muted/40 px-4 py-24 sm:px-6 lg:py-32">
+      <SectionHeading id="why-us-heading" eyebrow="Why compare with us" title="More context for ED prices." accent="That's what we do." />
 
-      <div className="mx-auto mt-14 grid max-w-5xl grid-cols-1 items-center gap-10 lg:grid-cols-[1fr_auto_1fr]">
-        <ul className="space-y-3">
-          {PAIN_POINTS.map((point) => (
-            <li
-              key={point}
-              className="flex items-start gap-3 rounded-xl border border-border bg-card p-4 text-sm"
-            >
-              <X className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-              <span className="text-muted-foreground">{point}</span>
-            </li>
-          ))}
-        </ul>
-
-        <ComparisonRing />
-
-        <ul className="space-y-3">
-          {BENEFITS.map((benefit) => (
-            <li
-              key={benefit}
-              className="flex items-start gap-3 rounded-xl border border-border bg-card p-4 text-sm"
-            >
-              <Check className="mt-0.5 size-4 shrink-0 text-primary" />
-              <span>{benefit}</span>
-            </li>
-          ))}
-        </ul>
+      <div className="mx-auto mt-14 grid max-w-5xl gap-6 md:grid-cols-2">
+        {COLUMNS.map(({ title, icon: Icon, items, highlighted }, column) => (
+          <Reveal key={title} delay={column * 120} className="h-full">
+            <div className={cn(hoverCardClass, "p-6 sm:p-8", highlighted && "border-primary/40 bg-linear-to-br from-primary/10 via-card to-card")}>
+              <h3 className="flex items-center gap-3 text-lg font-semibold">
+                <span className={cn("flex size-9 items-center justify-center rounded-full", highlighted ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+                  <Icon aria-hidden="true" className="size-4" />
+                </span>
+                {title}
+              </h3>
+              <ul className="mt-6 space-y-3">
+                {items.map((item) => (
+                  <li key={item} className="flex items-start gap-3 rounded-2xl border border-border/70 bg-background/60 p-3.5 text-sm transition-colors duration-200 hover:bg-background">
+                    <Icon aria-hidden="true" className={cn("mt-0.5 size-4 shrink-0", highlighted ? "text-primary" : "text-muted-foreground")} />
+                    <span className={highlighted ? undefined : "text-muted-foreground"}>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Reveal>
+        ))}
       </div>
     </section>
   );

@@ -153,7 +153,7 @@ export function BannerLayout({ model }: { model: PharmacyPageModel }) {
           <div className="mt-10 flex flex-col gap-6 sm:flex-row sm:items-center">
             <PharmacyAvatar name={provider.name} logoUrl={provider.logoUrl} size="xl" />
             <div className="min-w-0">
-              <p className="text-xs font-semibold tracking-[0.18em] text-background/60 uppercase">Offers · Prices · Checks</p>
+              <p className="text-xs font-semibold tracking-[0.18em] text-background/70 uppercase">Offers · Prices · Checks</p>
               <h1 className="mt-2 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">{provider.name} discounts</h1>
               <p className="mt-3 text-background/70">{provider.websiteDomain} · Registered with the {model.regulatorLabel}</p>
             </div>

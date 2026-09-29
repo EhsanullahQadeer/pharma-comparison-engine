@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { env, exit } from "node:process";
 
-import { chromium, type BrowserContext } from "playwright";
+import { chromium, type BrowserContext } from "patchright";
 
 const cdpUrl = env.GOOGLE_AI_CDP_URL ?? "http://127.0.0.1:9222";
 const profileDir = env.GOOGLE_AI_PROFILE_DIR ?? "tmp/google-ai-cdp-profile";

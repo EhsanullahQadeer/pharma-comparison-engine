@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 
+import { createProviderRecord } from "@/actions/providers/create-provider-record";
 import { createProviderSchema } from "@/actions/providers/provider-schema";
-import type { Prisma, ProviderStatus } from "@/generated/prisma/client";
+import type { ProviderStatus } from "@/generated/prisma/client";
 import { recordAuditLog } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 import { getAllowedNextStatuses } from "@/lib/provider-status-transitions";
@@ -17,22 +18,6 @@ export type CreateProviderState = {
   error?: string;
   fieldErrors?: Partial<Record<keyof z.infer<typeof createProviderSchema>, string[]>>;
 };
-
-// Shared by createProvider (top-level prisma) and promoteDiscoveryCandidate (inside its own
-// $transaction) so provider-creation logic isn't duplicated. Throws Prisma's raw P2002 on a
-// duplicate websiteDomain — callers translate that into a field-level error.
-export async function createProviderRecord(tx: Prisma.TransactionClient, data: z.infer<typeof createProviderSchema>) {
-  const { serviceRegions, ...rest } = data;
-  return tx.provider.create({
-    data: {
-      ...rest,
-      serviceRegions: serviceRegions
-        .split(",")
-        .map((region) => region.trim())
-        .filter(Boolean),
-    },
-  });
-}
 
 // Staff-facing manual entry — new providers always land as DISCOVERED (M3b state machine); staff
 // promote them through identity/catalogue verification separately, never auto-published.

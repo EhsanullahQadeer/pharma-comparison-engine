@@ -53,7 +53,7 @@ export default async function ComparePage(props: PageProps<"/ed/compare">) {
         <>
           <ComparisonFiltersPanel offers={allOffers} filters={filters} />
           {offers.length === 0 ? (
-            <PublicEmptyState icon={PackageSearch} title="No prices match these filters" description="Try another strength or pack size, or clear the filters to see every current price." action={{ href: comparisonHref({ sort: filters.sort }), label: "Clear filters" }} />
+            <PublicEmptyState icon={PackageSearch} title="No prices match these filters" description="Try another brand, strength, form or pack size, or clear the filters to see every current price." action={{ href: comparisonHref({ sort: filters.sort }), label: "Clear filters" }} />
           ) : (
             <>
               <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">

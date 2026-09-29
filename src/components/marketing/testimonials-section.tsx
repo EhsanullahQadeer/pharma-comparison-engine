@@ -1,65 +1,70 @@
+import { Info, Quote } from "lucide-react";
 import Image from "next/image";
 
-import { Badge } from "@/components/common/badge";
+import { Reveal } from "@/components/marketing/reveal";
+import { SectionHeading } from "@/components/marketing/section-heading";
+import { hoverCardClass } from "@/lib/motion";
+import { cn } from "@/lib/utils";
 
-const PRIORITIES = [
+// No real user reviews have been collected yet, so these are illustrative and the section says so
+// on the page (fake reviews are unlawful in the UK and break SEO rule 6). Replace them with genuine,
+// consented feedback and set SAMPLE_TESTIMONIALS to false before launch. Never add star ratings.
+const SAMPLE_TESTIMONIALS = true;
+
+const TESTIMONIALS = [
   {
-    name: "A discreet starting point",
+    quote: "I'd been comparing prices in three tabs and still missed the delivery charge. Seeing the total cost side by side made the decision easy.",
+    name: "James",
+    detail: "Leeds",
     image: "/images/dean-and-allie.jpg",
-    quote:
-      "Explore ED pharmacy information and prepare questions for a professional consultation.",
   },
   {
-    name: "Evidence you can inspect",
+    quote: "Being able to check the pharmacy's registration before going anywhere near a checkout gave me real peace of mind.",
+    name: "Colin",
+    detail: "Bristol",
     image: "/images/summer-and-colin.jpg",
-    quote:
-      "Understand where listing details come from and when registration evidence was checked.",
   },
   {
-    name: "Costs with context",
+    quote: "Clear, discreet and no sign-up. I found a tadalafil pack for less than I'd been paying, and the price matched on the pharmacy's site.",
+    name: "Mark",
+    detail: "Glasgow",
     image: "/images/download.jpg",
-    quote:
-      "See pack sizes, delivery fees and offer conditions together, ranked by price.",
   },
 ];
 
 export function TestimonialsSection() {
   return (
-    <section className="px-6 py-24">
-      <div className="mx-auto max-w-3xl text-center">
-        <Badge variant="secondary" className="rounded-full px-3 py-1">
-          What we focus on
-        </Badge>
-        <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
-          A thoughtful approach to{" "}
-          <span className="bg-linear-to-r from-chart-1 via-chart-2 to-chart-5 bg-clip-text text-transparent">
-            ED treatment information.
-          </span>
-        </h2>
-      </div>
+    <section id="testimonials" aria-labelledby="testimonials-heading" className="relative scroll-mt-28 overflow-hidden bg-muted/40 px-4 py-24 sm:px-6 lg:py-32">
+      <SectionHeading id="testimonials-heading" eyebrow="Testimonials" title="What people value about" accent="comparing with us." />
 
-      <div className="mx-auto mt-14 grid max-w-5xl gap-6 sm:grid-cols-3">
-        {PRIORITIES.map(({ name, image, quote }) => (
-          <div
-            key={name}
-            className="flex flex-col items-center rounded-2xl border border-border bg-card p-8 text-center shadow-(--shadow)"
-          >
-            <div className="relative size-16 overflow-hidden rounded-full ring-2 ring-primary/20">
-              <Image
-                src={image}
-                alt=""
-                fill
-                sizes="64px"
-                className="object-cover"
-              />
-            </div>
-            <h3 className="mt-4 text-sm font-medium">
-              {name}
-            </h3>
-            <p className="mt-5 text-sm text-muted-foreground">{quote}</p>
-          </div>
+      {SAMPLE_TESTIMONIALS ? (
+        <p className="mx-auto mt-6 flex w-fit max-w-full items-center gap-2 rounded-full border border-dashed border-border bg-background px-4 py-1.5 text-xs text-muted-foreground">
+          <Info aria-hidden="true" className="size-3.5 shrink-0" />
+          Illustrative examples while we collect genuine feedback.
+        </p>
+      ) : null}
+
+      <ul className="mx-auto mt-12 grid max-w-6xl gap-6 md:grid-cols-3">
+        {TESTIMONIALS.map(({ quote, name, detail, image }, index) => (
+          <li key={name}>
+            <Reveal delay={index * 120} className="h-full">
+              <figure className={cn(hoverCardClass, "flex flex-col p-7", index === 1 && "md:-translate-y-4 md:hover:-translate-y-5")}>
+                <Quote aria-hidden="true" className="size-8 text-primary/50 transition-all duration-300 group-hover:scale-110 group-hover:text-primary" />
+                <blockquote className="mt-5 flex-1 leading-relaxed text-pretty">&ldquo;{quote}&rdquo;</blockquote>
+                <figcaption className="mt-8 flex items-center gap-3 border-t border-border pt-5">
+                  <span className="relative size-11 overflow-hidden rounded-full ring-2 ring-primary/30 transition-all duration-300 group-hover:ring-primary">
+                    <Image src={image} alt="" fill sizes="44px" className="object-cover" />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-semibold">{name}</span>
+                    <span className="block text-xs text-muted-foreground">{detail}</span>
+                  </span>
+                </figcaption>
+              </figure>
+            </Reveal>
+          </li>
         ))}
-      </div>
+      </ul>
     </section>
   );
 }

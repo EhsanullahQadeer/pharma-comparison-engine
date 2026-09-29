@@ -87,7 +87,7 @@ async function collectCandidateUrlsForAudit(websiteDomain: string, drugTerm: str
     const rendered = await collectRenderedPageSignals(`https://${websiteDomain}`, [drugTerm], { humanAssist });
     return {
       candidateUrls: rendered.candidateUrls,
-      note: `Used Playwright rendered-page fallback after strict collection stopped: ${error.message}`,
+      note: `Used patchright rendered-page fallback after strict collection stopped: ${error.message}`,
     };
   }
 }
@@ -141,7 +141,7 @@ async function scrapeDrugOnSite(websiteDomain: string, ingredient: Ingredient, d
           const rendered = await collectRenderedPageSignals(match.candidateUrl, match.matchedTokens, { humanAssist });
           html = rendered.html;
           renderedPricing = rendered.pricing;
-          pageWarning = `Used Playwright rendered-page fallback after strict collection stopped: ${error.message}`;
+          pageWarning = `Used patchright rendered-page fallback after strict collection stopped: ${error.message}`;
         }
       }
       const signals = extractPriceSignals(html);

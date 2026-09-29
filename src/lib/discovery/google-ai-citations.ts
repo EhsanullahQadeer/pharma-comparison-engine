@@ -1,3 +1,7 @@
+import { ignoreNavigationRace } from "@/lib/browser/navigation-race";
+
+import type { Page } from "patchright";
+
 const excludedHosts = /(^|\.)(google\.[a-z.]+|googleusercontent\.com|gstatic\.com|nhs\.uk|pharmacyregulation\.org|cqc\.org\.uk|facebook\.com|instagram\.com|yell\.com|yelp\.[a-z.]+|trustpilot\.com)$/i;
 
 export function assertGoogleAiRequestLimit(body: string) {
@@ -23,6 +27,12 @@ export function googleAiCitationUrls(links: string[]) {
 
 export function googleAiCitationOrigins(links: string[]) {
   return new Set([...googleAiCitationUrls(links)].map(link => new URL(link).origin));
+}
+
+// Submitting the prompt navigates the AI chat tab (Google /ai → /search, DeepSeek / → /a/chat/…);
+// a read that lands mid-navigation counts as "no links yet" and the polling loop reads again.
+export async function readPageLinks(page: Page) {
+  return ignoreNavigationRace(() => page.locator("a[href]").evaluateAll(elements => elements.map(element => (element as HTMLAnchorElement).href)), []);
 }
 
 export async function waitForGoogleAiCitationUrls(

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { chromium } from "playwright";
+import { chromium } from "patchright";
 
 import { pickStructuredPrice, readProductCard } from "./product-price";
 

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { brandSideMatches, preferPrescriptionLabels } from "./variant-label";
+import { brandSideMatches, labelMatchesVariant, preferPrescriptionLabels } from "./variant-label";
 
 // Product names / option text as seen on live pharmacy pages.
 test("option text that states branded or generic decides the side", () => {
@@ -27,6 +27,17 @@ test("without option wording, only a name that starts with the brand is branded"
 test("unknown side or no brand token accepts either", () => {
   assert.equal(brandSideMatches("Sildenafil (Viagra) Tablets", "25mg 4 tablets", "viagra", undefined), true);
   assert.equal(brandSideMatches("Sildenafil Tablets", "25mg", undefined, false), true);
+});
+
+test("a single-strength OTC product named without its strength implies it", () => {
+  // Withaid: "Viagra Connect 4 Tablets" — Viagra Connect is only ever 50mg.
+  const connect = ["viagra connect", "sildenafil", "viagra"];
+  assert.equal(labelMatchesVariant("Viagra Connect 4 Tablets", connect, { strengthMg: 50, packQuantity: 4 }), true);
+  assert.equal(labelMatchesVariant("Viagra Connect 4 Tablets", connect, { strengthMg: 25, packQuantity: 4 }), false);
+  assert.equal(labelMatchesVariant("Viagra Connect 4 Tablets", connect, { strengthMg: 50, packQuantity: 8 }), false);
+  assert.equal(labelMatchesVariant("Cialis Together 4 Tablets", ["cialis together", "tadalafil"], { strengthMg: 10, packQuantity: 4 }), true);
+  // Prescription Viagra comes in several strengths, so it still needs one stated.
+  assert.equal(labelMatchesVariant("Viagra 4 Tablets", ["viagra", "sildenafil"], { strengthMg: 50, packQuantity: 4 }), false);
 });
 
 test("prefers the prescription brand over its over-the-counter version when both match", () => {

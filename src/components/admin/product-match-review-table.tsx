@@ -17,6 +17,8 @@ type MatchItem = {
   matchedIngredient: Ingredient;
   matchedTokens: string[];
   confidence: ProductMatchConfidence;
+  // Set when detection found this exact strength/pack priced on the page.
+  productVariantId: string | null;
   provider: { id: string; tradingName: string };
 };
 
@@ -24,7 +26,7 @@ type VariantOption = { id: string; ingredient: Ingredient; brandName: string | n
 
 function MatchRow({ item, variants }: { item: MatchItem; variants: VariantOption[] }) {
   const matchingVariants = variants.filter((variant) => variant.ingredient === item.matchedIngredient);
-  const [productVariantId, setProductVariantId] = useState(matchingVariants[0]?.id ?? variants[0]?.id ?? "");
+  const [productVariantId, setProductVariantId] = useState(item.productVariantId ?? matchingVariants[0]?.id ?? variants[0]?.id ?? "");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string>();
   const [savedResult, setSavedResult] = useState<{ itemPricePence: number; deliveryFeePence: number; updatedAt: Date }>();

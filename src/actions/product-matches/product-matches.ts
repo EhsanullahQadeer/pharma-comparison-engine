@@ -2,15 +2,17 @@
 
 import { revalidatePath } from "next/cache";
 
-import { collectPriceForMatch } from "@/actions/price-collection/price-collection";
+import { collectPriceForMatch } from "@/actions/price-collection/collect-price";
 import { recordAuditLog } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
-import { detectEdProductMatches } from "@/lib/product-detection/detect-products";
+import { detectEdProductMatchesWithBrowserFallback } from "@/lib/product-detection/detect-products-in-browser";
+import { findPricedVariantsOnPage } from "@/lib/product-detection/page-variants";
 import { requireStaffRole } from "@/lib/staff-auth";
+import type { ProductDetectionMethod } from "@/types/product-detection";
 
 export type RunProductDetectionState = {
   error?: string;
-  result?: { candidatesSeen: number; newMatches: number };
+  result?: { candidatesSeen: number; newMatches: number; method: ProductDetectionMethod };
 };
 
 // Manual "Run now" trigger, one provider at a time (pilot scope — see docs/current-tasks.md's
@@ -25,24 +27,48 @@ export async function runProductDetectionForProvider(providerId: string): Promis
     return { error: "You are not authorized to run product detection." };
   }
 
-  const provider = await prisma.provider.findUnique({ where: { id: providerId }, select: { id: true, websiteDomain: true } });
+  // The postcode from the registry record it was discovered from answers shops that ask for one
+  // before listing products.
+  const provider = await prisma.provider.findUnique({
+    where: { id: providerId },
+    select: { id: true, websiteDomain: true, discoveryCandidates: { where: { postcode: { not: null } }, select: { postcode: true }, take: 1 } },
+  });
   if (!provider) return { error: "Provider not found." };
 
   let detected;
+  let method: ProductDetectionMethod;
   try {
-    detected = await detectEdProductMatches(provider.websiteDomain);
+    ({ matches: detected, method } = await detectEdProductMatchesWithBrowserFallback(provider.websiteDomain, { postcode: provider.discoveryCandidates[0]?.postcode ?? undefined }));
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Product detection failed." };
   }
 
+  const catalogue = await prisma.productVariant.findMany({
+    select: { id: true, ingredient: true, brandName: true, strengthMg: true, packQuantity: true, formulation: true },
+  });
+
   let newMatches = 0;
   for (const match of detected) {
-    // A page can hold one match per variant, so "already known" means any match on this page.
     const existing = await prisma.productMatch.findMany({
       where: { providerId, candidateUrl: match.candidateUrl },
-      select: { id: true, status: true },
+      select: { id: true, status: true, productVariantId: true },
     });
-    if (existing.length === 0) {
+    // A page offering several strengths/packs gets a suggested (still NEW) match per catalogue
+    // variant it has a price for; staff confirm or reject each one. Variants already matched on this
+    // page, in any status, are left alone.
+    const priced = await findPricedVariantsOnPage(match.candidateUrl, catalogue.filter((variant) => variant.ingredient === match.ingredient));
+    const known = new Set(existing.map((row) => row.productVariantId));
+    const suggestions = priced.filter(({ variantId }) => !known.has(variantId));
+    if (suggestions.length > 0) {
+      await prisma.productMatch.createMany({
+        data: suggestions.map(({ variantId }) => ({
+          providerId, candidateUrl: match.candidateUrl, matchedIngredient: match.ingredient, matchedTokens: match.matchedTokens, confidence: match.confidence, productVariantId: variantId,
+        })),
+        skipDuplicates: true,
+      });
+      newMatches += suggestions.length;
+    } else if (existing.length === 0 && priced.length === 0) {
+      // Nothing readable on the page: one undecided match for staff to assign a variant by hand.
       await prisma.productMatch.create({
         data: { providerId, candidateUrl: match.candidateUrl, matchedIngredient: match.ingredient, matchedTokens: match.matchedTokens, confidence: match.confidence },
       });
@@ -56,11 +82,11 @@ export async function runProductDetectionForProvider(providerId: string): Promis
     }
   }
 
-  await recordAuditLog({ actorId: staffUser.id, action: "CREATE", entityType: "ProductMatch", entityId: providerId, changes: { candidatesSeen: detected.length, newMatches } });
+  await recordAuditLog({ actorId: staffUser.id, action: "CREATE", entityType: "ProductMatch", entityId: providerId, changes: { candidatesSeen: detected.length, newMatches, method } });
 
   revalidatePath(`/admin/pharmacies/${providerId}`);
   revalidatePath("/admin/reviews");
-  return { result: { candidatesSeen: detected.length, newMatches } };
+  return { result: { candidatesSeen: detected.length, newMatches, method } };
 }
 
 // Only matches a staff member hasn't yet acted on — same reviewedAt-drives-queue-membership
@@ -87,12 +113,19 @@ export async function confirmProductMatch(matchId: string, productVariantId: str
     return { error: "You are not authorized to review product matches." };
   }
 
-  const match = await prisma.productMatch.findUnique({ where: { id: matchId }, select: { id: true, reviewedAt: true } });
+  const match = await prisma.productMatch.findUnique({ where: { id: matchId }, select: { id: true, reviewedAt: true, providerId: true, candidateUrl: true } });
   if (!match) return { error: "Product match not found." };
   if (match.reviewedAt) return { error: "This match has already been reviewed." };
 
   const variant = await prisma.productVariant.findUnique({ where: { id: productVariantId }, select: { id: true } });
   if (!variant) return { error: "Product variant not found." };
+
+  // Detection may already have suggested this exact variant for the page as its own row.
+  const duplicate = await prisma.productMatch.findFirst({
+    where: { providerId: match.providerId, candidateUrl: match.candidateUrl, productVariantId, id: { not: matchId } },
+    select: { id: true },
+  });
+  if (duplicate) return { error: "This page already has a match for that variant — confirm or reject that one instead." };
 
   await prisma.productMatch.update({
     where: { id: matchId },

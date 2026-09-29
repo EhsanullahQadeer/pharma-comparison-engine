@@ -83,7 +83,7 @@ export function SiteHeader() {
             ))}
           </div>
         </nav>
-        <Link href="/ed/pharmacies" onClick={close} className="hidden shrink-0 rounded-full bg-primary px-4 py-2 text-sm font-medium text-foreground hover:bg-primary/80 xl:block">Explore pharmacies</Link>
+        <Link href="/ed/pharmacies" onClick={close} className="hidden shrink-0 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/80 xl:block">Explore pharmacies</Link>
         <button ref={toggleRef} type="button" onClick={() => { if (mobileOpen) close(); else setMobileOpen(true); }} aria-expanded={mobileOpen} aria-controls="primary-navigation" aria-label={mobileOpen ? "Close navigation" : "Open navigation"} className="rounded-lg p-3 hover:bg-muted lg:hidden">
           {mobileOpen ? <X aria-hidden="true" className="size-5" /> : <Menu aria-hidden="true" className="size-5" />}
         </button>

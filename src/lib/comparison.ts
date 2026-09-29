@@ -1,4 +1,4 @@
-import type { Ingredient } from "@/generated/prisma/client";
+import type { Ingredient, PurchaseModel } from "@/generated/prisma/client";
 import { ingredientLabels, ingredientSlugs, ingredientValues } from "@/lib/catalogue-labels";
 import { formatPence } from "@/lib/money";
 import type { ComparisonFilters, ComparisonSort, FreshnessTier, PublicOffer, PublicVariant, VariantPriceSummary } from "@/types/comparison";
@@ -61,12 +61,15 @@ export function splitRankedOffers(offers: PublicOffer[], sort: ComparisonSort) {
   return { ranked: sorted.filter(isRankable), other: sorted.filter((offer) => !isRankable(offer)) };
 }
 
-export function filterOffers(offers: PublicOffer[], { ingredient, strengthMg, packQuantity }: ComparisonFilters) {
+export function filterOffers(offers: PublicOffer[], { ingredient, productType, strengthMg, formulation, packQuantity, purchaseModel }: ComparisonFilters) {
   return offers.filter(
     (offer) =>
       (!ingredient || offer.variant.ingredient === ingredient) &&
+      (!productType || variantTypeSlug(offer.variant) === productType) &&
       (!strengthMg || offer.variant.strengthMg === strengthMg) &&
-      (!packQuantity || offer.variant.packQuantity === packQuantity),
+      (!formulation || slugify(baseFormulation(offer.variant)) === formulation) &&
+      (!packQuantity || offer.variant.packQuantity === packQuantity) &&
+      (!purchaseModel || offer.purchaseModel === purchaseModel),
   );
 }
 
@@ -86,25 +89,41 @@ export function summarizeVariants(offers: PublicOffer[]): VariantPriceSummary[] 
 
 const ingredientBySlug = Object.fromEntries(ingredientValues.map((value) => [ingredientSlugs[value], value])) as Record<string, Ingredient>;
 
+// Public wording: "Recurring" is the admin term; visitors know it as a subscription.
+export const purchaseModelSlugs: Record<PurchaseModel, string> = { ONE_OFF: "one-off", RECURRING: "subscription" };
+export const publicPurchaseModelLabels: Record<PurchaseModel, string> = { ONE_OFF: "One-off", RECURRING: "Subscription" };
+const purchaseModelBySlug = Object.fromEntries(Object.entries(purchaseModelSlugs).map(([model, slug]) => [slug, model])) as Record<string, PurchaseModel>;
+
 function positiveInt(value: string | string[] | undefined) {
   const parsed = typeof value === "string" ? Number.parseInt(value, 10) : Number.NaN;
   return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
 }
 
+// Free-text slugs (type/form) only need to be well-formed: an unknown one simply matches nothing.
+function slugParam(value: string | string[] | undefined) {
+  return typeof value === "string" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) ? value : undefined;
+}
+
 export function parseComparisonFilters(params: Record<string, string | string[] | undefined>): ComparisonFilters {
   return {
     ingredient: typeof params.medicine === "string" ? ingredientBySlug[params.medicine] : undefined,
+    productType: slugParam(params.type),
     strengthMg: positiveInt(params.strength),
+    formulation: slugParam(params.form),
     packQuantity: positiveInt(params.pack),
+    purchaseModel: typeof params.plan === "string" ? purchaseModelBySlug[params.plan] : undefined,
     sort: params.sort === "total" ? "total" : "tablet",
   };
 }
 
-export function comparisonHref({ ingredient, strengthMg, packQuantity, sort }: Partial<ComparisonFilters>) {
+export function comparisonHref({ ingredient, productType, strengthMg, formulation, packQuantity, purchaseModel, sort }: Partial<ComparisonFilters>) {
   const query = new URLSearchParams();
   if (ingredient) query.set("medicine", ingredientSlugs[ingredient]);
+  if (productType) query.set("type", productType);
   if (strengthMg) query.set("strength", String(strengthMg));
+  if (formulation) query.set("form", formulation);
   if (packQuantity) query.set("pack", String(packQuantity));
+  if (purchaseModel) query.set("plan", purchaseModelSlugs[purchaseModel]);
   if (sort === "total") query.set("sort", sort);
   const search = query.toString();
   return search ? `/ed/compare?${search}` : "/ed/compare";
@@ -113,7 +132,7 @@ export function comparisonHref({ ingredient, strengthMg, packQuantity, sort }: P
 // Stable, human-readable profile slug from the (unique) website domain: "www.click-pharmacy.co.uk"
 // → "click-pharmacy-co-uk". Derived rather than stored, so it can't drift from the domain.
 export function providerSlug(websiteDomain: string) {
-  return websiteDomain.toLowerCase().replace(/^www\./, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return slugify(websiteDomain.replace(/^www\./i, ""));
 }
 
 // Register-style ALL-CAPS names ("PEAK PHARMACY DIRECT") read as shouting on a public page.
@@ -128,6 +147,20 @@ export function variantLabel(variant: PublicVariant) {
 
 export function variantTypeLabel(variant: PublicVariant) {
   return /generic/i.test(variant.formulation) || !variant.brandName ? "Generic" : variant.brandName;
+}
+
+export function slugify(text: string) {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+export function variantTypeSlug(variant: PublicVariant) {
+  return slugify(variantTypeLabel(variant));
+}
+
+// "Film-coated tablet (generic, daily dose)" → "Film-coated tablet": generic and daily-dose are
+// already covered by the type and strength filters.
+export function baseFormulation(variant: PublicVariant) {
+  return variant.formulation.replace(/\s*\(.*\)\s*$/, "");
 }
 
 const relativeTime = new Intl.RelativeTimeFormat("en-GB", { numeric: "auto" });
