@@ -1,7 +1,7 @@
 import { Resolver } from "node:dns/promises";
 import { request } from "node:https";
 
-import { extractPageTitle, isPublicIpv4, normalizePublicUrl, robotsAllows } from "./public-web-policy";
+import { extractPageTitle, isHumanVerificationPage, isPublicIpv4, normalizePublicUrl, robotsAllows } from "./public-web-policy";
 
 // Falls back to a public resolver when the system-configured DNS server rejects the query
 // (e.g. a VPN/antivirus DNS proxy registered in Windows network config but not actually running).
@@ -73,7 +73,7 @@ async function collectPublicResource(input: string, accept: RegExp, { detectChal
     if (robots.status !== 404 && (robots.status !== 200 || !/text\/plain/i.test(robots.type))) {
       throw new Error(`Collection stopped: robots rules could not be confirmed (HTTP ${robots.status}). Review it manually.`);
     }
-    if (robots.status !== 404 && !robotsAllows(robots.text, url.pathname)) {
+    if (robots.status !== 404 && !robotsAllows(robots.text, url.pathname + url.search)) {
       throw new Error("Collection stopped: robots rules do not permit this page. Review it manually.");
     }
     const page = await readPage(url, signal);
@@ -82,7 +82,7 @@ async function collectPublicResource(input: string, accept: RegExp, { detectChal
       continue;
     }
     if (page.status !== 200) throw new Error(`Collection stopped (HTTP ${page.status}). Review the page manually.`);
-    if (detectChallenge && /captcha|recaptcha|hcaptcha|cf-chl-|verify you are human|checking your browser/i.test(page.text)) {
+    if (detectChallenge && isHumanVerificationPage(page.text)) {
       throw new Error("Page contains a human-verification challenge or CAPTCHA marker. Review it in your browser; automated collection stopped.");
     }
     if (!accept.test(page.type)) throw new Error(`Unexpected content type for this page: ${page.type || "unknown"}.`);

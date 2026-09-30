@@ -29,6 +29,37 @@ test("reads a 'Quantity' column of bare counts with bare prices, naming the prod
   assert.equal(pickPriceGridTable(somerViagra, tokens, { strengthMg: 50, packQuantity: 4, generic: true }, somerUrl), undefined);
 });
 
+test("decides branded or generic per row when the rows say so (Dr Fox)", () => {
+  // Generic and branded rows in one table; branded packs of 32 are "n/a" and must never be filled
+  // with the generic price.
+  const drFox = `<h1>Viagra</h1><table><tr><th>Tablet type</th><th>4 tablets</th><th>32 tablets</th></tr>
+<tr><td>Generic Viagra 25mg</td><td>&pound;3.20</td><td>&pound;22.00</td></tr>
+<tr><td>Viagra 25mg</td><td>&pound;24.20</td><td>n/a</td></tr></table>`;
+  const url = "https://www.doctorfox.co.uk/erectile-dysfunction/viagra.html";
+  assert.equal(pickPriceGridTable(drFox, tokens, { strengthMg: 25, packQuantity: 4, generic: false }, url)?.itemPricePence, 2420);
+  assert.equal(pickPriceGridTable(drFox, tokens, { strengthMg: 25, packQuantity: 4, generic: true }, url)?.itemPricePence, 320);
+  assert.equal(pickPriceGridTable(drFox, tokens, { strengthMg: 25, packQuantity: 32, generic: false }, url), undefined);
+  assert.equal(pickPriceGridTable(drFox, tokens, { strengthMg: 25, packQuantity: 32, generic: true }, url)?.itemPricePence, 2200);
+});
+
+test("rows naming their own product are that product, not the page's (Dr Fox Viagra Connect / Cialis Together)", () => {
+  const connect = `<h1>Viagra Connect</h1><table><tr><th>Tablet type</th><th>4 tablets</th><th>8 tablets</th></tr>
+<tr><td>Sildenafil 50mg</td><td>&pound;3.50</td><td>&pound;9.80</td></tr>
+<tr><td>Viagra Connect 50mg</td><td>&pound;19.99</td><td>&pound;34.99</td></tr></table>`;
+  const url = "https://www.doctorfox.co.uk/erectile-dysfunction/viagra-connect-tablets.html";
+  const connectTokens = ["viagra connect", "sildenafil", "viagra"];
+  assert.equal(pickPriceGridTable(connect, connectTokens, { strengthMg: 50, packQuantity: 4, generic: false }, url)?.itemPricePence, 1999);
+  // The generic sildenafil row is never prescription Viagra or Viagra Connect.
+  assert.equal(pickPriceGridTable(connect, tokens, { strengthMg: 50, packQuantity: 4, generic: false }, url), undefined);
+  assert.equal(pickPriceGridTable(connect, tokens, { strengthMg: 50, packQuantity: 4, generic: true }, url)?.itemPricePence, 350);
+
+  const together = `<h1>Cialis Together</h1><table><tr><th>Tablet type</th><th>4 tablets</th></tr>
+<tr><td>Generic 10mg tadalafil</td><td>&pound;7.95</td></tr><tr><td>Cialis Together (10mg tadalafil)</td><td>&pound;16.00</td></tr></table>`;
+  assert.equal(pickPriceGridTable(together, ["cialis together", "tadalafil", "cialis"], { strengthMg: 10, packQuantity: 4, generic: false }, url)?.itemPricePence, 1600);
+  assert.equal(pickPriceGridTable(together, ["cialis", "tadalafil"], { strengthMg: 10, packQuantity: 4, generic: false }, url), undefined);
+  assert.equal(pickPriceGridTable(together, ["cialis", "tadalafil"], { strengthMg: 10, packQuantity: 4, generic: true }, url)?.itemPricePence, 795);
+});
+
 test("reads every price table on the page, not just the first", () => {
   // Somer Pharmacy's tadalafil page: an on-demand table (packs of 4–8) then a daily one (28–56).
   const somerTadalafil = `<title>Tadalafil &#8211; Somer Pharmacy</title>

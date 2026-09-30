@@ -24,9 +24,10 @@ type MatchItem = {
 
 type VariantOption = { id: string; ingredient: Ingredient; brandName: string | null; strengthMg: number; packQuantity: number; formulation: string };
 
-function MatchRow({ item, variants }: { item: MatchItem; variants: VariantOption[] }) {
-  const matchingVariants = variants.filter((variant) => variant.ingredient === item.matchedIngredient);
-  const [productVariantId, setProductVariantId] = useState(item.productVariantId ?? matchingVariants[0]?.id ?? variants[0]?.id ?? "");
+function MatchRow({ item, variants, showProvider }: { item: MatchItem; variants: VariantOption[]; showProvider: boolean }) {
+  // Only detection's own suggestion is pre-selected: defaulting to the first catalogue variant got
+  // pages confirmed to a product they don't sell with one click. Otherwise staff pick explicitly.
+  const [productVariantId, setProductVariantId] = useState(item.productVariantId ?? "");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string>();
   const [savedResult, setSavedResult] = useState<{ itemPricePence: number; deliveryFeePence: number; updatedAt: Date }>();
@@ -64,7 +65,7 @@ function MatchRow({ item, variants }: { item: MatchItem; variants: VariantOption
 
   return (
     <TableRow>
-      <TableCell className="font-medium">{item.provider.tradingName}</TableCell>
+      {showProvider ? <TableCell className="font-medium">{item.provider.tradingName}</TableCell> : null}
       <TableCell className="max-w-xs truncate text-xs text-muted-foreground">
         <a href={item.candidateUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">{item.candidateUrl}</a>
       </TableCell>
@@ -79,9 +80,10 @@ function MatchRow({ item, variants }: { item: MatchItem; variants: VariantOption
           disabled={variants.length === 0}
           className="h-8 w-full max-w-56 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
         >
+          <option value="" disabled>Choose the exact variant…</option>
           {variants.map((variant) => (
             <option key={variant.id} value={variant.id}>
-              {ingredientLabels[variant.ingredient]} {variant.strengthMg}mg × {variant.packQuantity} ({variant.formulation})
+              {variant.brandName ?? ingredientLabels[variant.ingredient]} ({ingredientLabels[variant.ingredient]}) {variant.strengthMg}mg × {variant.packQuantity} ({variant.formulation})
             </option>
           ))}
         </select>
@@ -104,11 +106,13 @@ function MatchRow({ item, variants }: { item: MatchItem; variants: VariantOption
   );
 }
 
-export function ProductMatchReviewTable({ items, variants }: { items: MatchItem[]; variants: VariantOption[] }) {
+// Shared by the Reviews page (every pharmacy) and a pharmacy's own page (`showProvider={false}`,
+// its suggestions only, confirmed in place next to its price collection list).
+export function ProductMatchReviewTable({ items, variants, title = "Product matches", showProvider = true }: { items: MatchItem[]; variants: VariantOption[]; title?: string; showProvider?: boolean }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Product matches ({items.length})</CardTitle>
+        <CardTitle>{title} ({items.length})</CardTitle>
       </CardHeader>
       <CardContent className="px-0">
         {items.length === 0 ? (
@@ -117,7 +121,7 @@ export function ProductMatchReviewTable({ items, variants }: { items: MatchItem[
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Provider</TableHead>
+                {showProvider ? <TableHead>Provider</TableHead> : null}
                 <TableHead>Matched page</TableHead>
                 <TableHead>Ingredient</TableHead>
                 <TableHead>Confidence</TableHead>
@@ -126,7 +130,7 @@ export function ProductMatchReviewTable({ items, variants }: { items: MatchItem[
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item) => <MatchRow key={item.id} item={item} variants={variants} />)}
+              {items.map((item) => <MatchRow key={item.id} item={item} variants={variants} showProvider={showProvider} />)}
             </TableBody>
           </Table>
         )}

@@ -23,3 +23,13 @@ export type VariantScheduleSummary = {
   cadence: PriceScrapeCadence | "MIXED" | null;
   nextScrapeAt: Date | null;
 };
+
+// One purchasable option a shop's embedded page data names (product, chosen options, full label)
+// with its price — what the Next.js/Shopify variant readers check against a catalogue variant.
+export type PricedVariantLabel = {
+  productName: string;
+  optionText: string;
+  label: string;
+  itemPricePence: number;
+  availability: "IN_STOCK" | "OUT_OF_STOCK" | "UNKNOWN";
+};

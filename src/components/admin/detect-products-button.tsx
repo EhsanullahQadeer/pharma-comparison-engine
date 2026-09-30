@@ -39,6 +39,7 @@ export function DetectProductsButton({ providerId }: { providerId: string }) {
         <p className="text-right text-xs text-muted-foreground">
           {result.newMatches} new of {result.candidatesSeen} page{result.candidatesSeen === 1 ? "" : "s"} matched
           {result.method === "browser" ? " (read in the Chrome window)" : ""}.{" "}
+          {result.newVariants > 0 ? `${result.newVariants} new strength/pack option${result.newVariants === 1 ? "" : "s"} added to the catalogue. ` : null}
           {result.newMatches > 0 ? <Link href="/admin/reviews" className="text-primary hover:underline">Review →</Link> : null}
         </p>
       ) : null}

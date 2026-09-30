@@ -5,14 +5,15 @@ import { revalidatePath } from "next/cache";
 import { collectPriceForMatch } from "@/actions/price-collection/collect-price";
 import { recordAuditLog } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
+import { ensureCatalogueVariant, type CatalogueVariant } from "@/lib/product-detection/catalogue-variants";
 import { detectEdProductMatchesWithBrowserFallback } from "@/lib/product-detection/detect-products-in-browser";
-import { findPricedVariantsOnPage } from "@/lib/product-detection/page-variants";
+import { findOfferedOptionsOnPage } from "@/lib/product-detection/page-variants";
 import { requireStaffRole } from "@/lib/staff-auth";
 import type { ProductDetectionMethod } from "@/types/product-detection";
 
 export type RunProductDetectionState = {
   error?: string;
-  result?: { candidatesSeen: number; newMatches: number; method: ProductDetectionMethod };
+  result?: { candidatesSeen: number; newMatches: number; newVariants: number; method: ProductDetectionMethod };
 };
 
 // Manual "Run now" trigger, one provider at a time (pilot scope — see docs/current-tasks.md's
@@ -43,20 +44,26 @@ export async function runProductDetectionForProvider(providerId: string): Promis
     return { error: error instanceof Error ? error.message : "Product detection failed." };
   }
 
-  const catalogue = await prisma.productVariant.findMany({
+  const catalogue: CatalogueVariant[] = await prisma.productVariant.findMany({
     select: { id: true, ingredient: true, brandName: true, strengthMg: true, packQuantity: true, formulation: true },
   });
 
   let newMatches = 0;
+  let newVariants = 0;
   for (const match of detected) {
     const existing = await prisma.productMatch.findMany({
       where: { providerId, candidateUrl: match.candidateUrl },
       select: { id: true, status: true, productVariantId: true },
     });
-    // A page offering several strengths/packs gets a suggested (still NEW) match per catalogue
-    // variant it has a price for; staff confirm or reject each one. Variants already matched on this
-    // page, in any status, are left alone.
-    const priced = await findPricedVariantsOnPage(match.candidateUrl, catalogue.filter((variant) => variant.ingredient === match.ingredient));
+    // A page offering several strengths/packs gets a suggested (still NEW) match per option it has
+    // a price for — each option's catalogue variant is added first if the catalogue lacks it; staff
+    // confirm or reject each match. Variants already matched on this page, in any status, are left alone.
+    const priced: { variantId: string }[] = [];
+    for (const option of await findOfferedOptionsOnPage(match.candidateUrl, match.ingredient)) {
+      const { variant, created } = await ensureCatalogueVariant(option, catalogue, staffUser.id);
+      if (created) newVariants += 1;
+      priced.push({ variantId: variant.id });
+    }
     const known = new Set(existing.map((row) => row.productVariantId));
     const suggestions = priced.filter(({ variantId }) => !known.has(variantId));
     if (suggestions.length > 0) {
@@ -82,19 +89,20 @@ export async function runProductDetectionForProvider(providerId: string): Promis
     }
   }
 
-  await recordAuditLog({ actorId: staffUser.id, action: "CREATE", entityType: "ProductMatch", entityId: providerId, changes: { candidatesSeen: detected.length, newMatches, method } });
+  await recordAuditLog({ actorId: staffUser.id, action: "CREATE", entityType: "ProductMatch", entityId: providerId, changes: { candidatesSeen: detected.length, newMatches, newVariants, method } });
 
   revalidatePath(`/admin/pharmacies/${providerId}`);
   revalidatePath("/admin/reviews");
-  return { result: { candidatesSeen: detected.length, newMatches, method } };
+  return { result: { candidatesSeen: detected.length, newMatches, newVariants, method } };
 }
 
 // Only matches a staff member hasn't yet acted on — same reviewedAt-drives-queue-membership
 // pattern as getDiscoveryCandidatesForReview.
-export async function getProductMatchesForReview() {
+// `providerId` narrows the queue to one pharmacy (its admin page lists its own suggestions).
+export async function getProductMatchesForReview(providerId?: string) {
   await requireStaffRole(["CATALOGUE_EDITOR", "ADMINISTRATOR"]);
   return prisma.productMatch.findMany({
-    where: { status: "NEW", reviewedAt: null },
+    where: { status: "NEW", reviewedAt: null, providerId },
     orderBy: { detectedAt: "desc" },
     include: { provider: { select: { id: true, tradingName: true } } },
   });
@@ -134,6 +142,8 @@ export async function confirmProductMatch(matchId: string, productVariantId: str
 
   await recordAuditLog({ actorId: staffUser.id, action: "UPDATE", entityType: "ProductMatch", entityId: matchId, changes: { status: "CONFIRMED", productVariantId } });
 
+  // The pharmacy's page lists it under price collection from now on.
+  revalidatePath(`/admin/pharmacies/${match.providerId}`);
   revalidatePath("/admin/reviews");
   return {};
 }
@@ -175,7 +185,7 @@ export async function rejectProductMatch(matchId: string): Promise<RejectProduct
     return { error: "You are not authorized to review product matches." };
   }
 
-  const match = await prisma.productMatch.findUnique({ where: { id: matchId }, select: { id: true, reviewedAt: true } });
+  const match = await prisma.productMatch.findUnique({ where: { id: matchId }, select: { id: true, reviewedAt: true, providerId: true } });
   if (!match) return { error: "Product match not found." };
   if (match.reviewedAt) return { error: "This match has already been reviewed." };
 
@@ -186,6 +196,7 @@ export async function rejectProductMatch(matchId: string): Promise<RejectProduct
 
   await recordAuditLog({ actorId: staffUser.id, action: "UPDATE", entityType: "ProductMatch", entityId: matchId, changes: { status: "REJECTED" } });
 
+  revalidatePath(`/admin/pharmacies/${match.providerId}`);
   revalidatePath("/admin/reviews");
   return {};
 }

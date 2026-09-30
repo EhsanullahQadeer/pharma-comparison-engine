@@ -77,6 +77,47 @@ test("reads a quantity with a duration note, e.g. '28 (4 week)'", () => {
   assert.equal(pickNextDataVariantPrice(page, tadalafil, { strengthMg: 5, packQuantity: 28, generic: false }, mppUrl)?.itemPricePence, 6999);
 });
 
+// Trimmed from Pharmacy Online's App Router page: the product streams in `self.__next_f` chunks,
+// prices in pence, strength and pack as attributes; a related product streams alongside it.
+function flightVariant(strength: string, pack: string, price: number, extra: Record<string, unknown> = {}) {
+  return { price, units_available: 9999, is_active: true, is_bundle: false, deleted_at: null, sale_price: null, sale_start_date: null, sale_end_date: null, attributes: [{ attribute_name: "Strength", attribute_value: strength }, { attribute_name: "Pack Size", attribute_value: pack }], ...extra };
+}
+const flightPayload = `3:{"slug":"sildenafil","title":"Sildenafil","variants":${JSON.stringify([flightVariant("50mg", "4", 999)])}}`
+  + `\n4:{"slug":"viagra","title":"Viagra","variants":${JSON.stringify([
+    flightVariant("25mg", "4", 2499),
+    flightVariant("50mg", "4", 2999),
+    flightVariant("100mg", "8", 6399, { units_available: 0 }),
+    flightVariant("50mg", "8", 5899, { sale_price: 4999, sale_start_date: "$D2020-01-01T00:00:00.000Z", sale_end_date: "$D2099-01-01T00:00:00.000Z" }),
+    flightVariant("100mg", "4", 3399, { sale_price: 1000, sale_end_date: "$D2020-01-01T00:00:00.000Z" }),
+  ])}}`;
+const flightHtml = `<script>self.__next_f.push([1,${JSON.stringify(flightPayload.slice(0, 40))}])</script><script>self.__next_f.push([1,${JSON.stringify(flightPayload.slice(40))}])</script>`;
+const poUrl = "https://www.pharmacyonline.co.uk/products/viagra";
+
+test("reads the page's own product from an App Router stream split across chunks", () => {
+  assert.equal(pickNextDataVariantPrice(flightHtml, tokens, { strengthMg: 25, packQuantity: 4, generic: false }, poUrl)?.itemPricePence, 2499);
+  assert.equal(pickNextDataVariantPrice(flightHtml, tokens, { strengthMg: 100, packQuantity: 8, generic: false }, poUrl)?.availability, "OUT_OF_STOCK");
+  // Only while the sale window is open does the sale price apply.
+  assert.equal(pickNextDataVariantPrice(flightHtml, tokens, { strengthMg: 50, packQuantity: 8, generic: false }, poUrl)?.itemPricePence, 4999);
+  assert.equal(pickNextDataVariantPrice(flightHtml, tokens, { strengthMg: 100, packQuantity: 4, generic: false }, poUrl)?.itemPricePence, 3399);
+  // The related generic product's £9.99 is never read for this page.
+  assert.equal(pickNextDataVariantPrice(flightHtml, tokens, { strengthMg: 50, packQuantity: 4, generic: true }, poUrl), undefined);
+  assert.equal(pickNextDataVariantPrice(flightHtml, tokens, { strengthMg: 50, packQuantity: 4, generic: true }, "https://www.pharmacyonline.co.uk/products/sildenafil")?.itemPricePence, 999);
+});
+
+test("reads SynovaMed's streamed variants: one-off GBP price blocks and plain strength/pack fields", () => {
+  const variant = (packSize: string, amount: number) => ({ name: `10mg - ${packSize} Tablets`, price: { currency: "GBP", amount }, oneOffPrice: { currency: "GBP", amount }, inStock: false, strength: "10mg", packSize, subscriptionPrices: { month3: { currency: "GBP", amount: 0 } } });
+  const payload = `5:{"slug":"cialis-together","name":"Cialis Together","subtitle":"Over the counter Cialis","variants":${JSON.stringify([variant("4", 1999), variant("12", 5499)])}}`;
+  const page = `<script>self.__next_f.push([1,${JSON.stringify(payload)}])</script>`;
+  const url = "https://synovamed.co.uk/products/cialis-together";
+  const together = ["cialis together", "tadalafil", "cialis"];
+  const result = pickNextDataVariantPrice(page, together, { strengthMg: 10, packQuantity: 4, generic: false }, url);
+  assert.equal(result?.itemPricePence, 1999);
+  assert.equal(result?.availability, "OUT_OF_STOCK");
+  assert.equal(pickNextDataVariantPrice(page, together, { strengthMg: 10, packQuantity: 12, generic: false }, url)?.itemPricePence, 5499);
+  // Never priced as prescription Cialis.
+  assert.equal(pickNextDataVariantPrice(page, ["cialis", "tadalafil"], { strengthMg: 10, packQuantity: 4, generic: false }, url), undefined);
+});
+
 test("keeps branded and generic apart and refuses ambiguity or missing data", () => {
   assert.equal(pickNextDataVariantPrice(html, tokens, { strengthMg: 50, packQuantity: 4, generic: true }, url)?.itemPricePence, 1299);
   assert.equal(pickNextDataVariantPrice(html, tokens, { strengthMg: 50, packQuantity: 4 }, url), undefined);

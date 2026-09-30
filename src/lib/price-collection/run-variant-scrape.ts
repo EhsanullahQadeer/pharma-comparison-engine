@@ -187,6 +187,8 @@ const sourceLabels = {
   "per-tablet-price-table": "product options data",
   "shopify-product-meta": "product options data",
   "price-grid-table": "price table",
+  "price-table-columns": "price list",
+  "select-option-data": "product options data",
   "price-checker-dropdown": "price checker",
   "rendered-product-card": "rendered page",
 } satisfies Record<ScrapedPrice["source"], string>;
@@ -222,7 +224,7 @@ export async function runVariantScrape(
       status: "CONFIRMED",
       OR: [{ productVariantId }, { productVariantId: null }],
     },
-    select: { id: true, providerId: true, productVariantId: true, offerId: true, candidateUrl: true, provider: { select: { tradingName: true, websiteDomain: true } } },
+    select: { id: true, providerId: true, productVariantId: true, offerId: true, candidateUrl: true, provider: { select: { tradingName: true, websiteDomain: true, discoveryCandidates: { where: { postcode: { not: null } }, select: { postcode: true }, take: 1 } } } },
     orderBy: { reviewedAt: "desc" },
   });
   // One page per pharmacy: its match for this exact variant when there is one (e.g. a staff-entered
@@ -254,11 +256,12 @@ export async function runVariantScrape(
     onProgress(`${name} is showing a security check — complete it in the Chrome window (waiting up to 5 minutes).`);
     return attempt(humanBrowser.page);
   }
-  const scrapePage = (url: string, name: string) => withSecurityCheckFallback(name, (page) => scrapeProductPrice(url, {
+  const scrapePage = (url: string, name: string, postcode?: string) => withSecurityCheckFallback(name, (page) => scrapeProductPrice(url, {
     humanAssist: Boolean(page),
     page,
     matchedTokens: tokens,
     variant: variantSpec,
+    postcode,
     onProgress: (message) => onProgress(`${name}: ${message}`),
   }));
   try {
@@ -272,7 +275,7 @@ export async function runVariantScrape(
       onProgress(`Checking ${name}…`);
       try {
         const { feedPrice } = await checkProviderFeeds(match.provider.websiteDomain, name, tokens, variantSpec, onProgress);
-        const scrapedPrice = feedPrice ?? await scrapePage(match.candidateUrl, name);
+        const scrapedPrice = feedPrice ?? await scrapePage(match.candidateUrl, name, match.provider.discoveryCandidates[0]?.postcode ?? undefined);
         const linkMatchId = match.productVariantId === productVariantId && !match.offerId ? match.id : undefined;
         await recordVariantOffer(staffUserId, match.providerId, productVariantId, scrapedPrice, "variant-row", linkMatchId);
         await prisma.productMatch.update({

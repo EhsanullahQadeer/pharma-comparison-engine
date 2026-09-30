@@ -1,6 +1,7 @@
 import { ArrowLeft, Globe, MapPin, ShieldCheck } from "lucide-react";
 
 import { getPendingPriceCollectionForProvider } from "@/actions/price-collection/price-collection";
+import { getProductMatchesForReview } from "@/actions/product-matches/product-matches";
 import { getAllProductVariants } from "@/actions/product-variants/product-variants";
 import { getProvider } from "@/actions/providers/providers";
 import { getAffiliateProgramme } from "@/actions/referrals/programmes";
@@ -8,6 +9,7 @@ import { AffiliateProgrammeCard } from "@/components/admin/affiliate-programme-c
 import { DetectProductsButton } from "@/components/admin/detect-products-button";
 import { EditPharmacyModal } from "@/components/admin/edit-pharmacy-modal";
 import { ProductMatchPricingSection } from "@/components/admin/product-match-pricing-section";
+import { ProductMatchReviewTable } from "@/components/admin/product-match-review-table";
 import { ProviderLinkToggle } from "@/components/admin/provider-link-toggle";
 import { ProviderOffersSection } from "@/components/admin/provider-offers-section";
 import { ProviderStatusControl } from "@/components/admin/provider-status-control";
@@ -36,6 +38,9 @@ export default async function ProviderDetailPage(props: PageProps<"/admin/pharma
     getAffiliateProgramme(id),
   ]);
   const canEditCommercial = staffUser?.role === "COMMERCIAL_MANAGER" || staffUser?.role === "ADMINISTRATOR";
+  // Detected matches awaiting a decision, confirmed here next to the price collection list.
+  const canReviewMatches = staffUser?.role === "CATALOGUE_EDITOR" || staffUser?.role === "ADMINISTRATOR";
+  const suggestedMatches = canReviewMatches ? await getProductMatchesForReview(id) : [];
 
   return (
     <div className="space-y-6">
@@ -87,6 +92,10 @@ export default async function ProviderDetailPage(props: PageProps<"/admin/pharma
       </div>
 
       <ProviderOffersSection providerId={provider.id} providerPublished={provider.status === "PUBLISHED"} offers={provider.offers} variants={variants} />
+
+      {suggestedMatches.length > 0 && (
+        <ProductMatchReviewTable items={suggestedMatches} variants={variants} title="Suggested product matches" showProvider={false} />
+      )}
 
       <ProductMatchPricingSection items={pendingMatches} />
 

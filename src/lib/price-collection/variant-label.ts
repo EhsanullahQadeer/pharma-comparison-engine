@@ -51,6 +51,10 @@ const strengthPattern = /(\d{1,3}(?:\.\d+)?)\s*mg\b/g;
 const quantityPatterns = [
   /\b(\d{1,3})\s*(?:x\s*)?(?:film[- ]coated\s+)?(?:tablets?|tabs?|pills?|capsules?|caps)\b/g,
   /(?:mg|\s|^)x\s?(\d{1,3})\b/g,
+  // Count before strength: "Viagra Tablets 4 x 25mg" (Pharmulous).
+  /\b(\d{1,3})\s*x\s*\d{1,3}(?:\.\d+)?\s*mg\b/g,
+  // Count in brackets after the form: "Perrigo Sildenafil 50mg Film-Coated Tablets (4)" (Oxford e-Pharmacy).
+  /\b(?:tablets?|capsules?)\s*\((\d{1,3})\)/g,
   /\b(?:pack|box)\s*(?:of|size)?\s*[:#-]?\s*(\d{1,3})\b/g,
   /\bqty\s*[:#-]?\s*(\d{1,3})\b/g,
   /\b(\d{1,3})\s*(?:pack|pk)\b/g,
@@ -65,13 +69,18 @@ function impliedStrength(text: string): number[] {
   return product ? [singleStrengthProducts[product]] : [];
 }
 
+// An over-the-counter product is never its prescription brand, either way round: text naming "Viagra
+// Connect" can't price prescription Viagra, nor text naming plain "Viagra" Viagra Connect.
+export function otcProductMismatch(text: string, tokens: string[]): boolean {
+  const lower = text.toLowerCase().replace(/\s+/g, " ");
+  const variantNames = tokens.map((token) => token.toLowerCase());
+  return Object.keys(singleStrengthProducts).some((name) => lower.includes(name) !== variantNames.includes(name));
+}
+
 export function labelMatchesVariant(label: string, tokens: string[], variant: VariantSpec): boolean {
   const text = label.toLowerCase().replace(/\s+/g, " ");
   if (!tokens.some((token) => text.includes(token.toLowerCase()))) return false;
-  // An over-the-counter product is never its prescription brand, either way round: a "Viagra
-  // Connect" label can't price prescription Viagra, nor a plain "Viagra" label Viagra Connect.
-  const variantNames = tokens.map((token) => token.toLowerCase());
-  if (Object.keys(singleStrengthProducts).some((name) => text.includes(name) !== variantNames.includes(name))) return false;
+  if (otcProductMismatch(text, tokens)) return false;
 
   const stated = [...text.matchAll(strengthPattern)].map((match) => Number(match[1]));
   const strengths = stated.length > 0 ? stated : impliedStrength(text);

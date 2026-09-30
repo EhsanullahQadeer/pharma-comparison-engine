@@ -26,6 +26,8 @@ export async function collectPriceForMatch(matchId: string, options: { actorId?:
     include: {
       productVariant: { select: { ingredient: true, brandName: true, strengthMg: true, packQuantity: true, formulation: true } },
       offer: { select: { itemPricePence: true } },
+      // Its registry postcode answers shops that ask for one before showing a product.
+      provider: { select: { discoveryCandidates: { where: { postcode: { not: null } }, select: { postcode: true }, take: 1 } } },
     },
   });
   if (!match) throw new Error("Product match not found.");
@@ -45,6 +47,7 @@ export async function collectPriceForMatch(matchId: string, options: { actorId?:
         ? { strengthMg: match.productVariant.strengthMg, packQuantity: match.productVariant.packQuantity, generic: isGenericFormulation(match.productVariant.formulation) }
         : undefined,
       humanAssist: options.humanAssist,
+      postcode: match.provider.discoveryCandidates[0]?.postcode ?? undefined,
     });
 
     if (match.productVariant) {

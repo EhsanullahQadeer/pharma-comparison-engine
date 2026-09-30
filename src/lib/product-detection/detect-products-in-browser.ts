@@ -27,9 +27,9 @@ type DetectionOptions = { postcode?: string };
 function siteReader(page: Page, siteHostname: string, postcode?: string) {
   const robotsByOrigin = new Map<string, string>();
   async function allowed(url: string) {
-    const { origin, pathname } = new URL(url);
+    const { origin, pathname, search } = new URL(url);
     if (!robotsByOrigin.has(origin)) robotsByOrigin.set(origin, await readRobotsInBrowser(page, origin, true));
-    return robotsAllows(robotsByOrigin.get(origin) ?? "", pathname);
+    return robotsAllows(robotsByOrigin.get(origin) ?? "", pathname + search);
   }
   async function open(url: string): Promise<PageLink[] | undefined> {
     if (!await allowed(url)) return undefined;

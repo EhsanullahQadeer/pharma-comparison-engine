@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { brandSideMatches, labelMatchesVariant, preferPrescriptionLabels } from "./variant-label";
+import { brandSideMatches, labelMatchesVariant, otcProductMismatch, preferPrescriptionLabels } from "./variant-label";
 
 // Product names / option text as seen on live pharmacy pages.
 test("option text that states branded or generic decides the side", () => {
@@ -38,6 +38,25 @@ test("a single-strength OTC product named without its strength implies it", () =
   assert.equal(labelMatchesVariant("Cialis Together 4 Tablets", ["cialis together", "tadalafil"], { strengthMg: 10, packQuantity: 4 }), true);
   // Prescription Viagra comes in several strengths, so it still needs one stated.
   assert.equal(labelMatchesVariant("Viagra 4 Tablets", ["viagra", "sildenafil"], { strengthMg: 50, packQuantity: 4 }), false);
+});
+
+test("over-the-counter and prescription products are never mixed up, either way round", () => {
+  assert.equal(otcProductMismatch("Cialis Together | SynovaMed", ["cialis", "tadalafil"]), true);
+  assert.equal(otcProductMismatch("Viagra Tablets", ["viagra connect", "sildenafil", "viagra"]), true);
+  assert.equal(otcProductMismatch("Cialis Together | SynovaMed", ["cialis together", "tadalafil", "cialis"]), false);
+  assert.equal(otcProductMismatch("Buy Viagra Online", ["viagra", "sildenafil"]), false);
+});
+
+test("reads a pack written count-first, e.g. '4 x 25mg'", () => {
+  const tokens = ["viagra", "sildenafil"];
+  assert.equal(labelMatchesVariant("Viagra Tablets 4 x 25mg", tokens, { strengthMg: 25, packQuantity: 4 }), true);
+  assert.equal(labelMatchesVariant("Viagra Tablets 16 x 100mg", tokens, { strengthMg: 100, packQuantity: 16 }), true);
+  assert.equal(labelMatchesVariant("Viagra Tablets 4 x 25mg", tokens, { strengthMg: 25, packQuantity: 25 }), false);
+  assert.equal(labelMatchesVariant("Viagra Tablets 4 x 25mg", tokens, { strengthMg: 50, packQuantity: 4 }), false);
+  assert.equal(labelMatchesVariant("Perrigo Sildenafil 50mg Film-Coated Tablets (4)", tokens, { strengthMg: 50, packQuantity: 4 }), true);
+  assert.equal(labelMatchesVariant("Perrigo Sildenafil 50mg Film-Coated Tablets (8)", tokens, { strengthMg: 50, packQuantity: 4 }), false);
+  // The strength-first form still reads as before.
+  assert.equal(labelMatchesVariant("Viagra 50mg x 4", tokens, { strengthMg: 50, packQuantity: 4 }), true);
 });
 
 test("prefers the prescription brand over its over-the-counter version when both match", () => {

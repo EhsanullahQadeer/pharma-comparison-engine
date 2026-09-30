@@ -17,7 +17,7 @@ export async function readRobotsInBrowser(page: Page, origin: string, humanAssis
 export async function assertRobotsAllowInBrowser(page: Page, url: string, humanAssist: boolean, onWaiting?: (elapsedSeconds: number) => void) {
   const target = new URL(url);
   const rules = await readRobotsInBrowser(page, target.origin, humanAssist, onWaiting);
-  if (!robotsAllows(rules, target.pathname)) {
+  if (!robotsAllows(rules, target.pathname + target.search)) {
     throw new Error("Collection stopped: robots rules (read in the browser) do not permit this page.");
   }
 }

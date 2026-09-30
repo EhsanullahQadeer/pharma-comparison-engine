@@ -25,8 +25,9 @@ const allowedPathSegments = new Set([
 
 // Excluded outright even under an allowed root — e.g. clickpharmacy.co.uk genuinely nests blog
 // posts under /erectile-dysfunction/blog/..., where a title like "...viagra-last" would otherwise
-// false-positive as a product page.
-const blockedPathSegments = new Set(["blog", "blogs", "news", "guide", "guides", "article", "articles", "faq", "faqs", "help", "advice"]);
+// false-positive as a product page. Editorial hubs that nest articles under a condition folder
+// (Simple Online Pharmacy's /health-advice/erectile-dysfunction/viagra/how-does-viagra-work/) too.
+const blockedPathSegments = new Set(["blog", "blogs", "news", "guide", "guides", "article", "articles", "faq", "faqs", "help", "advice", "health-advice", "health-hub", "health-centre", "health-center", "health-guides", "health-information", "learn", "resources", "info"]);
 
 // The subset of allowedPathSegments that names the condition itself rather than a generic
 // e-commerce word — used as the single-segment root a page must sit at for edPageMentionsIngredient
@@ -41,6 +42,20 @@ export function isEdCategoryRootPath(pathname: string): boolean {
   return segments.length === 1 && edCategoryRootSegments.has(segments[0]);
 }
 
+// An ED condition/treatment listing page by its address alone, optionally under a UK locale
+// folder and with a file extension: "/erectile-dysfunction", "/uk/erectile-dysfunction-treatment.html".
+// Consultation, trial-pack or article pages ("-consultation", "-causes") don't count.
+const edCategoryPageWords = new Set(["treatment", "treatments", "medication", "medications", "medicine", "medicines", "pills", "tablets", "online", "uk"]);
+
+export function isEdCategoryPagePath(pathname: string): boolean {
+  const segments = pathname.split("/").filter(Boolean).map((segment) => segment.toLowerCase());
+  const last = segments[segments.length - 1]?.replace(/\.(?:html?|php|aspx?)$/, "") ?? "";
+  if (!last || !segments.slice(0, -1).every((segment) => ukLocaleSegments.has(segment))) return false;
+  if (edCategoryRootSegments.has(last)) return true;
+  const rest = last.replace(/^erectile-dysfunction(?:-ed)?/, "");
+  return rest !== last && rest.split("-").filter(Boolean).every((word) => edCategoryPageWords.has(word));
+}
+
 export type EdPathMatch = {
   ingredient: Ingredient;
   matchedTokens: string[];
@@ -52,6 +67,22 @@ function normalizeSegment(segment: string): string {
   return segment.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+// Flat product pages with no section folder (e.g. Zava's /uk/viagra.html, /uk/cialis-daily.html):
+// the last segment must be nothing but ED tokens plus product words, so "viagra-side-effects",
+// "viagra-dosage" or "viagra-alternatives" never pass; anything before it may only be a UK locale
+// folder, so other countries' pages (/fr/viagra.html) are skipped.
+const flatProductWords = new Set(["tablet", "tablets", "tabs", "pill", "pills", "connect", "together", "daily", "generic", "branded", "film", "coated", "online", "buy", "uk", "pack", "packs", "subscription"]);
+const ukLocaleSegments = new Set(["uk", "gb", "en", "en-gb", "en_gb"]);
+
+function isFlatProductPath(lowerSegments: string[]): boolean {
+  const last = lowerSegments[lowerSegments.length - 1]?.replace(/\.(?:html?|php|aspx?)$/, "");
+  if (!last || !lowerSegments.slice(0, -1).every((segment) => ukLocaleSegments.has(segment))) return false;
+  const words = last.split(/[-_]+/).filter(Boolean);
+  const tokens = new Set(edIngredientTokens.map(([token]) => token));
+  // Numbers are strengths ("100mg") or pack counts ("8" in Well's "sildenafil-100mg-8-pack-subscription").
+  return words.some((word) => tokens.has(word)) && words.every((word) => tokens.has(word) || flatProductWords.has(word) || /^\d+(?:\.\d+)?(?:mg)?$/.test(word));
+}
+
 // HIGH confidence when the token sits in the URL's final path segment (a specific product page,
 // e.g. /treatments/viagra-connect); MEDIUM when it only appears in an earlier segment (a bare
 // category/collection page, e.g. /treatments/erectile-dysfunction).
@@ -59,21 +90,23 @@ export function matchEdProductPath(pathname: string): EdPathMatch | undefined {
   const segments = pathname.split("/").filter(Boolean);
   const lowerSegments = segments.map((segment) => segment.toLowerCase());
   if (lowerSegments.some((segment) => blockedPathSegments.has(segment))) return undefined;
-  if (!lowerSegments.some((segment) => allowedPathSegments.has(segment))) return undefined;
+  if (!lowerSegments.some((segment) => allowedPathSegments.has(segment)) && !isFlatProductPath(lowerSegments)) return undefined;
 
-  const normalizedSegments = segments.map(normalizeSegment);
-  const lastSegment = normalizedSegments[normalizedSegments.length - 1] ?? "";
+  // A token counts only at the start of a word ("viagra-connect", "viagraconnect", "sildenafil100mg"),
+  // never buried inside one: "specialist-skincare" (Well) contains "cialis".
+  const segmentWords = lowerSegments.map((segment) => segment.split(/[^a-z0-9]+/).filter(Boolean));
+  const lastWords = segmentWords[segmentWords.length - 1] ?? [];
+  const hasToken = (words: string[], token: string) => words.some((word) => word.startsWith(token));
 
   const matchedTokens: string[] = [];
   let ingredient: Ingredient | undefined;
   let inLastSegment = false;
 
   for (const [token, tokenIngredient] of edIngredientTokens) {
-    const normalizedToken = normalizeSegment(token);
-    if (!normalizedSegments.some((segment) => segment.includes(normalizedToken))) continue;
+    if (!segmentWords.some((words) => hasToken(words, token))) continue;
     matchedTokens.push(token);
     ingredient ??= tokenIngredient;
-    if (lastSegment.includes(normalizedToken)) inLastSegment = true;
+    if (hasToken(lastWords, token)) inLastSegment = true;
   }
 
   if (!ingredient) return undefined;
@@ -118,6 +151,8 @@ export function matchEdProductTitle(title: string): EdPathMatch | undefined {
   return { ingredient, matchedTokens, confidence: "HIGH" };
 }
 
+const informationSlugWords = new Set(["side", "effects", "dosage", "dose", "doses", "alternatives", "alternative", "vs", "versus", "comparison", "compare", "doesnt", "reviews", "review", "causes", "symptoms", "interactions", "warnings", "leaflet"]);
+
 // The product name a site shows on a link (its anchor text) names what the linked page sells, so
 // it's exempt from the body-text ban like a feed title — catching opaque slugs such as
 // "/products/hezkue" linked as "Hezkue (Sildenafil)". Weaker than a feed title (a menu link
@@ -126,6 +161,9 @@ export function matchEdProductTitle(title: string): EdPathMatch | undefined {
 export function matchEdProductLinkText(text: string, pathname: string): EdPathMatch | undefined {
   const segments = pathname.split("/").filter(Boolean).map((segment) => segment.toLowerCase());
   if (segments.length === 0 || segments.some((segment) => blockedPathSegments.has(segment))) return undefined;
+  // Information pages a condition page links with the drug's name ("Viagra side effects" →
+  // /uk/viagra-side-effects.html) aren't product pages.
+  if (segments[segments.length - 1].split(/[-_.]+/).some((word) => informationSlugWords.has(word))) return undefined;
   const name = text.replace(/\s+/g, " ").trim();
   if (!name || name.length > 200) return undefined;
   const match = matchEdProductTitle(name);

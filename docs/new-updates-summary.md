@@ -1,5 +1,33 @@
 # Product updates
 
+## 2026-09-30
+
+- "Detect products" can now read the product lists of websites built on BigCommerce, such as Well, whose product list the system couldn't open before. On Well it now finds 33 erectile dysfunction product pages and 24 priced strength/pack options, including Viagra Connect, Cialis Together and the subscription packs.
+- Fixed pages being mistaken for erectile dysfunction products because a medicine name appeared inside another word. For example, Well's "Specialist Skincare" page was matched because "specialist" contains "cialis".
+- Web pages whose address includes extra details after a "?" (for example a product number) are now opened exactly as given. Before, those details were dropped and the wrong page could be read.
+- Price collection now works on shops that ask for a postcode before showing a product, such as Oxford e-Pharmacy's online shop. It enters the pharmacy's own postcode, the same way "Detect products" already did. Oxford e-Pharmacy's Viagra Connect (£10.99 for 2, £19.99 for 4, £34.99 for 8) and generic sildenafil (£14.99 for 4, £26.99 for 8) can now be collected.
+- Price collection no longer mistakes a basket "Quantity 1" box for the pack size, and understands pack sizes written like "Tablets (4)".
+- When a price is read from the page as displayed, it now also checks the product is branded or generic as required, so a generic sildenafil price is never recorded as branded Viagra.
+- Fixed Dr Fox and similar websites being wrongly treated as blocking us. Their site rules block certain other named web crawlers, and one of those names ("rma") happened to appear inside ours. We were applying that crawler's block to ourselves. Dr Fox's product pages can now be read.
+- Fixed a case where a price table listing both generic and branded tablets could record a generic price as the branded one. On Dr Fox's Viagra page, for example, generic sildenafil 25mg × 32 at £22 was being read as branded Viagra. Each row is now matched to the product it names, so a generic "Sildenafil 50mg" row on a Viagra Connect page is never taken as Viagra Connect.
+- "Detect products" now picks up every strength and pack size a pharmacy offers in its dropdowns, buttons or price tables, not just the ones already in our catalogue. For example, all 12 Viagra options on Pharmulous and all 25 on Simple Online Pharmacy.
+- Any strength or pack size that isn't in the catalogue yet is added automatically, along with its brand, whether it's branded or generic, and whether it's prescription-only. The message under the "Detect products" button says how many were added. Each match still needs a staff member to confirm it before a price is collected.
+- Daily tadalafil 2.5mg can't be added yet, because the catalogue only stores whole-number strengths.
+- When confirming a product match, the variant list no longer picks a product for you, which made it easy to confirm a page against the wrong product. It is only filled in when "Detect products" found that exact product priced on the page; otherwise you choose it, and the confirm buttons stay unavailable until you do.
+- The variant list now shows the brand as well as the medicine, for example "Viagra Connect (Sildenafil) 50mg × 4" and "Viagra (Sildenafil) 50mg × 4", so similar products can be told apart.
+- Price collection can now read strength and pack-size dropdowns like those on Simple Online Pharmacy's product pages. It keeps the branded (Pfizer) options separate from the generic ones: for example Viagra 50mg × 4 at £29.95 and generic sildenafil 50mg × 4 at £7.49. Sale prices are used only when an option is marked as on sale.
+- "Detect products" no longer mistakes health-advice articles for product pages, for example "How does Viagra work?" on Simple Online Pharmacy.
+- Price collection and "Detect products" no longer give up on product pages just because the page has a spam-protection box on a form, such as a newsletter sign-up. Pages that really are a "verify you are human" check are still stopped as before. This affected Pharmulous, whose Viagra and Cialis prices can now be collected.
+- Price collection now understands pack sizes written with the count first, such as "Viagra Tablets 4 x 50mg" (£34.99 at Pharmulous).
+- Price collection can now read the strength and pack-size options on SynovaMed's product pages, for example Cialis Together 10mg × 4 at £19.99. It uses the one-off purchase price, not the subscription price, and records whether the option is in stock.
+- Fixed a case where price collection could record an over-the-counter product's price (Cialis Together, Viagra Connect) as the price of the prescription medicine. It happened when the price was read from the page as displayed, rather than from the page's built-in price data.
+- Price collection and "Detect products" can now read the strength and pack-size options on pharmacy websites built like Pharmacy Online's, for example £29.99 for Viagra 50mg × 4. Sale prices are used only while the sale is on, and prices for other products shown on the same page are ignored.
+- A pharmacy's admin page now lists its suggested product matches in a "Suggested product matches" section just above Price collection. Staff can confirm (with or without collecting the price straight away) or reject each one there, without going to the Reviews page.
+- Confirming or rejecting a match, on either page, now updates the pharmacy's Price collection list straight away.
+- "Detect products" now finds products on pharmacy websites whose product pages have short addresses such as "/uk/viagra.html", like Zava. Pages about side effects, dosage or alternatives are still ignored, as are the same pharmacy's pages for other countries.
+- "Detect products" now also looks through a pharmacy's erectile dysfunction page for links to products. This finds product pages the pharmacy doesn't list elsewhere, such as Zava's main Viagra page.
+- Price collection can now read price lists laid out with one column per strength and one line per pack, such as "4 tablet(s) - £30.00" under "50 mg" on Zava's pages. Prices shown for other recommended products on the same page are ignored.
+
 ## 2026-09-29
 
 - Price collection and "Detect products" now recognise Viagra Connect and Cialis Together pages that don't state the strength (for example Withaid's "Viagra Connect 4 Tablets" at £36.09). These products are only sold in one strength, 50mg and 10mg.

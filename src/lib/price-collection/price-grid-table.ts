@@ -24,6 +24,7 @@ const STRENGTH = /(\d{1,3}(?:\.\d+)?)\s*mg\b/i;
 const PACK = /\b(\d{1,3})\s*(?:x\s*)?(?:tablets?|tabs?|pills?|capsules?)\b/i;
 const PRICE = /£\s*(\d+(?:\.\d{1,2})?)|^(\d{1,4}\.\d{2})$/;
 const BARE_COUNT = /^(\d{1,3})$/;
+const PRODUCT_WORD = /\b(?:sildenafil|viagra|tadalafil|cialis|generic)\b/i;
 const QUANTITY_HEADING = /\b(?:quantity|qty|pack(?:\s*size)?|tablets?|pills?|capsules?)\b/i;
 
 // "Viagra – Somer Pharmacy" → "Viagra": the site-name suffix would otherwise sit in the name.
@@ -44,7 +45,7 @@ function packLabel(cell: string, bareCountsAllowed: boolean) {
 export function pickPriceGridTable(html: string, matchedTokens: string[], variant: VariantSpec, sourceUrl: string): ScrapedPrice | undefined {
   const name = productName(html);
   const token = matchedTokens.find((candidate) => name.toLowerCase().includes(candidate.toLowerCase()));
-  if (!token || !brandSideMatches(name, "", matchedTokens[0], variant.generic)) return undefined;
+  if (!token) return undefined;
 
   const matches: { itemPricePence: number; evidence: string }[] = [];
   for (const table of html.matchAll(/<table[^>]*>([\s\S]*?)<\/table>/gi)) {
@@ -66,7 +67,12 @@ export function pickPriceGridTable(html: string, matchedTokens: string[], varian
         const strength = strengthsAcross ? header[column] : row[0];
         const pack = strengthsAcross ? packLabel(row[0], bareCounts) : header[column];
         if (!pack) continue;
-        const label = `${token} ${strength} ${pack}`;
+        // A strength label that names its own product ("Generic Viagra 25mg" beside "Viagra 25mg",
+        // or "Sildenafil 50mg" alternatives on a Viagra Connect page — Dr Fox) is that product, branded
+        // or generic by its own wording; a bare strength ("25mg") is the page's product.
+        const product = PRODUCT_WORD.test(strength) ? strength : name;
+        if (!brandSideMatches(product, "", matchedTokens[0], variant.generic)) continue;
+        const label = product === strength ? `${strength} ${pack}` : `${token} ${strength} ${pack}`;
         if (!labelMatchesVariant(label, matchedTokens, variant)) continue;
         matches.push({ itemPricePence: Math.round(Number(price) * 100), evidence: `${name}: ${strength} × ${pack}` });
       }

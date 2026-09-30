@@ -1,7 +1,10 @@
+import { flightStreamLabels } from "@/lib/price-collection/next-flight-variants";
 import type { ScrapedPrice } from "@/lib/price-collection/scrape-price";
 import { brandSideMatches, labelMatchesVariant, type VariantSpec } from "@/lib/price-collection/variant-label";
+import type { PricedVariantLabel } from "@/types/pricing";
 
-// Next.js storefronts ship every strength/pack option in the page's `__NEXT_DATA__` JSON. Two shapes
+// Next.js storefronts ship every strength/pack option in the page's `__NEXT_DATA__` JSON (App Router
+// pages stream it instead — see next-flight-variants.ts). Two `__NEXT_DATA__` shapes
 // are read:
 // - Magento-style catalogues (e.g. Mail My Meds): variant products with a descriptive SKU such as
 //   "Viagra (Sildenafil)-Branded (Viagra)-50mg-4 Tablets", a price block
@@ -23,7 +26,6 @@ type ShopifyProduct = {
   options?: { name?: unknown }[];
   variants?: { price?: unknown; available?: unknown; option1?: unknown; option2?: unknown; option3?: unknown }[];
 };
-type PricedLabel = { productName: string; optionText: string; label: string; itemPricePence: number; availability: ScrapedPrice["availability"] };
 
 function readNextData(html: string): unknown {
   const raw = html.match(/<script[^>]+id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/i)?.[1];
@@ -52,8 +54,8 @@ const stock = { IN_STOCK: "IN_STOCK", OUT_OF_STOCK: "OUT_OF_STOCK" } as const;
 // Shopify's `available` flag; absent (as on My Private Pharmacist) means unknown.
 const availableFlag = { true: "IN_STOCK", false: "OUT_OF_STOCK" } as const;
 
-function magentoLabels(products: VariantProduct[]): PricedLabel[] {
-  const labels: PricedLabel[] = [];
+function magentoLabels(products: VariantProduct[]): PricedVariantLabel[] {
+  const labels: PricedVariantLabel[] = [];
   const seen = new Set<string>();
   for (const product of products) {
     const sku = String(product.sku);
@@ -73,8 +75,8 @@ function magentoLabels(products: VariantProduct[]): PricedLabel[] {
   return labels;
 }
 
-function shopifyLabels(products: ShopifyProduct[]): PricedLabel[] {
-  const labels: PricedLabel[] = [];
+function shopifyLabels(products: ShopifyProduct[]): PricedVariantLabel[] {
+  const labels: PricedVariantLabel[] = [];
   for (const product of products) {
     const optionNames = (product.options ?? []).map((option) => String(option.name ?? ""));
     for (const entry of product.variants ?? []) {
@@ -101,9 +103,8 @@ function shopifyLabels(products: ShopifyProduct[]): PricedLabel[] {
 
 export function pickNextDataVariantPrice(html: string, matchedTokens: string[], variant: VariantSpec, sourceUrl: string): ScrapedPrice | undefined {
   const data = readNextData(html);
-  if (!data) return undefined;
-  const { magento, shopify } = collectProducts(data);
-  const matches = [...magentoLabels(magento), ...shopifyLabels(shopify)]
+  const { magento, shopify } = data ? collectProducts(data) : { magento: [], shopify: [] };
+  const matches = [...magentoLabels(magento), ...shopifyLabels(shopify), ...flightStreamLabels(html, sourceUrl)]
     .filter((item) => brandSideMatches(item.productName, item.optionText, matchedTokens[0], variant.generic))
     .filter((item) => labelMatchesVariant(item.label, matchedTokens, variant));
   if (new Set(matches.map((match) => match.itemPricePence)).size !== 1) return undefined;

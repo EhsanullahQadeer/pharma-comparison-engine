@@ -1,5 +1,5 @@
 import { collectPublicWebsite } from "@/lib/discovery/public-web";
-import { matchEdProductLinkText, matchEdProductPath, matchEdProductTitle, type EdPathMatch } from "@/lib/product-detection/ed-tokens";
+import { isEdCategoryPagePath, matchEdProductLinkText, matchEdProductPath, matchEdProductTitle, type EdPathMatch } from "@/lib/product-detection/ed-tokens";
 import { collectFeedCandidates, type FeedCandidate } from "@/lib/product-detection/site-feeds";
 import type { PageLink } from "@/types/product-detection";
 
@@ -78,12 +78,26 @@ export function matchEdProductLinks(links: PageLink[], feedCandidates: FeedCandi
   return [...matches.values()];
 }
 
-// Plain-request pass over the homepage and every recognized sitemap/product feed. Returns
-// candidates for staff review; nothing here is written to the database.
+// ED condition pages opened per pharmacy in the plain pass.
+const MAX_CATEGORY_PAGES = 3;
+
+// Links on the pharmacy's ED condition pages (found on its homepage or in its sitemap) — where
+// product pages missing from the sitemap are linked, e.g. Zava's /uk/erectile-dysfunction-treatment.html
+// → /uk/viagra.html behind a country-picker homepage. A page that can't be read is skipped.
+async function collectEdCategoryLinks(urls: string[]): Promise<PageLink[]> {
+  const categoryUrls = [...new Set(urls)].filter((url) => isEdCategoryPagePath(new URL(url).pathname)).slice(0, MAX_CATEGORY_PAGES);
+  const pages = await Promise.all(categoryUrls.map((url) => collectPublicWebsite(url).catch(() => undefined)));
+  return pages.flatMap((page) => (page ? extractSameOriginLinks(page.html, new URL(page.finalUrl)) : []));
+}
+
+// Plain-request pass over the homepage, every recognized sitemap/product feed and the ED condition
+// pages those link to. Returns candidates for staff review; nothing here is written to the database.
 export async function detectEdProductMatches(websiteDomain: string): Promise<DetectedProductMatch[]> {
   const [homepage, feedCandidates] = await Promise.all([
     collectPublicWebsite(`https://${websiteDomain}`),
     collectFeedCandidates(websiteDomain),
   ]);
-  return matchEdProductLinks(extractSameOriginLinks(homepage.html, new URL(homepage.finalUrl)), feedCandidates);
+  const homepageLinks = extractSameOriginLinks(homepage.html, new URL(homepage.finalUrl));
+  const categoryLinks = await collectEdCategoryLinks([...homepageLinks.map((link) => link.url), ...feedCandidates.map((candidate) => candidate.url)]);
+  return matchEdProductLinks([...homepageLinks, ...categoryLinks], feedCandidates);
 }

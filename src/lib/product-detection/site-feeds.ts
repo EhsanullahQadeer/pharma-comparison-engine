@@ -11,6 +11,8 @@ export const FEED_PATHS = [
   "/sitemap.xml",
   "/sitemap-index.xml",
   "/sitemap_index.xml",
+  // BigCommerce storefronts (e.g. Well) serve their sitemap index here, not at /sitemap.xml.
+  "/xmlsitemap.php",
   "/news-sitemap.xml",
   "/image-sitemap.xml",
   "/video-sitemap.xml",
@@ -68,9 +70,15 @@ function isSitemapIndex(xml: string): boolean {
 // <sitemapindex><sitemap><loc>...</loc></sitemap></sitemapindex> — <loc> means the same thing
 // either way (a URL), the caller decides whether to treat it as a page or a nested sitemap to
 // follow based on isSitemapIndex.
+// XML-escaped characters in a <loc> ("xmlsitemap.php?type=products&amp;page=1" on BigCommerce) are
+// decoded, or the query reaches the server as "&amp;page" and the wrong sitemap comes back.
+function decodeXmlEntities(value: string) {
+  return value.replace(/&amp;/g, "&").replace(/&apos;/g, "'").replace(/&quot;/g, "\"").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+}
+
 function extractLocs(xml: string, base: URL): string[] {
   return [...xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)]
-    .map((match) => absoluteSameOrigin(match[1], base))
+    .map((match) => absoluteSameOrigin(decodeXmlEntities(match[1]), base))
     .filter((url): url is URL => Boolean(url))
     .map((url) => url.href);
 }
