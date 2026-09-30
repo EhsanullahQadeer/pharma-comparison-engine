@@ -10,6 +10,7 @@ import { readPriceCheckerDropdown } from "@/lib/price-collection/price-checker-d
 import { pickPriceGridTable } from "@/lib/price-collection/price-grid-table";
 import { pickPriceTableColumns } from "@/lib/price-collection/price-table-columns";
 import { assertRobotsAllowInBrowser } from "@/lib/price-collection/robots-in-browser";
+import { readSectionedTextPrice } from "@/lib/price-collection/sectioned-text-prices";
 import { pickSelectOptionPrice } from "@/lib/price-collection/select-option-prices";
 import { pickShopifyMetaPrice } from "@/lib/price-collection/shopify-meta-price";
 import { brandSideMatches, labelMatchesVariant, otcProductMismatch, preferPrescriptionLabels, type VariantSpec } from "@/lib/price-collection/variant-label";
@@ -263,6 +264,10 @@ async function collectRenderedProductCard(url: string, matchedTokens: string[], 
     const deadline = Date.now() + 15_000;
     while (Date.now() < deadline) {
       await waitForHumanVerification(page, humanAssist, onWaiting);
+      // Product sections whose rows don't name the product (Rx Live Clinic) — read by section first,
+      // since the row-by-row reader below can't tell which section a row belongs to.
+      const sectioned = variant ? readSectionedTextPrice(await page.locator("body").innerText(), matchedTokens, variant) : undefined;
+      if (sectioned) return { ...sectioned, deliveryFeePence: 0, deliveryAssumption: "As shown on the provider's product page at collection time", availability: "UNKNOWN", sourceUrl: page.url(), source: "rendered-product-card" };
       const result = await readRenderedCard(page, matchedTokens, variant);
       if (result && rightProduct(result.evidence)) return { ...result, sourceUrl: page.url(), source: "rendered-product-card" };
       if (variant) {

@@ -2,6 +2,8 @@
 
 ## 2026-09-30
 
+- Price collection can now read treatment lists split into sections by product, where each row only shows the strength, pack and price. Rx Live Clinic's online-clinic page is an example: "Viagra (Branded)" then "50mg · 8 tablets … £44.99". Each price is matched to the product whose section it sits in. Sections for medicines we don't compare, such as Vardenafil or Spedra, are skipped.
+- Rx Live Clinic now has 17 suggested product matches waiting on its pharmacy page, covering its Viagra, generic sildenafil, Viagra Connect, Cialis and generic tadalafil options.
 - "Detect products" can now read the product lists of websites built on BigCommerce, such as Well, whose product list the system couldn't open before. On Well it now finds 33 erectile dysfunction product pages and 24 priced strength/pack options, including Viagra Connect, Cialis Together and the subscription packs.
 - Fixed pages being mistaken for erectile dysfunction products because a medicine name appeared inside another word. For example, Well's "Specialist Skincare" page was matched because "specialist" contains "cialis".
 - Web pages whose address includes extra details after a "?" (for example a product number) are now opened exactly as given. Before, those details were dropped and the wrong page could be read.
