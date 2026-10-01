@@ -6,7 +6,7 @@ import { LinkNote } from "@/components/ed/link-note";
 import { OfferResults } from "@/components/ed/offer-results";
 import { OutboundLink } from "@/components/ed/outbound-link";
 import { PublicEmptyState } from "@/components/ed/public-empty-state";
-import { formatShortDate, variantLabel, variantTypeLabel } from "@/lib/comparison";
+import { formatShortDate, variantLabel } from "@/lib/comparison";
 import { discountHeadline } from "@/lib/discounts";
 import { formatPence } from "@/lib/money";
 import { revealClass, revealStyle } from "@/lib/motion";
@@ -75,7 +75,7 @@ export function BestOfferCard({ model, tone = "dark", className }: { model: Phar
       <h2 id="best-offer-heading" className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">{heading}</h2>
       {bestOffer ? (
         <p className={cn("mt-4 max-w-xl leading-relaxed", styles.muted)}>
-          From <strong className="font-semibold text-current">{formatPence(bestOffer.perTabletPence)} per tablet</strong>: {variantLabel(bestOffer.variant)} ({variantTypeLabel(bestOffer.variant)}), {formatPence(bestOffer.deliveredTotalPence)} in total, checked {formatShortDate(bestOffer.checkedAt)}.
+          From <strong className="font-semibold text-current">{formatPence(bestOffer.perTabletPence)} per tablet</strong>: {variantLabel(bestOffer.variant)}, {formatPence(bestOffer.deliveredTotalPence)} in total, checked {formatShortDate(bestOffer.checkedAt)}.
         </p>
       ) : <p className={cn("mt-4 max-w-xl leading-relaxed", styles.muted)}>We haven&apos;t published a current price for {provider.name} yet.</p>}
       {topDiscount?.code ? <div className="mt-5"><CopyCodeButton code={topDiscount.code} className={cn(tone === "dark" && "bg-background text-foreground")} /></div> : null}

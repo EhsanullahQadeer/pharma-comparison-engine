@@ -42,10 +42,11 @@ export const edPages = [
   page("pharmacies/discovery", "Automatic pharmacy discovery", "pharmacies", "Build the directory", "How we find pharmacies from official UK registers and match duplicates, with staff review before anything is published."),
   page("pharmacies/claim", "Claim or correct a listing", "pharmacies", "For pharmacies", "Report a wrong price or detail, or ask to correct your pharmacy's listing."),
   page("pharmacies/partners", "ED pharmacy partnerships", "pharmacies", "For pharmacies", "Information for pharmacies: how listing works, price feeds, and why ranking can't be bought."),
-  page("compare", "Compare ED treatment prices", "prices", "Compare costs", "Sildenafil and tadalafil prices side by side, ranked by price, with delivery and consultation fees added in."),
+  // Products lead the Prices menu: shoppers look for a product by name, not for its medicine.
+  ...edProducts.map((product) => page(productPath(product), `${product.name} prices`, "prices", "Prices by product", product.description)),
+  page("compare", "Compare ED treatment prices", "prices", "Compare costs", "Viagra, Cialis and generic prices side by side, ranked by price, with delivery and consultation fees added in."),
   page("prices/sildenafil", "Sildenafil prices", "prices", "Compare costs", "Current sildenafil and Viagra prices by strength and pack size, with the time each was checked."),
   page("prices/tadalafil", "Tadalafil prices", "prices", "Compare costs", "Current tadalafil and Cialis prices by strength and pack size, with the time each was checked."),
-  ...edProducts.map((product) => page(productPath(product), `${product.name} prices`, "prices", "Prices by product", product.description)),
   page("prices/pack-sizes", "Pack-size comparison", "prices", "Understand the total", "Compare total pack cost and price per tablet for the same medicine and strength."),
   page("prices/repeat-costs", "Repeat purchase costs", "prices", "Understand the total", "One-off prices compared with subscription and repeat prices, and the conditions attached."),
   page("prices/data", "Price sources and updates", "prices", "Understand the total", "Where our prices come from, how often they're checked, and how older prices are labelled."),

@@ -9,7 +9,7 @@ import { PriceBar } from "@/components/ed/price-bar";
 import Link from "@/components/Link";
 import type { ReferralPlacement } from "@/generated/prisma/client";
 import { availabilityBadgeVariant, availabilityLabels } from "@/lib/catalogue-labels";
-import { feeText, offerSortValue, variantLabel, variantTypeLabel } from "@/lib/comparison";
+import { feeText, offerSortValue, variantLabel, variantMedicineNote } from "@/lib/comparison";
 import { formatPence } from "@/lib/money";
 import { revealClass, revealStyle } from "@/lib/motion";
 import { cn } from "@/lib/utils";
@@ -35,7 +35,7 @@ export function OfferCard({ offer, now, placement, linked, rank, best, max, sort
     { label: "Consultation", value: feeText(offer.consultationFeePence, offer.feesVerified) },
     ...(offer.otherMandatoryFeesPence > 0 ? [{ label: "Other fees", value: formatPence(offer.otherMandatoryFeesPence) }] : []),
   ];
-  const product = `${variantLabel(offer.variant)} · ${variantTypeLabel(offer.variant)}`;
+  const product = `${variantLabel(offer.variant)} · ${variantMedicineNote(offer.variant)}`;
 
   return (
     <li
@@ -64,7 +64,7 @@ export function OfferCard({ offer, now, placement, linked, rank, best, max, sort
               <Link href={`/ed/pharmacies/${offer.providerSlug}`} className="underline-offset-4 hover:underline">{offer.providerName}</Link>
             )}
           </h3>
-          <p className="mt-0.5 text-sm text-muted-foreground">{context === "profile" ? `${variantTypeLabel(offer.variant)} · ${offer.variant.formulation}` : product}</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">{context === "profile" ? `${variantMedicineNote(offer.variant)} · ${offer.variant.formulation}` : product}</p>
           <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs">
             {fees.map((fee) => (
               <div key={fee.label} className="flex gap-1">

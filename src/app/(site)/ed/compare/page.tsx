@@ -17,7 +17,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Compare ED treatment prices from UK pharmacies",
-  description: "Compare sildenafil and tadalafil prices from registered UK online pharmacies — total cost including delivery and consultation, price per tablet, and when each price was last checked.",
+  description: "Compare Viagra, Cialis and generic sildenafil and tadalafil prices from registered UK online pharmacies — total cost including delivery and consultation, price per tablet, and when each price was last checked.",
   // Filter/sort variants all canonicalise to the filter-less page (SEO rule 2).
   alternates: { canonical: "/ed/compare" },
   robots: pomPricingRobots,
@@ -38,7 +38,7 @@ export default async function ComparePage(props: PageProps<"/ed/compare">) {
       title="Compare ED treatment prices"
       heading={<>Compare ED treatment prices, <GradientText>total cost included.</GradientText></>}
       eyebrow="Prices / Compare costs"
-      description="Sildenafil and tadalafil prices from registered UK pharmacies, with delivery and consultation charges added in and the time each price was last checked."
+      description="Viagra, Cialis and generic prices from registered UK pharmacies, with delivery and consultation charges added in and the time each price was last checked."
       crumbs={crumbs}
       aside={<LiveSummary offers={allOffers} now={now} />}
     >
@@ -53,7 +53,7 @@ export default async function ComparePage(props: PageProps<"/ed/compare">) {
         <>
           <ComparisonFiltersPanel offers={allOffers} filters={filters} />
           {offers.length === 0 ? (
-            <PublicEmptyState icon={PackageSearch} title="No prices match these filters" description="Try another brand, strength, form or pack size, or clear the filters to see every current price." action={{ href: comparisonHref({ sort: filters.sort }), label: "Clear filters" }} />
+            <PublicEmptyState icon={PackageSearch} title="No prices match these filters" description="Try another product, strength, form or pack size, or clear the filters to see every current price." action={{ href: comparisonHref({ sort: filters.sort }), label: "Clear filters" }} />
           ) : (
             <>
               <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">

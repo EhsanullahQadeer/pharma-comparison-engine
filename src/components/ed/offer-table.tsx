@@ -10,7 +10,7 @@ import { PharmacyAvatar } from "@/components/ed/pharmacy-avatar";
 import Link from "@/components/Link";
 import type { ReferralPlacement } from "@/generated/prisma/client";
 import { availabilityBadgeVariant, availabilityLabels } from "@/lib/catalogue-labels";
-import { feeText, variantLabel, variantTypeLabel } from "@/lib/comparison";
+import { feeText, variantLabel, variantMedicineNote } from "@/lib/comparison";
 import { discountHeadline } from "@/lib/discounts";
 import { formatPence } from "@/lib/money";
 import { cn } from "@/lib/utils";
@@ -35,7 +35,7 @@ function OfferRow({ offer, now, sort, placement, linked, showLinkColumn, showOff
           <PharmacyAvatar name={offer.providerName} logoUrl={offer.providerLogoUrl} />
           <div className="min-w-0">
             <Link href={`/ed/pharmacies/${offer.providerSlug}`} className="font-semibold underline-offset-4 hover:underline">{offer.providerName}</Link>
-            <p className="text-xs text-muted-foreground">{variantLabel(offer.variant)} · {variantTypeLabel(offer.variant)}</p>
+            <p className="text-xs text-muted-foreground">{variantLabel(offer.variant)} · {variantMedicineNote(offer.variant)}</p>
             <div className="mt-1 flex flex-wrap gap-1.5">
               {best ? (
                 <Badge>

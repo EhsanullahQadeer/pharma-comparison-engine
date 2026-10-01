@@ -1,5 +1,5 @@
 import { ingredientLabels } from "@/lib/catalogue-labels";
-import { compareOffers, formatShortDate, isRankable, variantLabel } from "@/lib/comparison";
+import { compareOffers, formatShortDate, isRankable, variantLabel, variantProductName } from "@/lib/comparison";
 import { discountHeadline, providerDiscounts } from "@/lib/discounts";
 import { formatPence } from "@/lib/money";
 import { regulatorRegisterUrls, regulatorTypeLabels } from "@/lib/provider-labels";
@@ -7,6 +7,9 @@ import type { PublicDiscount, PublicOffer, PublicProviderProfile } from "@/types
 import type { PharmacyFaq, PharmacyPageModel, PharmacyStep } from "@/types/pharmacy-page";
 
 export const PHARMACY_LAYOUT_COUNT = 10;
+
+// "Cialis, Generic tadalafil and Viagra".
+const listFormatter = new Intl.ListFormat("en-GB", { style: "long", type: "conjunction" });
 
 // Each pharmacy keeps the same layout on every visit (and for search engines): an FNV-1a hash of
 // its slug, not Math.random, so the page is stable, cacheable and hydrates cleanly.
@@ -72,13 +75,14 @@ export function buildPharmacyPageModel(provider: PublicProviderProfile, linked: 
   const regulatorLabel = regulatorTypeLabels[provider.regulatorType];
   const delivery = deliveryText(offers);
   const medicines = [...new Set(offers.map((offer) => ingredientLabels[offer.variant.ingredient]))];
+  const products = [...new Set(offers.map((offer) => variantProductName(offer.variant)))].sort();
   const latestCheckAt = offers.length > 0 ? new Date(Math.max(...offers.map((offer) => offer.checkedAt.getTime()))) : null;
   const name = provider.name;
 
   const keyFacts = [
     `${provider.legalName} is registered with the ${regulatorLabel}, reference ${provider.regulatorReference}.`,
     bestOffer
-      ? `Prices start at ${formatPence(bestOffer.perTabletPence)} per tablet across ${offers.length} current price${offers.length === 1 ? "" : "s"}${medicines.length > 0 ? ` for ${medicines.join(" and ").toLowerCase()}` : ""}.`
+      ? `Prices start at ${formatPence(bestOffer.perTabletPence)} per tablet across ${offers.length} current price${offers.length === 1 ? "" : "s"}${products.length > 0 ? ` for ${listFormatter.format(products)}` : ""}.`
       : `We haven't published a current price for ${name} yet.`,
     discounts.length > 0 ? `${discounts.length} checked discount${discounts.length === 1 ? "" : "s"} on record: ${discounts.map(discountHeadline).join(", ")}.` : "No discount code on record. Any offer would show at the pharmacy's own checkout.",
     delivery,

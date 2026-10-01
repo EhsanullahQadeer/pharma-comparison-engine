@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { ensureCatalogueVariant, type CatalogueVariant } from "@/lib/product-detection/catalogue-variants";
 import { detectEdProductMatchesWithBrowserFallback } from "@/lib/product-detection/detect-products-in-browser";
 import { findOfferedOptionsOnPage } from "@/lib/product-detection/page-variants";
+import { revalidatePublicSite } from "@/lib/revalidate-public-site";
 import { requireStaffRole } from "@/lib/staff-auth";
 import type { ProductDetectionMethod } from "@/types/product-detection";
 
@@ -199,4 +200,50 @@ export async function rejectProductMatch(matchId: string): Promise<RejectProduct
   revalidatePath(`/admin/pharmacies/${match.providerId}`);
   revalidatePath("/admin/reviews");
   return {};
+}
+
+export type RejectConfirmedProductMatchesState = { error?: string; rejected?: number; removedPrices?: number };
+
+// Takes confirmed product pages back out of price collection (a wrong product, a page that repeats
+// another one, a page no price can be read from). The page is marked rejected, so "Detect products"
+// won't suggest it again, and its schedule and queued checks stop. A price saved from the page goes
+// with it: it was read from a page staff have now decided is not this product.
+export async function rejectConfirmedProductMatches(matchIds: string[]): Promise<RejectConfirmedProductMatchesState> {
+  let staffUser;
+  try {
+    staffUser = await requireStaffRole(["CATALOGUE_EDITOR", "ADMINISTRATOR"]);
+  } catch {
+    return { error: "You are not authorized to review product matches." };
+  }
+
+  const matches = await prisma.productMatch.findMany({
+    where: { id: { in: matchIds }, status: "CONFIRMED" },
+    select: { id: true, providerId: true, offerId: true, productVariantId: true },
+  });
+  if (matches.length === 0) return { error: "None of the selected product pages is still confirmed." };
+
+  const ids = matches.map((match) => match.id);
+  const offerIds = matches.flatMap((match) => match.offerId ?? []);
+  await prisma.$transaction(async (tx) => {
+    await tx.priceCollectionJob.deleteMany({ where: { productMatchId: { in: ids }, status: "QUEUED" } });
+    await tx.productMatch.updateMany({
+      where: { id: { in: ids } },
+      data: { status: "REJECTED", reviewedByStaffId: staffUser.id, reviewedAt: new Date(), scrapeEnabled: false, nextScrapeAt: null, lastScrapeStatus: "NOT_CONFIGURED", requiresHumanAssist: false },
+    });
+    // Deleting the offer clears the match's link to it (and removes its price history).
+    await tx.offer.deleteMany({ where: { id: { in: offerIds } } });
+  });
+
+  await Promise.all(matches.map((match) => recordAuditLog({
+    actorId: staffUser.id,
+    action: "UPDATE",
+    entityType: "ProductMatch",
+    entityId: match.id,
+    changes: { status: "REJECTED", wasConfirmed: true, removedOfferId: match.offerId },
+  })));
+
+  for (const providerId of new Set(matches.map((match) => match.providerId))) revalidatePath(`/admin/pharmacies/${providerId}`);
+  for (const variantId of new Set(matches.flatMap((match) => match.productVariantId ?? []))) revalidatePath(`/admin/catalogue/product-variants/${variantId}/prices`);
+  if (offerIds.length > 0) revalidatePublicSite();
+  return { rejected: matches.length, removedPrices: offerIds.length };
 }

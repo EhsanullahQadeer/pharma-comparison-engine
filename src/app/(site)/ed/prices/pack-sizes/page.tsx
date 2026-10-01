@@ -6,8 +6,7 @@ import { GradientText } from "@/components/ed/gradient-text";
 import { PageShell } from "@/components/ed/page-shell";
 import { PublicEmptyState } from "@/components/ed/public-empty-state";
 import Link from "@/components/Link";
-import { ingredientLabels } from "@/lib/catalogue-labels";
-import { comparisonHref, summarizeVariants } from "@/lib/comparison";
+import { comparisonHref, summarizeVariants, variantProductName, variantTypeSlug } from "@/lib/comparison";
 import { formatPence } from "@/lib/money";
 import { revealClass, revealStyle } from "@/lib/motion";
 import { pomPricingRobots } from "@/lib/seo";
@@ -25,11 +24,12 @@ export const metadata: Metadata = {
   robots: pomPricingRobots,
 };
 
-// Same medicine + strength, different pack sizes — the only fair "bigger pack is cheaper" comparison.
+// Same product + strength, different pack sizes — the only fair "bigger pack is cheaper"
+// comparison. A branded pack and a generic one are different products, never rows of one card.
 function groupByStrength(summaries: VariantPriceSummary[]) {
   const groups = new Map<string, VariantPriceSummary[]>();
   for (const summary of summaries) {
-    const key = `${summary.variant.ingredient}-${summary.variant.strengthMg}`;
+    const key = `${variantProductName(summary.variant)}-${summary.variant.strengthMg}`;
     groups.set(key, [...(groups.get(key) ?? []), summary]);
   }
   return [...groups.values()].map((packs) => ({ packs: packs.sort((a, b) => a.variant.packQuantity - b.variant.packQuantity), cheapest: Math.min(...packs.map((pack) => pack.lowestPerTabletPence)) }));
@@ -51,10 +51,10 @@ export default async function PackSizesPage() {
       ) : (
         <ul className="mt-10 grid gap-5 lg:grid-cols-2">
           {groups.map(({ packs, cheapest }, index) => {
-            const { ingredient, strengthMg } = packs[0].variant;
+            const heading = `${variantProductName(packs[0].variant)} ${packs[0].variant.strengthMg}mg`;
             return (
-              <li key={`${ingredient}-${strengthMg}`} className={cn("rounded-3xl border border-border bg-card p-6 shadow-(--shadow)", revealClass)} style={revealStyle(index)}>
-                <h2 className="text-xl font-semibold">{ingredientLabels[ingredient]} {strengthMg}mg</h2>
+              <li key={heading} className={cn("rounded-3xl border border-border bg-card p-6 shadow-(--shadow)", revealClass)} style={revealStyle(index)}>
+                <h2 className="text-xl font-semibold">{heading}</h2>
                 <ul className="mt-4 divide-y divide-border">
                   {packs.map((pack) => (
                     <li key={pack.variant.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
@@ -66,7 +66,7 @@ export default async function PackSizesPage() {
                         <span className={cn("rounded-full px-3 py-1 text-sm font-semibold tabular-nums", pack.lowestPerTabletPence === cheapest && packs.length > 1 ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground")}>
                           {formatPence(pack.lowestPerTabletPence)} / tablet
                         </span>
-                        <Link href={comparisonHref({ ingredient, strengthMg, packQuantity: pack.variant.packQuantity })} className="text-sm underline underline-offset-4 hover:text-muted-foreground">Compare</Link>
+                        <Link href={comparisonHref({ ingredient: pack.variant.ingredient, productType: variantTypeSlug(pack.variant), strengthMg: pack.variant.strengthMg, packQuantity: pack.variant.packQuantity })} className="text-sm underline underline-offset-4 hover:text-muted-foreground">Compare</Link>
                       </div>
                     </li>
                   ))}

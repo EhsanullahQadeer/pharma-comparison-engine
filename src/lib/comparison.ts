@@ -141,12 +141,25 @@ export function displayName(name: string) {
   return name.toLowerCase().replace(/(^|[\s(-])(\p{L})/gu, (_, lead: string, letter: string) => lead + letter.toUpperCase());
 }
 
-export function variantLabel(variant: PublicVariant) {
-  return `${ingredientLabels[variant.ingredient]} ${variant.strengthMg}mg × ${variant.packQuantity}`;
-}
-
 export function variantTypeLabel(variant: PublicVariant) {
   return /generic/i.test(variant.formulation) || !variant.brandName ? "Generic" : variant.brandName;
+}
+
+// The name shoppers know a product by: its brand ("Viagra"), or "Generic sildenafil" when it is
+// unbranded. Public headings lead with this, not with the medicine's name.
+export function variantProductName(variant: PublicVariant) {
+  const type = variantTypeLabel(variant);
+  return type === "Generic" ? `Generic ${ingredientLabels[variant.ingredient].toLowerCase()}` : type;
+}
+
+export function variantLabel(variant: PublicVariant) {
+  return `${variantProductName(variant)} ${variant.strengthMg}mg × ${variant.packQuantity}`;
+}
+
+// The line under a product heading: the medicine a branded product contains. A generic already
+// carries the medicine's name in its heading, so it is described as unbranded instead.
+export function variantMedicineNote(variant: PublicVariant) {
+  return variantTypeLabel(variant) === "Generic" ? "Unbranded" : `Contains ${ingredientLabels[variant.ingredient].toLowerCase()}`;
 }
 
 export function slugify(text: string) {

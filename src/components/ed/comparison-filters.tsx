@@ -3,7 +3,7 @@ import { SlidersHorizontal } from "lucide-react";
 import { FilterChip, FilterGroup } from "@/components/ed/filter-chip";
 import Link from "@/components/Link";
 import { ingredientLabels, ingredientValues, purchaseModelValues } from "@/lib/catalogue-labels";
-import { baseFormulation, comparisonHref, filterOffers, publicPurchaseModelLabels, slugify, variantTypeLabel, variantTypeSlug } from "@/lib/comparison";
+import { baseFormulation, comparisonHref, filterOffers, publicPurchaseModelLabels, slugify, variantProductName, variantTypeSlug } from "@/lib/comparison";
 import type { ComparisonFilters, ComparisonSort, PublicOffer } from "@/types/comparison";
 
 const sortOptions: { value: ComparisonSort; label: string }[] = [
@@ -20,12 +20,25 @@ function labelledOptions(entries: [slug: string, label: string][]) {
   return [...new Map(entries).entries()].sort((a, b) => a[1].localeCompare(b[1]));
 }
 
-// Groups run top to bottom: each group's options come from the offers left by the groups above it,
-// and choosing an option keeps those earlier choices but clears the later ones (which may no longer
-// exist). Options are derived from the offers actually on show, so a chip never leads to an empty page.
+// Every product with a price on show, in name order. A product is a medicine plus a type, since
+// "generic" is a type of both medicines.
+function productOptions(offers: PublicOffer[]) {
+  const products = new Map<string, { ingredient: PublicOffer["variant"]["ingredient"]; productType: string; label: string }>();
+  for (const { variant } of offers) {
+    const productType = variantTypeSlug(variant);
+    products.set(`${variant.ingredient}-${productType}`, { ingredient: variant.ingredient, productType, label: variantProductName(variant) });
+  }
+  return [...products.values()].sort((a, b) => a.label.localeCompare(b.label));
+}
+
+// Product comes first: it is how shoppers look for a price. The medicine filter under it is the
+// broader choice (every product of one medicine). From Strength down, groups run top to bottom:
+// each group's options come from the offers left by the groups above it, and choosing an option
+// keeps those earlier choices but clears the later ones (which may no longer exist). Options are
+// derived from the offers actually on show, so a chip never leads to an empty page.
 export function ComparisonFiltersPanel({ offers, filters }: { offers: PublicOffer[]; filters: ComparisonFilters }) {
   const { ingredient, productType, strengthMg, formulation, packQuantity, purchaseModel, sort } = filters;
-  const types = labelledOptions(filterOffers(offers, { ingredient, sort }).map((offer) => [variantTypeSlug(offer.variant), variantTypeLabel(offer.variant)]));
+  const products = productOptions(offers);
   const strengths = uniqueSorted(filterOffers(offers, { ingredient, productType, sort }).map((offer) => offer.variant.strengthMg));
   const forms = labelledOptions(filterOffers(offers, { ingredient, productType, strengthMg, sort }).map((offer) => [slugify(baseFormulation(offer.variant)), baseFormulation(offer.variant)]));
   const packs = uniqueSorted(filterOffers(offers, { ingredient, productType, strengthMg, formulation, sort }).map((offer) => offer.variant.packQuantity));
@@ -40,16 +53,16 @@ export function ComparisonFiltersPanel({ offers, filters }: { offers: PublicOffe
         {filtered ? <Link href={comparisonHref({ sort })} scroll={false} className="text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline">Clear filters</Link> : null}
       </div>
       <div className="space-y-4">
-        <FilterGroup label="Medicine">
-          <FilterChip href={comparisonHref({ sort })} active={!ingredient}>All</FilterChip>
-          {ingredientValues.map((value) => (
-            <FilterChip key={value} href={comparisonHref({ ingredient: value, sort })} active={ingredient === value}>{ingredientLabels[value]}</FilterChip>
+        <FilterGroup label="Product">
+          <FilterChip href={comparisonHref({ ingredient, sort })} active={!productType}>All</FilterChip>
+          {products.map((product) => (
+            <FilterChip key={`${product.ingredient}-${product.productType}`} href={comparisonHref({ ingredient: product.ingredient, productType: product.productType, sort })} active={ingredient === product.ingredient && productType === product.productType}>{product.label}</FilterChip>
           ))}
         </FilterGroup>
-        <FilterGroup label="Brand">
-          <FilterChip href={comparisonHref({ ingredient, sort })} active={!productType}>Any</FilterChip>
-          {types.map(([slug, label]) => (
-            <FilterChip key={slug} href={comparisonHref({ ingredient, productType: slug, sort })} active={productType === slug}>{label}</FilterChip>
+        <FilterGroup label="Medicine">
+          <FilterChip href={comparisonHref({ sort })} active={!ingredient}>Any</FilterChip>
+          {ingredientValues.map((value) => (
+            <FilterChip key={value} href={comparisonHref({ ingredient: value, sort })} active={ingredient === value}>{ingredientLabels[value]}</FilterChip>
           ))}
         </FilterGroup>
         <FilterGroup label="Strength">

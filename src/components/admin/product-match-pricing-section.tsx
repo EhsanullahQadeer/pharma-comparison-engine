@@ -3,8 +3,9 @@
 import { useMemo, useState, useTransition } from "react";
 
 import { runPriceCollectionForMatch, updatePriceCollectionSchedule } from "@/actions/price-collection/price-collection";
+import { rejectConfirmedProductMatches } from "@/actions/product-matches/product-matches";
 import { SelectAllCheckbox } from "@/components/admin/bulk-action-bar";
-import { PriceBulkActions } from "@/components/admin/price-bulk-actions";
+import { PriceBulkActions, confirmRejectPages } from "@/components/admin/price-bulk-actions";
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/card";
@@ -30,7 +31,7 @@ type MatchItem = {
   offer: { itemPricePence: number; deliveryFeePence: number; retrievedAt: Date; updatedAt: Date; publishedAt: Date | null } | null;
 };
 
-const bulkActions = ["schedule", "scrape"] as const;
+const bulkActions = ["schedule", "scrape", "reject"] as const;
 
 const scrapeStatusLabels: Record<PriceScrapeStatus, string> = {
   NOT_CONFIGURED: "Not configured",
@@ -61,6 +62,7 @@ function formatDate(value: Date | null): string {
 function MatchRow({ item, selected, onToggleSelected }: { item: MatchItem; selected: boolean; onToggleSelected: (id: string, checked: boolean) => void }) {
   const [isCollecting, startCollecting] = useTransition();
   const [isSavingSchedule, startSavingSchedule] = useTransition();
+  const [isRejecting, startRejecting] = useTransition();
   const [error, setError] = useState<string>();
   const [result, setResult] = useState<{ itemPricePence: number; deliveryFeePence: number; created: boolean; updatedAt: Date }>();
   const [cadence, setCadence] = useState<PriceScrapeCadence>(item.scrapeCadence);
@@ -75,6 +77,15 @@ function MatchRow({ item, selected, onToggleSelected }: { item: MatchItem; selec
         return;
       }
       if (state.result) setResult(state.result);
+    });
+  }
+
+  async function handleReject() {
+    if (!(await confirmRejectPages(1, item.offerId ? 1 : 0))) return;
+    setError(undefined);
+    startRejecting(async () => {
+      const state = await rejectConfirmedProductMatches([item.id]);
+      if (state.error) setError(state.error);
     });
   }
 
@@ -166,6 +177,9 @@ function MatchRow({ item, selected, onToggleSelected }: { item: MatchItem; selec
           </Button>
           <Button type="button" size="sm" variant="outline" disabled={isCollecting} onClick={() => handleCollect(true)}>
             Human-assisted
+          </Button>
+          <Button type="button" size="sm" variant="ghost" disabled={isCollecting || isRejecting} onClick={handleReject} className="text-destructive">
+            {isRejecting ? "Rejecting..." : "Reject"}
           </Button>
           {error ? <p className="max-w-xs text-right text-xs text-destructive">{error}</p> : null}
           {result ? (

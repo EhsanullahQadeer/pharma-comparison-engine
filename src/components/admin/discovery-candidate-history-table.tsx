@@ -2,14 +2,18 @@
 
 import { useMemo, useState } from "react";
 
+import { SelectAllCheckbox } from "@/components/admin/bulk-action-bar";
+import { DetectProductsBulkActions } from "@/components/admin/detect-products-bulk-actions";
 import { DiscoveryCandidateHistoryActions, hasDiscoveryCandidateHistoryAction } from "@/components/admin/discovery-candidate-history-actions";
 import { Badge } from "@/components/common/badge";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/common/card";
+import { Checkbox } from "@/components/common/checkbox";
 import { EmptyState } from "@/components/common/empty-state";
 import Pagination from "@/components/common/pagination";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/common/table";
 import Link from "@/components/Link";
 import type { DiscoveryCandidateStatus, DiscoverySourceType } from "@/generated/prisma/client";
+import { useRowSelection } from "@/hooks/useRowSelection";
 import { identifierSummary } from "@/lib/discovery-identifier-summary";
 import { discoveryCandidateStatusBadgeVariant, discoverySourceTypeLabels, reviewedDiscoveryCandidateStatusLabels } from "@/lib/discovery-labels";
 import { DEFAULT_PAGE_SIZE } from "@/lib/pagination";
@@ -26,7 +30,7 @@ type HistoryItem = {
   status: DiscoveryCandidateStatus;
   reviewedAt: Date | null;
   source: { type: DiscoverySourceType };
-  matchedProvider: { id: string; tradingName: string } | null;
+  matchedProvider: { id: string; tradingName: string; _count: { productMatches: number } } | null;
   reviewedByStaff: { name: string } | null;
 };
 
@@ -35,6 +39,15 @@ type HistoryItem = {
 // that decision (see DiscoveryCandidateHistoryActions).
 export function DiscoveryCandidateHistoryTable({ title, items, emptyTitle }: { title: string; items: HistoryItem[]; emptyTitle: string }) {
   const [page, setPage] = useState(1);
+  // Only rows that became (or were linked to) a pharmacy can have their products detected.
+  const selectableIds = useMemo(() => items.filter((item) => item.matchedProvider && item.status !== "REJECTED").map((item) => item.id), [items]);
+  const selection = useRowSelection(selectableIds);
+  const canSelect = selectableIds.length > 0;
+  // Several candidates can point at the same pharmacy; it is checked once.
+  const selectedProviderIds = useMemo(
+    () => [...new Set(items.flatMap((item) => (selection.selectedIds.includes(item.id) && item.matchedProvider ? item.matchedProvider.id : [])))],
+    [items, selection.selectedIds],
+  );
   const showActions = useMemo(() => items.some((item) => hasDiscoveryCandidateHistoryAction(item.status)), [items]);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
@@ -58,14 +71,22 @@ export function DiscoveryCandidateHistoryTable({ title, items, emptyTitle }: { t
         {items.length === 0 ? (
           <EmptyState title={emptyTitle} />
         ) : (
+          <>
+          {canSelect ? <DetectProductsBulkActions providerIds={selectedProviderIds} onClear={selection.clear} /> : null}
           <Table resizable={false}>
             <TableHeader>
               <TableRow>
+                {canSelect ? (
+                  <TableHead className="w-10">
+                    <SelectAllCheckbox allSelected={selection.allSelected} someSelected={selection.someSelected} onToggleAll={selection.toggleAll} label="Select all pharmacies in this list" />
+                  </TableHead>
+                ) : null}
                 <TableHead minWidth={170}>Source</TableHead>
                 <TableHead minWidth={200}>Name</TableHead>
                 <TableHead minWidth={180}>Website</TableHead>
                 <TableHead minWidth={200}>Identifiers</TableHead>
                 <TableHead minWidth={180}>Pharmacy</TableHead>
+                <TableHead minWidth={130}>Products found</TableHead>
                 <TableHead minWidth={110}>Status</TableHead>
                 <TableHead minWidth={150}>Reviewed</TableHead>
                 {showActions ? <TableHead minWidth={170} className="text-right">Actions</TableHead> : null}
@@ -73,7 +94,14 @@ export function DiscoveryCandidateHistoryTable({ title, items, emptyTitle }: { t
             </TableHeader>
             <TableBody>
               {pagedItems.map((item) => (
-                <TableRow key={item.id}>
+                <TableRow key={item.id} data-state={selection.isSelected(item.id) ? "selected" : undefined}>
+                  {canSelect ? (
+                    <TableCell>
+                      {selectableIds.includes(item.id) ? (
+                        <Checkbox checked={selection.isSelected(item.id)} onCheckedChange={(checked) => selection.toggle(item.id, checked === true)} aria-label={`Select ${item.name}`} />
+                      ) : null}
+                    </TableCell>
+                  ) : null}
                   <TableCell className="text-muted-foreground">{discoverySourceTypeLabels[item.source.type]}</TableCell>
                   <TableCell className="max-w-xs">
                     <p className="truncate font-medium">{item.name}</p>
@@ -98,6 +126,7 @@ export function DiscoveryCandidateHistoryTable({ title, items, emptyTitle }: { t
                       <span className="text-muted-foreground">—</span>
                     )}
                   </TableCell>
+                  <TableCell className="tabular-nums text-muted-foreground">{item.matchedProvider?._count.productMatches ?? "—"}</TableCell>
                   <TableCell>
                     <Badge variant={discoveryCandidateStatusBadgeVariant[item.status]}>{reviewedDiscoveryCandidateStatusLabels[item.status]}</Badge>
                   </TableCell>
@@ -114,6 +143,7 @@ export function DiscoveryCandidateHistoryTable({ title, items, emptyTitle }: { t
               ))}
             </TableBody>
           </Table>
+          </>
         )}
       </CardContent>
       {items.length > 0 ? (

@@ -1,10 +1,11 @@
 "use client";
 
-import { CalendarClock, ChevronDown, Eye, EyeOff, RefreshCw, Square, Trash2 } from "lucide-react";
+import { Ban, CalendarClock, ChevronDown, Eye, EyeOff, RefreshCw, Square, Trash2 } from "lucide-react";
 import { useRef } from "react";
 
 import { deleteOffers, setOffersPublished } from "@/actions/offers/offers";
 import { runPriceCollectionForMatch, updatePriceCollectionSchedules } from "@/actions/price-collection/price-collection";
+import { rejectConfirmedProductMatches } from "@/actions/product-matches/product-matches";
 import { BulkActionBar, plural } from "@/components/admin/bulk-action-bar";
 import { Button } from "@/components/common/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/common/dropdown-menu";
@@ -16,7 +17,18 @@ import { confirm } from "@/lib/confirm-store";
 import { cn } from "@/lib/utils";
 import type { BulkPriceRow } from "@/types/pricing";
 
-export type PriceBulkAction = "publish" | "schedule" | "scrape" | "delete";
+export type PriceBulkAction = "publish" | "schedule" | "scrape" | "reject" | "delete";
+
+// Shared by the bulk toolbar and each row's own Reject button, so both ask the same question.
+export async function confirmRejectPages(pages: number, withPrice: number) {
+  const priceNote = withPrice > 0 ? ` ${plural(withPrice, "saved price")} from ${withPrice === 1 ? "it" : "them"} will be removed too, and disappear from the public site if published.` : "";
+  return confirm({
+    title: `Reject ${plural(pages, "product page")}?`,
+    message: `${pages === 1 ? "This page" : "These pages"} will be taken out of price collection and won't be suggested again.${priceNote}`,
+    confirmText: "Reject",
+    variant: "destructive",
+  });
+}
 
 // Toolbar shown above a price table while rows are selected. Each action only touches the rows it
 // applies to (publish/delete need a saved price, schedule/scrape need a tracked product page).
@@ -70,6 +82,17 @@ export function PriceBulkActions({ rows, actions, onClear }: { rows: BulkPriceRo
       if (failures.length === 0) return { message: `Scraped ${plural(scraped, "price")}.${stopped}` };
       return { error: `Scraped ${scraped}, ${failures.length} failed (first error: ${failures[0]}).${stopped}` };
     }, `Scraping 1 of ${matchIds.length}…`);
+  }
+
+  async function handleReject() {
+    const withPrice = rows.filter((row) => row.matchId && row.offerId).length;
+    if (!(await confirmRejectPages(matchIds.length, withPrice))) return;
+    void run(async () => {
+      const result = await rejectConfirmedProductMatches(matchIds);
+      if (result.error) return { error: result.error };
+      const prices = result.removedPrices ? ` ${plural(result.removedPrices, "price")} removed.` : "";
+      return { message: `Rejected ${plural(result.rejected ?? 0, "product page")}.${prices}` };
+    });
   }
 
   async function handleDelete() {
@@ -126,6 +149,12 @@ export function PriceBulkActions({ rows, actions, onClear }: { rows: BulkPriceRo
         <Button type="button" size="sm" variant="outline" disabled={disabled || matchIds.length === 0} onClick={handleScrape}>
           <RefreshCw aria-hidden="true" className={cn("size-4", state.busy && state.progress && "animate-spin")} />
           Scrape now
+        </Button>
+      ) : null}
+      {has("reject") ? (
+        <Button type="button" size="sm" variant="ghost" disabled={disabled || matchIds.length === 0} onClick={handleReject} className="text-destructive">
+          <Ban aria-hidden="true" className="size-4" />
+          Reject
         </Button>
       ) : null}
       {has("delete") ? (

@@ -1,15 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { DiscoveryCandidateHistoryTable } from "@/components/admin/discovery-candidate-history-table";
 import { DiscoveryCandidateReviewTable } from "@/components/admin/discovery-candidate-review-table";
 import { DiscoveryCandidatesBacklogCheckActions } from "@/components/admin/discovery-candidates-backlog-check-actions";
 import { Button } from "@/components/common/button";
+import { useSearchParamTab } from "@/hooks/useSearchParamTab";
 
 import type { ComponentProps, ReactNode } from "react";
 
-type StatusTab = "pending" | "promoted" | "linked" | "rejected";
+const statusTabs = ["pending", "promoted", "linked", "rejected"] as const;
+type StatusTab = (typeof statusTabs)[number];
+
+export const CANDIDATE_STATUS_PARAM = "status";
 
 type HistoryItems = ComponentProps<typeof DiscoveryCandidateHistoryTable>["items"];
 
@@ -29,7 +33,7 @@ export function DiscoveryCandidatesPanel({
   pending: ComponentProps<typeof DiscoveryCandidateReviewTable>["items"];
   reviewed: HistoryItems;
 }) {
-  const [tab, setTab] = useState<StatusTab>("pending");
+  const [tab, setTab] = useSearchParamTab(CANDIDATE_STATUS_PARAM, statusTabs);
 
   const byDecision = useMemo(() => {
     const groups: Record<Exclude<StatusTab, "pending">, HistoryItems> = { promoted: [], linked: [], rejected: [] };
@@ -63,7 +67,7 @@ export function DiscoveryCandidatesPanel({
   return (
     <div className="space-y-4">
       <div className="inline-flex flex-wrap rounded-lg border border-border p-1">
-        {(Object.keys(tabLabels) as StatusTab[]).map((key) => (
+        {statusTabs.map((key) => (
           <Button key={key} type="button" size="sm" variant={tab === key ? "secondary" : "ghost"} onClick={() => setTab(key)}>
             {tabLabels[key]} ({counts[key]})
           </Button>

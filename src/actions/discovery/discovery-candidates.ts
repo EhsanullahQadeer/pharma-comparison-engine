@@ -52,7 +52,10 @@ export async function getReviewedDiscoveryCandidates() {
       status: true,
       reviewedAt: true,
       source: { select: { type: true } },
-      matchedProvider: { select: { id: true, tradingName: true } },
+      // Products found on the pharmacy's site: every detected match staff haven't rejected.
+      matchedProvider: {
+        select: { id: true, tradingName: true, _count: { select: { productMatches: { where: { status: { not: "REJECTED" } } } } } },
+      },
       reviewedByStaff: { select: { name: true } },
     },
   });

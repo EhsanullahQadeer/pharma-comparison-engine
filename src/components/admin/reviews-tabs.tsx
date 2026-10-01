@@ -4,11 +4,12 @@ import { Search } from "lucide-react";
 import { useDeferredValue, useMemo, useState } from "react";
 
 import { CorrectionReviewTable } from "@/components/admin/correction-review-table";
-import { DiscoveryCandidatesPanel } from "@/components/admin/discovery-candidates-panel";
+import { CANDIDATE_STATUS_PARAM, DiscoveryCandidatesPanel } from "@/components/admin/discovery-candidates-panel";
 import { EvidenceReviewTable } from "@/components/admin/evidence-review-table";
 import { ProductMatchReviewTable } from "@/components/admin/product-match-review-table";
 import { Button } from "@/components/common/button";
 import InputField from "@/components/common/input";
+import { useSearchParamTab } from "@/hooks/useSearchParamTab";
 import { filterBySearch } from "@/lib/text-search";
 
 import type { ComponentProps, ReactNode } from "react";
@@ -16,13 +17,10 @@ import type { ComponentProps, ReactNode } from "react";
 const tabs = ["evidence", "corrections", "candidates", "productMatches"] as const;
 type Tab = (typeof tabs)[number];
 
-// A link into the page (e.g. from the pending-work bell) may name the tab to open.
-function tabFrom(value: string | undefined): Tab {
-  return tabs.find((tab) => tab === value) ?? "evidence";
-}
+// The discovery candidates tab keeps its own status tab in the URL; it only means something there.
+const tabOptions = { clearKeys: [CANDIDATE_STATUS_PARAM] };
 
 export function ReviewsTabs({
-  initialTab,
   evidence,
   corrections,
   candidates,
@@ -30,7 +28,6 @@ export function ReviewsTabs({
   productMatches,
   productVariants,
 }: {
-  initialTab?: string;
   evidence: ComponentProps<typeof EvidenceReviewTable>["items"];
   corrections: ComponentProps<typeof CorrectionReviewTable>["items"];
   candidates: ComponentProps<typeof DiscoveryCandidatesPanel>["pending"];
@@ -38,7 +35,8 @@ export function ReviewsTabs({
   productMatches: ComponentProps<typeof ProductMatchReviewTable>["items"];
   productVariants: ComponentProps<typeof ProductMatchReviewTable>["variants"];
 }) {
-  const [tab, setTab] = useState<Tab>(() => tabFrom(initialTab));
+  // In the URL (`?tab=…`) so links (e.g. the pending-work bell), refresh and back/forward land on the same tab.
+  const [tab, setTab] = useSearchParamTab("tab", tabs, tabOptions);
   const [query, setQuery] = useState("");
   // Deferred so typing stays responsive while the larger candidate lists re-filter.
   const deferredQuery = useDeferredValue(query);
