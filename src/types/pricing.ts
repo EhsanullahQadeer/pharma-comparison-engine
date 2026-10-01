@@ -1,4 +1,4 @@
-import type { PriceScrapeCadence } from "@/generated/prisma/client";
+import type { DeliveryPolicy, Discount, DiscountValueType, PriceScrapeCadence } from "@/generated/prisma/client";
 
 // A pharmacy staff can attach a manually entered offer to (picker on a variant's prices page).
 export type OfferProviderOption = {
@@ -32,4 +32,28 @@ export type PricedVariantLabel = {
   label: string;
   itemPricePence: number;
   availability: "IN_STOCK" | "OUT_OF_STOCK" | "UNKNOWN";
+};
+
+// A delivery charge read from a pharmacy's own website wording, awaiting staff approval.
+export type DetectedDeliveryPolicy = {
+  standardFeePence: number;
+  freeOverPence: number | null;
+  evidenceText: string;
+};
+
+// A discount offer read from a pharmacy's own website wording, awaiting staff approval.
+export type DetectedDiscount = {
+  code: string | null;
+  valueType: DiscountValueType;
+  valuePercent: number | null;
+  valuePence: number | null;
+  eligibility: string;
+  evidenceText: string;
+};
+
+// What the website check found for one pharmacy, as shown on its admin page.
+export type ProviderSiteOffers = {
+  checkedAt: Date | null;
+  deliveryPolicies: DeliveryPolicy[];
+  discounts: Discount[];
 };

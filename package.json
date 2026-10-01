@@ -26,6 +26,7 @@
     "discovery:filter-ed-candidates": "tsx scripts/filter-discovery-candidates-by-ed-medicine.ts",
     "price-collection:run-due": "tsx scripts/run-price-collection-jobs.ts",
     "price-collection:worker": "tsx scripts/price-collection-worker.ts",
+    "price-collection:check-site-offers": "tsx scripts/check-site-offers.ts",
     "content:seed-article-drafts": "tsx scripts/seed-article-drafts.ts",
     "pharmacies:fetch-logos": "tsx scripts/fetch-pharmacy-logos.ts",
     "prepare": "husky"

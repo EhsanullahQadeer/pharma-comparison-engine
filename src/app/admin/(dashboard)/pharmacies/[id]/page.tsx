@@ -1,6 +1,7 @@
 import { ArrowLeft, Globe, MapPin, ShieldCheck } from "lucide-react";
 
 import { getPendingPriceCollectionForProvider } from "@/actions/price-collection/price-collection";
+import { getProviderSiteOffers } from "@/actions/price-collection/site-offers";
 import { getProductMatchesForReview } from "@/actions/product-matches/product-matches";
 import { getAllProductVariants } from "@/actions/product-variants/product-variants";
 import { getProvider } from "@/actions/providers/providers";
@@ -12,6 +13,7 @@ import { ProductMatchPricingSection } from "@/components/admin/product-match-pri
 import { ProductMatchReviewTable } from "@/components/admin/product-match-review-table";
 import { ProviderLinkToggle } from "@/components/admin/provider-link-toggle";
 import { ProviderOffersSection } from "@/components/admin/provider-offers-section";
+import { ProviderSiteOffersSection } from "@/components/admin/provider-site-offers-section";
 import { ProviderStatusControl } from "@/components/admin/provider-status-control";
 import { Badge } from "@/components/common/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/card";
@@ -30,12 +32,13 @@ export async function generateMetadata(props: PageProps<"/admin/pharmacies/[id]"
 
 export default async function ProviderDetailPage(props: PageProps<"/admin/pharmacies/[id]">) {
   const { id } = await props.params;
-  const [provider, variants, staffUser, pendingMatches, programme] = await Promise.all([
+  const [provider, variants, staffUser, pendingMatches, programme, siteOffers] = await Promise.all([
     getProvider(id),
     getAllProductVariants(),
     getStaffUser(),
     getPendingPriceCollectionForProvider(id),
     getAffiliateProgramme(id),
+    getProviderSiteOffers(id),
   ]);
   const canEditCommercial = staffUser?.role === "COMMERCIAL_MANAGER" || staffUser?.role === "ADMINISTRATOR";
   // Detected matches awaiting a decision, confirmed here next to the price collection list.
@@ -60,7 +63,7 @@ export default async function ProviderDetailPage(props: PageProps<"/admin/pharma
           </div>
 
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1.5"><Globe aria-hidden="true" className="size-3.5" />{provider.websiteDomain}</span>
+            <a href={`https://${provider.websiteDomain}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-foreground hover:underline"><Globe aria-hidden="true" className="size-3.5" />{provider.websiteDomain}</a>
             <span className="flex items-center gap-1.5"><ShieldCheck aria-hidden="true" className="size-3.5" />{regulatorTypeLabels[provider.regulatorType]} · {provider.regulatorReference}</span>
             {provider.serviceRegions.length > 0 && (
               <span className="flex items-center gap-1.5"><MapPin aria-hidden="true" className="size-3.5" />{provider.serviceRegions.join(", ")}</span>
@@ -92,6 +95,8 @@ export default async function ProviderDetailPage(props: PageProps<"/admin/pharma
       </div>
 
       <ProviderOffersSection providerId={provider.id} providerPublished={provider.status === "PUBLISHED"} offers={provider.offers} variants={variants} />
+
+      <ProviderSiteOffersSection providerId={provider.id} siteOffers={siteOffers} canReview={canReviewMatches} />
 
       {suggestedMatches.length > 0 && (
         <ProductMatchReviewTable items={suggestedMatches} variants={variants} title="Suggested product matches" showProvider={false} />

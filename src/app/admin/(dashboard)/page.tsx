@@ -1,11 +1,13 @@
 import { AlertTriangle, BarChart3, CheckCircle2, Clock3, Pill } from "lucide-react";
 
 import { getAdminAnalytics } from "@/actions/analytics/analytics";
+import { getPendingWork } from "@/actions/notifications/pending-work";
 import { getProviderStatusCounts, getProviders } from "@/actions/providers/providers";
 import { AddPharmacyModal } from "@/components/admin/add-pharmacy-modal";
 import { ProviderFunnelChart } from "@/components/admin/charts/provider-funnel-chart";
 import { ProvidersTrendChart } from "@/components/admin/charts/providers-trend-chart";
 import { StatusDonutChart } from "@/components/admin/charts/status-donut-chart";
+import { PendingWorkCard } from "@/components/admin/pending-work-card";
 import { Badge } from "@/components/common/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/common/card";
 import { EmptyState } from "@/components/common/empty-state";
@@ -23,11 +25,12 @@ const inReviewStatuses: ProviderStatus[] = ["DISCOVERED", "IDENTITY_VERIFIED", "
 const attentionStatuses: ProviderStatus[] = ["TEMPORARILY_WITHHELD", "ARCHIVED"];
 
 export default async function AdminDashboardPage() {
-  const [staffUser, counts, recentProviders, analytics] = await Promise.all([
+  const [staffUser, counts, recentProviders, analytics, pendingWork] = await Promise.all([
     getStaffUser(),
     getProviderStatusCounts(),
     getProviders(undefined, 5),
     getAdminAnalytics(),
+    getPendingWork(),
   ]);
 
   const countByStatus = Object.fromEntries(counts.map((entry) => [entry.status, entry.count])) as Partial<Record<ProviderStatus, number>>;
@@ -54,6 +57,8 @@ export default async function AdminDashboardPage() {
           <AddPharmacyModal />
         </CardContent>
       </Card>
+
+      <PendingWorkCard items={pendingWork} />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => (

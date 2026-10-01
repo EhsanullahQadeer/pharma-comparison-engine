@@ -9,8 +9,9 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Reviews", robots: { index: false, follow: false } };
 
-export default async function ReviewsPage() {
-  const [evidence, corrections, candidates, reviewedCandidates, productMatches, productVariants] = await Promise.all([
+export default async function ReviewsPage(props: PageProps<"/admin/reviews">) {
+  const [{ tab }, evidence, corrections, candidates, reviewedCandidates, productMatches, productVariants] = await Promise.all([
+    props.searchParams,
     getPendingEvidence(),
     getCorrections(),
     getDiscoveryCandidatesForReview(),
@@ -27,7 +28,7 @@ export default async function ReviewsPage() {
           Evidence awaiting approval, corrections reported by the public, pharmacy candidates found by automatic discovery, and detected product matches.
         </p>
       </div>
-      <ReviewsTabs evidence={evidence} corrections={corrections} candidates={candidates} reviewedCandidates={reviewedCandidates} productMatches={productMatches} productVariants={productVariants} />
+      <ReviewsTabs initialTab={typeof tab === "string" ? tab : undefined} evidence={evidence} corrections={corrections} candidates={candidates} reviewedCandidates={reviewedCandidates} productMatches={productMatches} productVariants={productVariants} />
     </div>
   );
 }

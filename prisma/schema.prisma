@@ -63,6 +63,15 @@ enum DiscountValueType {
   FIXED_AMOUNT
 }
 
+// A delivery policy or discount the scraper read from a pharmacy's own website. Nothing found this
+// way is applied or shown publicly until a staff member approves it; a dismissed row is kept so
+// the same finding isn't suggested again on the next check.
+enum ScrapeReviewStatus {
+  PENDING
+  APPROVED
+  DISMISSED
+}
+
 enum EvidenceApprovalStatus {
   PENDING
   APPROVED
@@ -227,10 +236,14 @@ model Provider {
   affiliateApproved     Boolean        @default(false)
   // Path under /public (e.g. /pharmacy-logos/boots-com.png) or an https URL; null shows a monogram.
   logoUrl               String?
+  // When this pharmacy's own website was last read for its delivery charge and discount offers.
+  siteOffersCheckedAt   DateTime?
   createdAt             DateTime       @default(now())
   updatedAt             DateTime       @updatedAt
 
   offers              Offer[]
+  discounts           Discount[]
+  deliveryPolicies    DeliveryPolicy[]
   evidence            Evidence[]
   corrections         Correction[]
   identifiers         ProviderIdentifier[]
@@ -294,22 +307,55 @@ model Offer {
   @@index([productVariantId])
 }
 
+// Belongs to exactly one of an Offer (staff-entered, for that price) or a Provider (site-wide,
+// applies to all of that pharmacy's offers) — enforced at the application layer.
 model Discount {
-  id           String            @id @default(cuid())
-  offerId      String
-  offer        Offer             @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  id           String             @id @default(cuid())
+  offerId      String?
+  offer        Offer?             @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  providerId   String?
+  provider     Provider?          @relation(fields: [providerId], references: [id], onDelete: Cascade)
   eligibility  String
   // Optional code the customer enters at the pharmacy's checkout; null when it applies automatically.
   code         String?
   valueType    DiscountValueType
   valuePence   Int?
   valuePercent Int?
-  stackable    Boolean           @default(false)
+  stackable    Boolean            @default(false)
   expiresAt    DateTime?
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  // Staff-entered discounts are approved from the start; scraped ones wait for a staff decision.
+  status       ScrapeReviewStatus @default(APPROVED)
+  scraped      Boolean            @default(false)
+  // The wording on the pharmacy's website a scraped discount was read from, and where.
+  evidenceText String?
+  sourceUrl    String?
+  lastSeenAt   DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 
   evidence Evidence[]
+
+  @@index([offerId])
+  @@index([providerId])
+}
+
+// A pharmacy's standard UK delivery charge as read from its own website. Once approved it sets the
+// delivery fee on that pharmacy's offers; at most one row per provider is APPROVED.
+model DeliveryPolicy {
+  id               String             @id @default(cuid())
+  providerId       String
+  provider         Provider           @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  standardFeePence Int
+  // Orders at or above this item price are delivered free; null when there is no such threshold.
+  freeOverPence    Int?
+  evidenceText     String
+  sourceUrl        String
+  status           ScrapeReviewStatus @default(PENDING)
+  lastSeenAt       DateTime
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([providerId, status])
 }
 
 // Source URL, retrieved date, checked date, reviewer and approved status (roadmap §4). Attaches to

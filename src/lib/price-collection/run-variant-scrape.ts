@@ -1,6 +1,7 @@
 import type { Ingredient } from "@/generated/prisma/client";
 import { recordAuditLog } from "@/lib/audit-log";
 import { normalizePublicUrl } from "@/lib/discovery/public-web-policy";
+import { resolveScrapedDelivery } from "@/lib/price-collection/delivery-policy";
 import { pickFeedVariantPrice } from "@/lib/price-collection/feed-price";
 import { HumanVerificationError, openHumanBrowser, waitForHumanVerification } from "@/lib/price-collection/human-browser";
 import { impossiblePriceReason } from "@/lib/price-collection/price-sanity";
@@ -96,24 +97,23 @@ async function findProviderVariantCandidateUrls(websiteDomain: string, ingredien
 // gets linked to the saved offer (as collectPriceForMatch does).
 async function saveVariantScrapedOffer(providerId: string, productVariantId: string, scraped: ScrapedPrice, linkMatchId?: string) {
   const now = new Date();
-  const deliveredTotalPence = scraped.itemPricePence + scraped.deliveryFeePence;
   return prisma.$transaction(async (tx) => {
     const offers = await tx.offer.findMany({
       where: { providerId, productVariantId },
-      select: { id: true, itemPricePence: true, productMatch: { select: { id: true } } },
+      select: { id: true, itemPricePence: true, deliveryFeePence: true, deliveryAssumption: true, productMatch: { select: { id: true } } },
       orderBy: { updatedAt: "desc" },
     });
     const existing = offers.find((offer) => offer.productMatch) ?? offers[0];
     const { packQuantity } = await tx.productVariant.findUniqueOrThrow({ where: { id: productVariantId }, select: { packQuantity: true } });
     const rejected = impossiblePriceReason({ itemPricePence: scraped.itemPricePence, packQuantity, previousItemPricePence: existing?.itemPricePence });
     if (rejected) throw new Error(rejected);
+    const delivery = await resolveScrapedDelivery(tx, providerId, scraped.itemPricePence, scraped, existing);
     const offer = existing
       ? await tx.offer.update({
         where: { id: existing.id },
         data: {
           itemPricePence: scraped.itemPricePence,
-          deliveryFeePence: scraped.deliveryFeePence,
-          deliveryAssumption: scraped.deliveryAssumption,
+          ...delivery,
           availability: scraped.availability,
           sourceUrl: scraped.sourceUrl,
           retrievedAt: now,
@@ -125,8 +125,7 @@ async function saveVariantScrapedOffer(providerId: string, productVariantId: str
           providerId,
           productVariantId,
           itemPricePence: scraped.itemPricePence,
-          deliveryFeePence: scraped.deliveryFeePence,
-          deliveryAssumption: scraped.deliveryAssumption,
+          ...delivery,
           availability: scraped.availability,
           sourceUrl: scraped.sourceUrl,
           retrievedAt: now,
@@ -138,8 +137,8 @@ async function saveVariantScrapedOffer(providerId: string, productVariantId: str
       data: {
         offerId: offer.id,
         itemPricePence: scraped.itemPricePence,
-        deliveryFeePence: scraped.deliveryFeePence,
-        deliveredTotalPence,
+        deliveryFeePence: delivery.deliveryFeePence,
+        deliveredTotalPence: scraped.itemPricePence + delivery.deliveryFeePence,
         availability: scraped.availability,
         effectiveFrom: now,
       },
@@ -153,9 +152,9 @@ async function saveVariantScrapedOffer(providerId: string, productVariantId: str
   });
 }
 
-function formatPrice(scraped: ScrapedPrice) {
-  const item = `£${(scraped.itemPricePence / 100).toFixed(2)}`;
-  const delivery = scraped.deliveryFeePence > 0 ? ` + £${(scraped.deliveryFeePence / 100).toFixed(2)} delivery` : "";
+function formatPrice(saved: { itemPricePence: number; deliveryFeePence: number }) {
+  const item = `£${(saved.itemPricePence / 100).toFixed(2)}`;
+  const delivery = saved.deliveryFeePence > 0 ? ` + £${(saved.deliveryFeePence / 100).toFixed(2)} delivery` : "";
   return `${item}${delivery}`;
 }
 
@@ -170,11 +169,13 @@ async function recordVariantOffer(staffUserId: string, providerId: string, produ
       productVariantId,
       providerId,
       itemPricePence: scraped.itemPricePence,
-      deliveryFeePence: scraped.deliveryFeePence,
+      deliveryFeePence: offer.deliveryFeePence,
       source: scraped.source,
       collection,
     },
   });
+  // The price as saved: the delivery fee may come from the approved policy, not from this page.
+  return formatPrice(offer);
 }
 
 const sourceLabels = {
@@ -277,7 +278,7 @@ export async function runVariantScrape(
         const { feedPrice } = await checkProviderFeeds(match.provider.websiteDomain, name, tokens, variantSpec, onProgress);
         const scrapedPrice = feedPrice ?? await scrapePage(match.candidateUrl, name, match.provider.discoveryCandidates[0]?.postcode ?? undefined);
         const linkMatchId = match.productVariantId === productVariantId && !match.offerId ? match.id : undefined;
-        await recordVariantOffer(staffUserId, match.providerId, productVariantId, scrapedPrice, "variant-row", linkMatchId);
+        const savedPrice = await recordVariantOffer(staffUserId, match.providerId, productVariantId, scrapedPrice, "variant-row", linkMatchId);
         await prisma.productMatch.update({
           where: { id: match.id },
           data: {
@@ -288,7 +289,7 @@ export async function runVariantScrape(
           },
         });
         scraped += 1;
-        onProgress(`Saved ${formatPrice(scrapedPrice)} for ${name} (from ${sourceLabels[scrapedPrice.source]}).`);
+        onProgress(`Saved ${savedPrice} for ${name} (from ${sourceLabels[scrapedPrice.source]}).`);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Variant price scrape failed.";
         const verification = needsVerification(error);
@@ -334,9 +335,9 @@ export async function runVariantScrape(
           onProgress(`Trying ${name}'s last saved product page: ${savedPage}`);
           try {
             const scrapedPrice = await scrapePage(savedPage, name);
-            await recordVariantOffer(staffUserId, provider.id, productVariantId, scrapedPrice, "provider-fallback-variant-row");
+            const savedPrice = await recordVariantOffer(staffUserId, provider.id, productVariantId, scrapedPrice, "provider-fallback-variant-row");
             scraped += 1;
-            onProgress(`Saved ${formatPrice(scrapedPrice)} for ${name} (from ${sourceLabels[scrapedPrice.source]}).`);
+            onProgress(`Saved ${savedPrice} for ${name} (from ${sourceLabels[scrapedPrice.source]}).`);
             continue;
           } catch (error) {
             if (error instanceof HumanVerificationError) throw error;
@@ -346,9 +347,9 @@ export async function runVariantScrape(
         }
         const { feedCandidates, feedPrice } = await checkProviderFeeds(provider.websiteDomain, name, tokens, variantSpec, onProgress);
         if (feedPrice) {
-          await recordVariantOffer(staffUserId, provider.id, productVariantId, feedPrice, "provider-fallback-variant-row");
+          const savedPrice = await recordVariantOffer(staffUserId, provider.id, productVariantId, feedPrice, "provider-fallback-variant-row");
           scraped += 1;
-          onProgress(`Saved ${formatPrice(feedPrice)} for ${name} (from ${sourceLabels[feedPrice.source]}).`);
+          onProgress(`Saved ${savedPrice} for ${name} (from ${sourceLabels[feedPrice.source]}).`);
           continue;
         }
         onProgress(`Searching ${name}'s website for a product page…`);
@@ -360,10 +361,10 @@ export async function runVariantScrape(
           try {
             onProgress(`Trying ${name}: ${candidate.candidateUrl}`);
             const scrapedPrice = await scrapePage(candidate.candidateUrl, name);
-            await recordVariantOffer(staffUserId, provider.id, productVariantId, scrapedPrice, "provider-fallback-variant-row");
+            const savedPrice = await recordVariantOffer(staffUserId, provider.id, productVariantId, scrapedPrice, "provider-fallback-variant-row");
             scraped += 1;
             saved = true;
-            onProgress(`Saved ${formatPrice(scrapedPrice)} for ${name} (from ${sourceLabels[scrapedPrice.source]}).`);
+            onProgress(`Saved ${savedPrice} for ${name} (from ${sourceLabels[scrapedPrice.source]}).`);
             break;
           } catch (error) {
             if (error instanceof HumanVerificationError) throw error;

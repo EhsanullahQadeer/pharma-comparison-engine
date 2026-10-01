@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
 
 import Link from "@/components/Link";
-import { comparisonHref, variantTypeLabel } from "@/lib/comparison";
+import { comparisonHref, variantTypeLabel, variantTypeSlug } from "@/lib/comparison";
 import { formatPence } from "@/lib/money";
 import { revealClass, revealStyle } from "@/lib/motion";
 import type { VariantPriceSummary } from "@/types/comparison";
@@ -13,7 +13,7 @@ export function VariantPriceCard({ summary, index }: { summary: VariantPriceSumm
   return (
     <li className={revealClass} style={revealStyle(index)}>
       <Link
-        href={comparisonHref({ ingredient: variant.ingredient, strengthMg: variant.strengthMg, packQuantity: variant.packQuantity })}
+        href={comparisonHref({ ingredient: variant.ingredient, productType: variantTypeSlug(variant), strengthMg: variant.strengthMg, packQuantity: variant.packQuantity })}
         className="group flex h-full flex-col rounded-3xl border border-border bg-card p-6 shadow-(--shadow) transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-ring"
       >
         <div className="flex items-center justify-between gap-2">

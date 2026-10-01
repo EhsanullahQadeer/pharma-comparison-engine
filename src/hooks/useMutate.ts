@@ -83,6 +83,8 @@ export function useMutate<K extends MutationKey>(
         if (invalidateKeys) {
           invalidateQueries(invalidateKeys);
         }
+        // Any staff action can add or clear pending work, so the header bell re-counts after each.
+        invalidateQueries("pendingWork");
         onSuccess?.(result, args);
 
         return result;

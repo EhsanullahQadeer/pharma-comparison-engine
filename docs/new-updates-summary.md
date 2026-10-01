@@ -1,5 +1,32 @@
 # Product updates
 
+## 2026-10-01
+
+- The bell at the top of every admin page now shows how much work is waiting. A number on the bell gives the total, and opening it lists each kind of work with its count and a link to where it is done: pharmacy candidates to review, product matches to confirm, evidence to approve, corrections to resolve, new inbox messages, articles waiting for review, delivery charges and discounts to approve, price checks that need attention, and draft prices to publish.
+- The dashboard has a new "Pending work" section with the same list in full. For work done on a pharmacy's own page, it names each pharmacy with its count, and each name opens that pharmacy.
+- Each staff member only sees the kinds of work their role can act on. A notification disappears by itself once the work is done; there is nothing to mark as read.
+- The number on the bell updates by itself, without reloading the page: straight after a staff action such as approving, dismissing, confirming or publishing, and every 30 seconds for work that arrives in the background, such as a failed price check or a new message.
+- Links from the bell to the Reviews page open the right tab straight away.
+- The website check for delivery charges and discounts now also reads a pharmacy's product pages when its delivery page and homepage don't state a charge. This found the delivery charge for Medy (£3.99), Click Pharmacy (£3.50) and LloydsDirect (£4.95).
+- The check has been run on all 85 published pharmacies. 17 delivery charges and 4 discount offers are waiting for approval on the pharmacies' admin pages. Nothing has been applied to prices or shown to the public.
+- The discount check now ignores offers for a pharmacy's other services, such as weight-loss consultations, and labels a reward for returning customers as "Returning customers" rather than a first-order discount. Two weight-loss offers it had suggested earlier were removed from the approval list.
+- A website that can't be reached during a check is no longer counted as checked, so an approved delivery charge or discount isn't wrongly marked "Not found on the last check".
+- The public site now has a price page for each product, not only for each medicine: Viagra, Viagra Connect, Generic sildenafil, Cialis, Cialis Together and Generic tadalafil. Each page shows only that product's prices by strength and pack size, and states whether it is prescription-only or a pharmacy medicine sold without a prescription.
+- The six product pages are in the "Prices" menu under "Prices by product" and on the site map.
+- The Sildenafil and Tadalafil price pages now start with a "Choose a product" section linking to their products, with the number of prices on record and the lowest price per tablet for each.
+- The strength-and-pack cards now open the comparison for that exact product. Before, a Viagra card opened a list that also included generic and Viagra Connect prices of the same strength and pack.
+- The Viagra Connect and Cialis Together pages can be found by search engines, because those two are sold without a prescription. The pages for prescription-only products stay hidden from search engines, as all prescription price pages already are.
+- Price collection no longer saves a second price for a product a pharmacy already has a price for. This happened when the same pack was listed on two of a pharmacy's pages, for example Dr Fox's Cialis page and its Tadalafil page, and showed the product twice. The repeated page is now marked "Needs review" on the pharmacy's admin page, with a note saying which page the existing price comes from, and its automatic price checks are switched off.
+- Duplicate prices saved before this change are still on record: 36 products across 7 pharmacies, 29 of them at Dr Fox. They have not been removed yet.
+- The system can now read a pharmacy's delivery charge and discount offers from its own website. Each pharmacy's admin page has a new "Delivery charge and discounts from the website" section showing what was found, the exact wording it was read from, and a link to that page.
+- Nothing found this way is used or shown to the public until a staff member approves it. Each finding has "Approve" and "Dismiss" buttons, and a dismissed finding is not suggested again unless the website changes.
+- Approving a delivery charge sets it on all of that pharmacy's prices, including free delivery above a spending level where the pharmacy offers it (for example "£2.95, free on orders of £39 or more"). Later price checks keep using the approved charge.
+- A price check on its own no longer changes the delivery charge of a price already on record. Before, a check that couldn't see the delivery charge could reset it to £0.
+- An approved discount (for example "10% off with code WELCOME10" for new customers) is shown beside every price from that pharmacy. It is not subtracted from the total, because not every shopper qualifies.
+- The website check runs automatically after a price check, at most once a week per pharmacy, and can be run at any time with the "Check website now" button. If an approved discount or delivery charge is no longer on the website, it is marked "Not found on the last check" so staff can remove it.
+- Websites that show a "verify you are human" check can't be read this way yet; their delivery charge and discounts still need to be entered by hand.
+- On a pharmacy's admin page, the website address under the pharmacy name is now a link that opens the pharmacy's website in a new tab.
+
 ## 2026-09-30
 
 - Price collection can now read treatment lists split into sections by product, where each row only shows the strength, pack and price. Rx Live Clinic's online-clinic page is an example: "Viagra (Branded)" then "50mg · 8 tablets … £44.99". Each price is matched to the product whose section it sits in. Sections for medicines we don't compare, such as Vardenafil or Spedra, are skipped.

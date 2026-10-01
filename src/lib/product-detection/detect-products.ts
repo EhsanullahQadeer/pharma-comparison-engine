@@ -14,7 +14,7 @@ export function isSameSite(hostname: string, siteHostname: string): boolean {
 }
 
 // Every href (incl. <link> tags, text ""), with the text shown inside any <a> pointing at it.
-function extractSameOriginLinks(html: string, base: URL): PageLink[] {
+export function extractSameOriginLinks(html: string, base: URL): PageLink[] {
   const texts = new Map<string, string>();
   for (const [, attributes, inner] of html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)) {
     const href = attributes.match(/\bhref\s*=\s*["']([^"']+)["']/i)?.[1];

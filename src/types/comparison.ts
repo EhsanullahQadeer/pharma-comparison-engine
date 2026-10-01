@@ -27,8 +27,8 @@ export type PublicVariant = {
   packQuantity: number;
 };
 
-// A staff-entered, unexpired discount on a published offer. Never estimated or inferred — if a
-// pharmacy has none recorded, the public site says so rather than implying one exists.
+// A staff-entered or staff-approved, unexpired discount on a published offer. Never estimated or
+// inferred — if a pharmacy has none recorded, the public site says so rather than implying one exists.
 export type PublicDiscount = {
   id: string;
   eligibility: string;
@@ -100,4 +100,19 @@ export type VariantPriceSummary = {
   lowestTotalPence: number;
   highestTotalPence: number;
   lowestPerTabletPence: number;
+};
+
+// A product shoppers recognise by name (a brand, or the unbranded generic of one ingredient), with
+// its own public price page at /ed/prices/<slug>.
+export type EdProduct = {
+  slug: string;
+  name: string;
+  ingredient: Ingredient;
+  // Matches variantTypeSlug ("viagra", "viagra-connect", "cialis", "cialis-together", "generic").
+  typeSlug: string;
+  // Prescription-only products keep the prescription-price search gate (src/lib/seo.ts); pharmacy
+  // medicines sold without a prescription do not.
+  prescriptionOnly: boolean;
+  description: string;
+  legalNote: string;
 };

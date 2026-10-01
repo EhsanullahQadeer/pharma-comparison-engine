@@ -9,7 +9,7 @@ export async function recordPriceHistorySnapshot(tx: Prisma.TransactionClient, o
     where: { id: offerId },
     include: {
       discounts: {
-        where: { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
+        where: { status: "APPROVED", OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
         orderBy: { createdAt: "desc" },
         take: 1,
       },

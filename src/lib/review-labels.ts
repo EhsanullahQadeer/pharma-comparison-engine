@@ -1,4 +1,4 @@
-import type { CorrectionStatus, EvidenceApprovalStatus } from "@/generated/prisma/client";
+import type { CorrectionStatus, EvidenceApprovalStatus, ScrapeReviewStatus } from "@/generated/prisma/client";
 
 export const evidenceApprovalStatusLabels: Record<EvidenceApprovalStatus, string> = {
   PENDING: "Pending",
@@ -26,4 +26,16 @@ export const correctionStatusBadgeVariant: Record<CorrectionStatus, "secondary" 
   IN_PROGRESS: "outline",
   RESOLVED: "default",
   REJECTED: "destructive",
+};
+
+export const scrapeReviewStatusLabels: Record<ScrapeReviewStatus, string> = {
+  PENDING: "Needs approval",
+  APPROVED: "Approved",
+  DISMISSED: "Dismissed",
+};
+
+export const scrapeReviewStatusBadgeVariant: Record<ScrapeReviewStatus, "secondary" | "default" | "outline"> = {
+  PENDING: "secondary",
+  APPROVED: "default",
+  DISMISSED: "outline",
 };

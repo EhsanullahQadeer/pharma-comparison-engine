@@ -13,13 +13,16 @@ import {
 } from "@/components/common/sheet";
 import type { StaffRole } from "@/generated/prisma/client";
 import { siteConfig } from "@/lib/site-config";
+import type { PendingWorkItem } from "@/types/pending-work";
 
 
 export function AdminShell({
   user,
+  pendingWork,
   children,
 }: {
   user: { name: string; email: string; role: StaffRole };
+  pendingWork: PendingWorkItem[];
   children: ReactNode;
 }) {
   const [panelOpen, setPanelOpen] = useState(false);
@@ -44,6 +47,7 @@ export function AdminShell({
       <div className="flex min-w-0 flex-1 flex-col bg-background">
         <AdminHeader
           user={user}
+          pendingWork={pendingWork}
           onOpenMobileNav={() => setMobileNavOpen(true)}
         />
         <main

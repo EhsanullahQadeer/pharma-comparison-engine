@@ -6,6 +6,7 @@ type AuditEntityType =
   | "ProductVariant"
   | "Offer"
   | "Discount"
+  | "DeliveryPolicy"
   | "Evidence"
   | "Article"
   | "Correction"

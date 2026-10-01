@@ -13,9 +13,16 @@ import { filterBySearch } from "@/lib/text-search";
 
 import type { ComponentProps, ReactNode } from "react";
 
-type Tab = "evidence" | "corrections" | "candidates" | "productMatches";
+const tabs = ["evidence", "corrections", "candidates", "productMatches"] as const;
+type Tab = (typeof tabs)[number];
+
+// A link into the page (e.g. from the pending-work bell) may name the tab to open.
+function tabFrom(value: string | undefined): Tab {
+  return tabs.find((tab) => tab === value) ?? "evidence";
+}
 
 export function ReviewsTabs({
+  initialTab,
   evidence,
   corrections,
   candidates,
@@ -23,6 +30,7 @@ export function ReviewsTabs({
   productMatches,
   productVariants,
 }: {
+  initialTab?: string;
   evidence: ComponentProps<typeof EvidenceReviewTable>["items"];
   corrections: ComponentProps<typeof CorrectionReviewTable>["items"];
   candidates: ComponentProps<typeof DiscoveryCandidatesPanel>["pending"];
@@ -30,7 +38,7 @@ export function ReviewsTabs({
   productMatches: ComponentProps<typeof ProductMatchReviewTable>["items"];
   productVariants: ComponentProps<typeof ProductMatchReviewTable>["variants"];
 }) {
-  const [tab, setTab] = useState<Tab>("evidence");
+  const [tab, setTab] = useState<Tab>(() => tabFrom(initialTab));
   const [query, setQuery] = useState("");
   // Deferred so typing stays responsive while the larger candidate lists re-filter.
   const deferredQuery = useDeferredValue(query);

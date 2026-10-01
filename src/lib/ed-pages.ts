@@ -1,3 +1,5 @@
+import { edProducts, productPath } from "@/lib/ed-products";
+
 export const edGroups = ["pharmacies", "prices", "guides", "side-effects", "tools", "trust"] as const;
 
 export const groupLabels = { pharmacies: "Pharmacies", prices: "Prices", guides: "Guides", "side-effects": "Side Effects", tools: "Tools", trust: "Trust" };
@@ -14,9 +16,14 @@ const livePaths = new Set([
   "guides", "guides/safety", "tools", "tools/pack-cost",
   "how-it-works", "independence", "trust/pharmacy-evidence", "trust/editorial-policy", "contact",
   "trust/disclaimer", "trust/listing-disclaimer", "trust/data-transparency", "trust/about", "privacy", "terms",
+  ...edProducts.map(productPath),
 ]);
-// Live pages that show prescription-only medicine prices stay noindex (see src/lib/seo.ts).
-const pomPricingPaths = new Set(["pharmacies", "compare", "prices/sildenafil", "prices/tadalafil", "prices/pack-sizes", "prices/repeat-costs"]);
+// Live pages that show prescription-only medicine prices stay noindex (see src/lib/seo.ts). The
+// product pages for pharmacy medicines, sold without a prescription, are not among them.
+const pomPricingPaths = new Set([
+  "pharmacies", "compare", "prices/sildenafil", "prices/tadalafil", "prices/pack-sizes", "prices/repeat-costs",
+  ...edProducts.filter((product) => product.prescriptionOnly).map(productPath),
+]);
 
 const pageKind = (path: string): EdPageKind => (livePaths.has(path) ? "live" : "article");
 
@@ -38,6 +45,7 @@ export const edPages = [
   page("compare", "Compare ED treatment prices", "prices", "Compare costs", "Sildenafil and tadalafil prices side by side, ranked by price, with delivery and consultation fees added in."),
   page("prices/sildenafil", "Sildenafil prices", "prices", "Compare costs", "Current sildenafil and Viagra prices by strength and pack size, with the time each was checked."),
   page("prices/tadalafil", "Tadalafil prices", "prices", "Compare costs", "Current tadalafil and Cialis prices by strength and pack size, with the time each was checked."),
+  ...edProducts.map((product) => page(productPath(product), `${product.name} prices`, "prices", "Prices by product", product.description)),
   page("prices/pack-sizes", "Pack-size comparison", "prices", "Understand the total", "Compare total pack cost and price per tablet for the same medicine and strength."),
   page("prices/repeat-costs", "Repeat purchase costs", "prices", "Understand the total", "One-off prices compared with subscription and repeat prices, and the conditions attached."),
   page("prices/data", "Price sources and updates", "prices", "Understand the total", "Where our prices come from, how often they're checked, and how older prices are labelled."),

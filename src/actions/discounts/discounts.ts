@@ -66,7 +66,7 @@ export async function deleteDiscount(discountId: string, providerId: string) {
 
   await prisma.$transaction(async (tx) => {
     const deleted = await tx.discount.delete({ where: { id: discountId } });
-    await recordPriceHistorySnapshot(tx, deleted.offerId, new Date());
+    if (deleted.offerId) await recordPriceHistorySnapshot(tx, deleted.offerId, new Date());
   });
 
   await recordAuditLog({ actorId: staffUser.id, action: "DELETE", entityType: "Discount", entityId: discountId, changes: { providerId } });
