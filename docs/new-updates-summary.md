@@ -2,6 +2,12 @@
 
 ## 2026-10-02
 
+- "Detect products" can now list every strength and pack size on websites that put a security check in front of every page, such as Oxford Online Pharmacy. It reads those product pages in the Chrome window, where a staff member completes any check, as it already did to find the pages. On Oxford Online Pharmacy this finds 63 options across its Cialis, tadalafil, Viagra, sildenafil, Viagra Connect and Cialis Together pages.
+- Fixed a price table on a Cialis Together or Viagra Connect page being read as the prescription product as well. For example, Oxford Online Pharmacy’s Cialis Together at £22 was also offered as prescription Cialis.
+- Price collection now accepts Viagra Connect and Cialis Together listings even when the pharmacy states the wrong strength. Each of these products is only made in one strength, so the product name decides. For example, EveryDayMeds lists "Cialis Together 50mg", which doesn’t exist; its prices are now collected as Cialis Together 10mg (£16.99 for 4 tablets). Every other product still needs the exact strength on the page.
+- Price collection and "Detect products" can now read pharmacy websites built with Nuxt, such as Cuva Health. It reads every strength and pack size on Cuva’s sildenafil and tadalafil pages at the price actually charged, including multi-pack discounts: for example generic tadalafil 5mg × 28 at £34.95.
+- In lists with tick boxes, "select all" ticks every row in the list, including rows on other pages, and the toolbar buttons act on all of them. The toolbar shows how many rows are ticked. This covers the pharmacies list, a pharmacy's Prices and Suggested product matches, and the prices for a product.
+
 - "Detect products" no longer mistakes advice articles or patient-leaflet PDFs for product pages when they sit in a pharmacy’s erectile dysfunction section, for example "How sildenafil works" or "Sildenafil vs Viagra" on Medicina Pharmacy.
 - Cleaned up 42 old product matches across 10 pharmacies that had been confirmed against a product the page doesn’t sell: articles, leaflets, or Viagra Connect and Cialis Together pages matched to a prescription product. They had never produced a price and kept showing as failed.
 - In the admin panel's narrow icon bar, every icon now opens the same small menu on hover when the side menu is closed, showing the section name and its pages. Icons for sections with one page still go straight to that page when clicked.
@@ -30,7 +36,6 @@
 - In the admin panel, the button or search box in a list's title bar now sits in the top-right corner, level with the title, instead of dropping onto its own line underneath. This fixes "Add offer" on a pharmacy's Offers list and the same layout on the pharmacies, product variants, product prices, inbox, audit log and discovery candidates lists.
 - Every list in the admin panel can now be sorted: click a column heading to sort by it, click again to reverse the order, and a third time to go back to the normal order. An arrow on the heading shows which column is in use. Columns that only hold buttons or free text are not sortable.
 - Every list in the admin panel now has page controls underneath: "Page 1 of 3 (61 total)", previous and next buttons, and a "Rows per page" choice of 25, 50, 100 or 200. This covers the pharmacies list, each pharmacy's Offers, Price collection and Suggested product matches, the prices for a product and their history, discovery sources, everything on the Reviews page, staff, articles, the inbox, the audit log and product variants.
-- In lists with tick boxes, "select all" now ticks only the rows on the page you are looking at, so a bulk action never touches rows you can't see.
 
 - When a table is wide enough to scroll sideways, its scroll bar is now a slim bar on its own, without the white strip and arrow buttons behind it.
 - Fixed the "Price collection" list on a pharmacy's admin page overlapping its own text on smaller screens. Each column is now as wide as its content, and on a narrow screen the list scrolls sideways instead.

@@ -150,8 +150,9 @@ function MatchRow({ item, variants, showProvider, productVariantId, onVariantCha
 // its suggestions only, confirmed in place next to its price collection list).
 export function ProductMatchReviewTable({ items, variants, title = "Product matches", showProvider = true }: { items: MatchItem[]; variants: VariantOption[]; title?: string; showProvider?: boolean }) {
   const view = useTableView(items, sorters);
-  // Selection covers the rows on the current page, so "select all" never reaches rows out of view.
-  const ids = useMemo(() => view.rows.map((item) => item.id), [view.rows]);
+  // Selection covers every row, not just the page on screen: "select all" and the bulk actions reach
+  // all pages, and the toolbar's count says how many that is.
+  const ids = useMemo(() => items.map((item) => item.id), [items]);
   const selection = useRowSelection(ids);
   // Variants staff picked by hand. Otherwise only detection's own suggestion is pre-selected:
   // defaulting to the first catalogue variant got pages confirmed to a product they don't sell with

@@ -60,11 +60,13 @@ const quantityPatterns = [
   /\b(\d{1,3})\s*(?:pack|pk)\b/g,
 ];
 
-// Over-the-counter products licensed in a single strength, which shops often name without it
-// ("Viagra Connect 4 Tablets"). Only used when the label states no strength at all.
+// Over-the-counter products licensed in a single strength. The product name settles the strength:
+// shops often leave it out ("Viagra Connect 4 Tablets") and occasionally state a wrong one
+// (EveryDayMeds lists "Cialis Together 50mg Tablets"; Cialis Together is only ever 10mg), so for
+// these two products whatever strength the label states is ignored.
 const singleStrengthProducts = { "viagra connect": 50, "cialis together": 10 } as const;
 
-function impliedStrength(text: string): number[] {
+function licensedStrength(text: string): number[] {
   const product = (Object.keys(singleStrengthProducts) as (keyof typeof singleStrengthProducts)[]).find((name) => text.includes(name));
   return product ? [singleStrengthProducts[product]] : [];
 }
@@ -82,8 +84,8 @@ export function labelMatchesVariant(label: string, tokens: string[], variant: Va
   if (!tokens.some((token) => text.includes(token.toLowerCase()))) return false;
   if (otcProductMismatch(text, tokens)) return false;
 
-  const stated = [...text.matchAll(strengthPattern)].map((match) => Number(match[1]));
-  const strengths = stated.length > 0 ? stated : impliedStrength(text);
+  const licensed = licensedStrength(text);
+  const strengths = licensed.length > 0 ? licensed : [...text.matchAll(strengthPattern)].map((match) => Number(match[1]));
   if (strengths.length === 0 || strengths.some((strength) => strength !== variant.strengthMg)) return false;
 
   const quantities = quantityPatterns.flatMap((pattern) => [...text.matchAll(pattern)].map((match) => Number(match[1])));

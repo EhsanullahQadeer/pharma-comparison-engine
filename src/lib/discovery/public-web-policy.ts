@@ -76,3 +76,8 @@ export function isHumanVerificationPage(html: string): boolean {
   const text = html.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   return text.length < WALL_MAX_TEXT_LENGTH;
 }
+
+// Refusals a browser must not try to get around: the site's own robots rules, or an address that
+// isn't on the public internet. Any other failure (a 403, a timeout, a security check) may be
+// worth a look in the Chrome window.
+export const FINAL_REFUSAL = /robots rules[^.]*do not permit|restricted network address/i;

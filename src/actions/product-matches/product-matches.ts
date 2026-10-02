@@ -3,14 +3,15 @@
 import { revalidatePath } from "next/cache";
 
 import { collectPriceForMatch } from "@/actions/price-collection/collect-price";
+import type { Ingredient } from "@/generated/prisma/client";
 import { recordAuditLog } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 import { ensureCatalogueVariant, type CatalogueVariant } from "@/lib/product-detection/catalogue-variants";
-import { detectEdProductMatchesWithBrowserFallback } from "@/lib/product-detection/detect-products-in-browser";
+import { detectEdProductMatchesWithBrowserFallback, readOfferedOptionsInBrowser } from "@/lib/product-detection/detect-products-in-browser";
 import { findOfferedOptionsOnPage, pageAffinity } from "@/lib/product-detection/page-variants";
 import { revalidatePublicSite } from "@/lib/revalidate-public-site";
 import { requireStaffRole } from "@/lib/staff-auth";
-import type { ProductDetectionMethod } from "@/types/product-detection";
+import type { OfferedOption, ProductDetectionMethod } from "@/types/product-detection";
 
 export type RunProductDetectionState = {
   error?: string;
@@ -36,11 +37,12 @@ export async function runProductDetectionForProvider(providerId: string): Promis
     select: { id: true, websiteDomain: true, discoveryCandidates: { where: { postcode: { not: null } }, select: { postcode: true }, take: 1 } },
   });
   if (!provider) return { error: "Provider not found." };
+  const postcode = provider.discoveryCandidates[0]?.postcode ?? undefined;
 
   let detected;
   let method: ProductDetectionMethod;
   try {
-    ({ matches: detected, method } = await detectEdProductMatchesWithBrowserFallback(provider.websiteDomain, { postcode: provider.discoveryCandidates[0]?.postcode ?? undefined }));
+    ({ matches: detected, method } = await detectEdProductMatchesWithBrowserFallback(provider.websiteDomain, { postcode }));
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Product detection failed." };
   }
@@ -56,11 +58,23 @@ export async function runProductDetectionForProvider(providerId: string): Promis
   // variant is added first if the catalogue lacks it. Several pages can list the same option (its
   // own page, plus comparison tables on sibling pages), so each variant goes to the one page whose
   // address fits its product best.
+  const optionsByUrl = new Map<string, OfferedOption[]>();
+  const blockedPages: { url: string; ingredient: Ingredient }[] = [];
+  for (const match of detected) {
+    const { options, blocked } = await findOfferedOptionsOnPage(match.candidateUrl, match.ingredient);
+    optionsByUrl.set(match.candidateUrl, options);
+    if (blocked) blockedPages.push({ url: match.candidateUrl, ingredient: match.ingredient });
+  }
+  // Pages a plain request couldn't reach (a security check in front of the site) are read in the
+  // Chrome window instead. If that fails, they simply keep no options and get an undecided match.
+  const browserOptions = await readOfferedOptionsInBrowser(blockedPages, provider.websiteDomain, { postcode }).catch(() => new Map<string, OfferedOption[]>());
+  for (const [url, options] of browserOptions) optionsByUrl.set(url, options);
+
   const pages: { match: (typeof detected)[number]; variantIds: string[] }[] = [];
   const bestPage = new Map<string, { url: string; affinity: number }>();
   for (const match of detected) {
     const variantIds: string[] = [];
-    for (const option of await findOfferedOptionsOnPage(match.candidateUrl, match.ingredient)) {
+    for (const option of optionsByUrl.get(match.candidateUrl) ?? []) {
       const { variant, created } = await ensureCatalogueVariant(option, catalogue, staffUser.id);
       if (created) newVariants += 1;
       variantIds.push(variant.id);

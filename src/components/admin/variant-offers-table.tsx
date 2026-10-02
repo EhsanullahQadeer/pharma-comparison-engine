@@ -50,8 +50,9 @@ const sorters = {
 
 export function VariantOffersTable({ offers, variants }: { offers: VariantOffer[]; variants: ProductVariant[] }) {
   const view = useTableView(offers, sorters);
-  // Selection covers the rows on the current page, so "select all" never reaches rows out of view.
-  const ids = useMemo(() => view.rows.map((offer) => offer.id), [view.rows]);
+  // Selection covers every row, not just the page on screen: "select all" and the bulk actions reach
+  // all pages, and the toolbar's count says how many that is.
+  const ids = useMemo(() => offers.map((offer) => offer.id), [offers]);
   const selection = useRowSelection(ids);
   const selectedRows = useMemo<BulkPriceRow[]>(() => {
     const byId = new Map(offers.map((offer) => [offer.id, offer]));

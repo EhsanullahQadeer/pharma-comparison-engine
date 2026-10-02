@@ -1,5 +1,5 @@
 import type { ScrapedPrice } from "@/lib/price-collection/scrape-price";
-import { brandSideMatches, labelMatchesVariant, type VariantSpec } from "@/lib/price-collection/variant-label";
+import { brandSideMatches, labelMatchesVariant, otcProductMismatch, type VariantSpec } from "@/lib/price-collection/variant-label";
 
 // A strength × pack-size price table on the product page (e.g. Oxford Online Pharmacy's "Our
 // Prices": strengths across the header, "4 tablets"/"8 tablets" rows, "-" where a pack isn't sold).
@@ -75,6 +75,9 @@ export function pickPriceGridTable(html: string, matchedTokens: string[], varian
         // comparison table) is never the page's product.
         if (OTHER_MEDICINE.test(strength)) continue;
         const product = PRODUCT_WORD.test(strength) ? strength : name;
+        // The label below only carries the matched token, so the product's full name is checked here:
+        // a "Cialis Together" page's table is never prescription Cialis (Oxford Online Pharmacy).
+        if (otcProductMismatch(product, matchedTokens)) continue;
         if (!brandSideMatches(product, "", matchedTokens[0], variant.generic)) continue;
         const label = product === strength ? `${strength} ${pack}` : `${token} ${strength} ${pack}`;
         if (!labelMatchesVariant(label, matchedTokens, variant)) continue;

@@ -4,6 +4,7 @@ import { collectPublicWebsite, ROBOTS_BEHIND_CHALLENGE } from "@/lib/discovery/p
 import { pickBigCommercePrice } from "@/lib/price-collection/bigcommerce-price";
 import { openHumanBrowser, waitForHumanVerification } from "@/lib/price-collection/human-browser";
 import { pickNextDataVariantPrice } from "@/lib/price-collection/next-data-variant-price";
+import { pickNuxtPayloadPrice } from "@/lib/price-collection/nuxt-payload-price";
 import { pickPerTabletPriceTable } from "@/lib/price-collection/per-tablet-price-table";
 import { pickPharmacyPluginPrice } from "@/lib/price-collection/pharmacy-plugin-price";
 import { readPriceCheckerDropdown } from "@/lib/price-collection/price-checker-dropdown";
@@ -24,7 +25,7 @@ export type ScrapedPrice = {
   availability: "IN_STOCK" | "OUT_OF_STOCK" | "UNKNOWN";
   sourceUrl: string;
   evidence?: string;
-  source: "merchant-feed" | "json-ld-product-offer" | "bigcommerce-page-data" | "woocommerce-variation-data" | "pharmacy-plugin-price-list" | "next-data-variants" | "per-tablet-price-table" | "shopify-product-meta" | "price-grid-table" | "price-table-columns" | "select-option-data" | "price-checker-dropdown" | "rendered-product-card";
+  source: "merchant-feed" | "json-ld-product-offer" | "bigcommerce-page-data" | "woocommerce-variation-data" | "pharmacy-plugin-price-list" | "next-data-variants" | "nuxt-payload-variants" | "per-tablet-price-table" | "shopify-product-meta" | "price-grid-table" | "price-table-columns" | "select-option-data" | "price-checker-dropdown" | "rendered-product-card";
 };
 
 type ScrapeProductPriceOptions = {
@@ -174,6 +175,7 @@ function pickEmbeddedVariantPrice(html: string, matchedTokens: string[], variant
   return pickWooCommercePrice(html, matchedTokens, variant, sourceUrl)
     ?? pickPharmacyPluginPrice(html, matchedTokens, variant, sourceUrl)
     ?? pickNextDataVariantPrice(html, matchedTokens, variant, sourceUrl)
+    ?? pickNuxtPayloadPrice(html, matchedTokens, variant, sourceUrl)
     ?? pickPerTabletPriceTable(html, matchedTokens, variant, sourceUrl)
     ?? pickShopifyMetaPrice(html, matchedTokens, variant, sourceUrl)
     ?? pickPriceGridTable(html, matchedTokens, variant, sourceUrl)

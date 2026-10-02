@@ -1,5 +1,6 @@
 import type { Ingredient } from "@/generated/prisma/client";
 import { collectPublicWebsite } from "@/lib/discovery/public-web";
+import { FINAL_REFUSAL } from "@/lib/discovery/public-web-policy";
 import { pickPageVariantPrice } from "@/lib/price-collection/scrape-price";
 import { variantTokens } from "@/lib/price-collection/variant-label";
 import type { OfferedOption } from "@/types/product-detection";
@@ -28,19 +29,27 @@ const productsByIngredient: Record<Ingredient, { brandName: string; generic: boo
 
 const PACK_SIZES = [1, 2, 3, 4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 30, 32, 36, 40, 48, 56, 60, 64, 72, 84, 90, 96];
 
-export async function findOfferedOptionsOnPage(url: string, ingredient: Ingredient): Promise<OfferedOption[]> {
-  let page;
+// `blocked` when the plain request couldn't reach the page for a reason a browser can get past (a
+// security check, a 403) — the caller then reads it in the Chrome window. A robots refusal or a
+// non-public address is final and never blocked.
+export async function findOfferedOptionsOnPage(url: string, ingredient: Ingredient): Promise<{ options: OfferedOption[]; blocked: boolean }> {
   try {
-    page = await collectPublicWebsite(url);
-  } catch {
-    return [];
+    const page = await collectPublicWebsite(url);
+    return { options: offeredOptionsInHtml(page.html, page.finalUrl, ingredient), blocked: false };
+  } catch (error) {
+    return { options: [], blocked: !(error instanceof Error && FINAL_REFUSAL.test(error.message)) };
   }
+}
+
+// The same read on a page already in hand — its HTML as loaded in the Chrome window, for sites a
+// plain request can't reach (a security check in front of every page, e.g. Oxford Online Pharmacy).
+export function offeredOptionsInHtml(html: string, finalUrl: string, ingredient: Ingredient): OfferedOption[] {
   const options: OfferedOption[] = [];
   for (const product of productsByIngredient[ingredient]) {
     const tokens = variantTokens({ ingredient, brandName: product.brandName });
     for (const strengthMg of product.strengths) {
       for (const packQuantity of PACK_SIZES) {
-        const price = pickPageVariantPrice(page.html, tokens, { strengthMg, packQuantity, generic: product.generic }, page.finalUrl);
+        const price = pickPageVariantPrice(html, tokens, { strengthMg, packQuantity, generic: product.generic }, finalUrl);
         if (!price) continue;
         options.push({
           ingredient,
