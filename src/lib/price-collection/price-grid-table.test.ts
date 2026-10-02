@@ -69,6 +69,13 @@ test("rows for a medicine we don't compare are never the page's product (Cloud P
   assert.equal(pickPriceGridTable(comparison, tadalafil, { strengthMg: 5, packQuantity: 4, generic: true }, cloud), undefined);
 });
 
+test("an over-the-counter product's own table is never its prescription brand (Oxford Online Pharmacy)", () => {
+  const together = `<h1>Cialis Together 10mg Tablets</h1><table><tr><th></th><th>10mg</th></tr><tr><td>4 tablets</td><td>£22.00</td></tr></table>`;
+  const page = "https://www.oxfordonlinepharmacy.co.uk/erectile-dysfunction/cialis-together";
+  assert.equal(pickPriceGridTable(together, ["cialis together", "tadalafil", "cialis"], { strengthMg: 10, packQuantity: 4, generic: false }, page)?.itemPricePence, 2200);
+  assert.equal(pickPriceGridTable(together, ["cialis", "tadalafil"], { strengthMg: 10, packQuantity: 4, generic: false }, page), undefined);
+});
+
 test("reads every price table on the page, not just the first", () => {
   // Somer Pharmacy's tadalafil page: an on-demand table (packs of 4–8) then a daily one (28–56).
   const somerTadalafil = `<title>Tadalafil &#8211; Somer Pharmacy</title>

@@ -286,7 +286,8 @@ for what's actually built vs. in progress.
     (`common/url-sort-table-head.tsx`), with `parseSort`
     (`src/lib/table-sort.ts`) passed to an `orderBy` map inside its action.
     Columns holding only buttons or free text stay unsortable; with tick
-    boxes, selection covers the current page only. Public-site tables are
+    boxes, selection and bulk actions cover every row, not just the page on
+    screen. Public-site tables are
     exempt (they are ranked by design). Don't invent a
     new `CardWrapper`/registry abstraction speculatively — if a real,
     repeated need for one emerges across several pages, add it deliberately

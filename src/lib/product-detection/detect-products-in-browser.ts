@@ -1,10 +1,12 @@
-import { normalizePublicUrl, robotsAllows } from "@/lib/discovery/public-web-policy";
+import type { Ingredient } from "@/generated/prisma/client";
+import { FINAL_REFUSAL, normalizePublicUrl, robotsAllows } from "@/lib/discovery/public-web-policy";
 import { openHumanBrowser, waitForHumanVerification } from "@/lib/price-collection/human-browser";
 import { readRobotsInBrowser } from "@/lib/price-collection/robots-in-browser";
 import { clickThroughEdProductCards, isEdCategoryLink, isShopLink, openEdCategoryByClick, passPostcodePrompt, readRenderedLinks } from "@/lib/product-detection/browser-shop-pages";
 import { detectEdProductMatches, matchEdProductLinks, type DetectedProductMatch } from "@/lib/product-detection/detect-products";
+import { offeredOptionsInHtml } from "@/lib/product-detection/page-variants";
 import { collectFeedCandidates } from "@/lib/product-detection/site-feeds";
-import type { PageLink, ProductDetectionMethod } from "@/types/product-detection";
+import type { OfferedOption, PageLink, ProductDetectionMethod } from "@/types/product-detection";
 
 import type { Page } from "patchright";
 
@@ -13,11 +15,8 @@ import type { Page } from "patchright";
 const MAX_SHOP_PAGES = 2;
 const MAX_CATEGORY_PAGES = 3;
 const MAX_CARDS_PER_LISTING = 20;
-
-// Refusals the browser must not try to get around: the site's own robots rules, or an address
-// that isn't on the public internet. Anything else (403, timeout, security check, geo block, no
-// products in the raw HTML) is worth a look in the browser.
-const finalRefusalPattern = /robots rules[^.]*do not permit|restricted network address/i;
+// Product pages whose strength/pack options are read in the browser per run.
+const MAX_OPTION_PAGES = 15;
 
 type DetectionOptions = { postcode?: string };
 
@@ -84,6 +83,30 @@ async function detectEdProductMatchesInBrowser(websiteDomain: string, { postcode
   }
 }
 
+// The strength/pack options on product pages a plain request couldn't reach (a security check in
+// front of every page, e.g. Oxford Online Pharmacy), read from each page as loaded in the Chrome
+// window. Same rules as the rest of this file: robots.txt is honoured and a person clears any
+// check. A page that fails to load is skipped; the caller leaves it for staff to assign by hand.
+export async function readOfferedOptionsInBrowser(pages: { url: string; ingredient: Ingredient }[], websiteDomain: string, { postcode }: DetectionOptions = {}): Promise<Map<string, OfferedOption[]>> {
+  const options = new Map<string, OfferedOption[]>();
+  if (pages.length === 0) return options;
+  const browser = await openHumanBrowser();
+  try {
+    const reader = siteReader(browser.page, normalizePublicUrl(`https://${websiteDomain}`).hostname, postcode);
+    for (const { url, ingredient } of pages.slice(0, MAX_OPTION_PAGES)) {
+      try {
+        if (!await reader.open(url)) continue;
+        options.set(url, offeredOptionsInHtml(await browser.page.content(), browser.page.url(), ingredient));
+      } catch {
+        // This page didn't load; the others may.
+      }
+    }
+  } finally {
+    await browser.close();
+  }
+  return options;
+}
+
 // Plain request first; the Chrome window only when that was blocked or found no product pages
 // (links built by JavaScript, a shop behind a postcode prompt, or a site that turns away visitors
 // from outside the UK).
@@ -93,7 +116,7 @@ export async function detectEdProductMatchesWithBrowserFallback(websiteDomain: s
     const matches = await detectEdProductMatches(websiteDomain);
     if (matches.length > 0) return { matches, method: "http" };
   } catch (error) {
-    if (error instanceof Error && finalRefusalPattern.test(error.message)) throw error;
+    if (error instanceof Error && FINAL_REFUSAL.test(error.message)) throw error;
     plainError = error;
   }
   try {

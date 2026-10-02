@@ -32,8 +32,9 @@ const sorters = {
 // Without a staff role (no session) the table is read-only: no selection, status shown as a badge.
 export function PharmaciesTable({ providers, role }: { providers: ProviderRow[]; role: StaffRole | null }) {
   const view = useTableView(providers, sorters);
-  // Selection covers the rows on the current page, so "select all" never reaches rows out of view.
-  const ids = useMemo(() => view.rows.map((provider) => provider.id), [view.rows]);
+  // Selection covers every row, not just the page on screen: "select all" and the bulk actions reach
+  // all pages, and the toolbar's count says how many that is.
+  const ids = useMemo(() => providers.map((provider) => provider.id), [providers]);
   const selection = useRowSelection(ids);
   const selectedProviders = useMemo(
     () => providers.filter((provider) => selection.selectedIds.includes(provider.id)).map(({ id, status, _count }) => ({ id, status, draftCount: _count.offers })),

@@ -36,6 +36,10 @@ test("a single-strength OTC product named without its strength implies it", () =
   assert.equal(labelMatchesVariant("Viagra Connect 4 Tablets", connect, { strengthMg: 25, packQuantity: 4 }), false);
   assert.equal(labelMatchesVariant("Viagra Connect 4 Tablets", connect, { strengthMg: 50, packQuantity: 8 }), false);
   assert.equal(labelMatchesVariant("Cialis Together 4 Tablets", ["cialis together", "tadalafil"], { strengthMg: 10, packQuantity: 4 }), true);
+  // A wrong strength in the label doesn't change which product it is (EveryDayMeds).
+  assert.equal(labelMatchesVariant("Cialis Together 50mg Tablets - 4 Tablets", ["cialis together", "tadalafil", "cialis"], { strengthMg: 10, packQuantity: 4 }), true);
+  assert.equal(labelMatchesVariant("Cialis Together 50mg Tablets - 8 Tablets", ["cialis together", "tadalafil", "cialis"], { strengthMg: 10, packQuantity: 4 }), false);
+  assert.equal(labelMatchesVariant("Cialis Together 50mg Tablets - 4 Tablets", ["cialis", "tadalafil"], { strengthMg: 50, packQuantity: 4 }), false);
   // Prescription Viagra comes in several strengths, so it still needs one stated.
   assert.equal(labelMatchesVariant("Viagra 4 Tablets", ["viagra", "sildenafil"], { strengthMg: 50, packQuantity: 4 }), false);
 });

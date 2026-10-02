@@ -267,8 +267,9 @@ function PriceTableRow({ row, providerId, providerPublished, variants, selected,
 export function ProviderPricesSection({ providerId, providerPublished, offers, matches, variants }: { providerId: string; providerPublished: boolean; offers: OfferItem[]; matches: MatchItem[]; variants: ProductVariant[] }) {
   const rows = useMemo(() => buildRows(offers, matches), [offers, matches]);
   const view = useTableView(rows, sorters);
-  // Selection covers the rows on the current page, so "select all" never reaches rows out of view.
-  const ids = useMemo(() => view.rows.map((row) => row.id), [view.rows]);
+  // Selection covers every row, not just the page on screen: "select all" and the bulk actions reach
+  // all pages, and the toolbar's count says how many that is.
+  const ids = useMemo(() => rows.map((row) => row.id), [rows]);
   const selection = useRowSelection(ids);
   const selectedRows = useMemo<BulkPriceRow[]>(
     () => rows

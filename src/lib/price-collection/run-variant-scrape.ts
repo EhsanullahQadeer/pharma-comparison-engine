@@ -185,6 +185,7 @@ const sourceLabels = {
   "woocommerce-variation-data": "product options data",
   "pharmacy-plugin-price-list": "product options data",
   "next-data-variants": "product options data",
+  "nuxt-payload-variants": "product options data",
   "per-tablet-price-table": "product options data",
   "shopify-product-meta": "product options data",
   "price-grid-table": "price table",
