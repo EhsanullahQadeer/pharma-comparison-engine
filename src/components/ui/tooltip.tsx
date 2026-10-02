@@ -15,11 +15,13 @@ const TooltipContent = React.forwardRef<
   React.ComponentProps<typeof TooltipPrimitive.Popup> & { sideOffset?: number }
 >(({ className, sideOffset, ...props }, ref) => (
   <TooltipPrimitive.Portal>
-    <TooltipPrimitive.Positioner sideOffset={sideOffset}>
+    {/* The positioner is the positioned element, so the stacking order has to be set here: on the
+        popup it has no effect and the tooltip slides under sticky table headings. */}
+    <TooltipPrimitive.Positioner sideOffset={sideOffset} className="isolate z-50">
       <TooltipPrimitive.Popup
         ref={ref}
         className={cn(
-          "z-50 overflow-hidden rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground animate-in fade-in-0 zoom-in-95",
+          "overflow-hidden rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground animate-in fade-in-0 zoom-in-95",
           className
         )}
         {...props}

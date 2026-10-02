@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { SelectAllCheckbox } from "@/components/admin/bulk-action-bar";
 import { DetectProductsBulkActions } from "@/components/admin/detect-products-bulk-actions";
@@ -14,9 +14,10 @@ import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@
 import Link from "@/components/Link";
 import type { DiscoveryCandidateStatus, DiscoverySourceType } from "@/generated/prisma/client";
 import { useRowSelection } from "@/hooks/useRowSelection";
+import { useTableView } from "@/hooks/useTableView";
 import { identifierSummary } from "@/lib/discovery-identifier-summary";
 import { discoveryCandidateStatusBadgeVariant, discoverySourceTypeLabels, reviewedDiscoveryCandidateStatusLabels } from "@/lib/discovery-labels";
-import { DEFAULT_PAGE_SIZE } from "@/lib/pagination";
+import type { TableSorters } from "@/types/table";
 
 type HistoryItem = {
   id: string;
@@ -34,11 +35,21 @@ type HistoryItem = {
   reviewedByStaff: { name: string } | null;
 };
 
+const sorters = {
+  source: (item) => discoverySourceTypeLabels[item.source.type],
+  name: (item) => item.name,
+  website: (item) => item.websiteDomain,
+  pharmacy: (item) => item.matchedProvider?.tradingName,
+  products: (item) => item.matchedProvider?._count.productMatches,
+  status: (item) => reviewedDiscoveryCandidateStatusLabels[item.status],
+  reviewed: (item) => item.reviewedAt,
+} satisfies TableSorters<HistoryItem>;
+
 // View of candidates staff have already decided on — what was decided, when and by whom, with a
 // link through to the resulting pharmacy. Promoted and rejected rows also get an action to change
 // that decision (see DiscoveryCandidateHistoryActions).
 export function DiscoveryCandidateHistoryTable({ title, items, emptyTitle }: { title: string; items: HistoryItem[]; emptyTitle: string }) {
-  const [page, setPage] = useState(1);
+  const view = useTableView(items, sorters);
   // Only rows that became (or were linked to) a pharmacy can have their products detected.
   const selectableIds = useMemo(() => items.filter((item) => item.matchedProvider && item.status !== "REJECTED").map((item) => item.id), [items]);
   const selection = useRowSelection(selectableIds);
@@ -49,16 +60,6 @@ export function DiscoveryCandidateHistoryTable({ title, items, emptyTitle }: { t
     [items, selection.selectedIds],
   );
   const showActions = useMemo(() => items.some((item) => hasDiscoveryCandidateHistoryAction(item.status)), [items]);
-  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
-
-  const pages = Math.max(1, Math.ceil(items.length / pageSize));
-  const currentPage = Math.min(page, pages);
-  const pagedItems = useMemo(() => items.slice((currentPage - 1) * pageSize, currentPage * pageSize), [items, currentPage, pageSize]);
-
-  function handlePageSizeChange(nextPageSize: number) {
-    setPageSize(nextPageSize);
-    setPage(1);
-  }
 
   return (
     <Card>
@@ -81,19 +82,19 @@ export function DiscoveryCandidateHistoryTable({ title, items, emptyTitle }: { t
                     <SelectAllCheckbox allSelected={selection.allSelected} someSelected={selection.someSelected} onToggleAll={selection.toggleAll} label="Select all pharmacies in this list" />
                   </TableHead>
                 ) : null}
-                <TableHead minWidth={170}>Source</TableHead>
-                <TableHead minWidth={200}>Name</TableHead>
-                <TableHead minWidth={180}>Website</TableHead>
+                <TableHead minWidth={170} {...view.sortProps("source")}>Source</TableHead>
+                <TableHead minWidth={200} {...view.sortProps("name")}>Name</TableHead>
+                <TableHead minWidth={180} {...view.sortProps("website")}>Website</TableHead>
                 <TableHead minWidth={200}>Identifiers</TableHead>
-                <TableHead minWidth={180}>Pharmacy</TableHead>
-                <TableHead minWidth={130}>Products found</TableHead>
-                <TableHead minWidth={110}>Status</TableHead>
-                <TableHead minWidth={150}>Reviewed</TableHead>
+                <TableHead minWidth={180} {...view.sortProps("pharmacy")}>Pharmacy</TableHead>
+                <TableHead minWidth={130} {...view.sortProps("products")}>Products found</TableHead>
+                <TableHead minWidth={110} {...view.sortProps("status")}>Status</TableHead>
+                <TableHead minWidth={150} {...view.sortProps("reviewed")}>Reviewed</TableHead>
                 {showActions ? <TableHead minWidth={170} className="text-right">Actions</TableHead> : null}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pagedItems.map((item) => (
+              {view.rows.map((item) => (
                 <TableRow key={item.id} data-state={selection.isSelected(item.id) ? "selected" : undefined}>
                   {canSelect ? (
                     <TableCell>
@@ -148,7 +149,7 @@ export function DiscoveryCandidateHistoryTable({ title, items, emptyTitle }: { t
       </CardContent>
       {items.length > 0 ? (
         <CardFooter className="border-t">
-          <Pagination page={currentPage} setPage={setPage} pages={pages} total={items.length} pageSize={pageSize} onPageSizeChange={handlePageSizeChange} />
+          <Pagination {...view.pagination} />
         </CardFooter>
       ) : null}
     </Card>

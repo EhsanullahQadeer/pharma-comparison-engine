@@ -21,12 +21,13 @@ import { Input } from "@/components/common/input";
 import Pagination from "@/components/common/pagination";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/common/table";
 import type { DiscoverySourceType, RegulatorType } from "@/generated/prisma/client";
+import { useTableView } from "@/hooks/useTableView";
 import { identifierSummary } from "@/lib/discovery-identifier-summary";
 import { discoverySourceTypeLabels, readEdFilterAudit } from "@/lib/discovery-labels";
-import { DEFAULT_PAGE_SIZE } from "@/lib/pagination";
 import { regulatorTypeLabels, regulatorTypeValues, serviceRegionOptions } from "@/lib/provider-labels";
 import { cn } from "@/lib/utils";
 import type { EdFilterAudit } from "@/types/discovery";
+import type { TableSorters } from "@/types/table";
 
 type CandidateItem = {
   id: string;
@@ -428,25 +429,26 @@ function CandidateRow({
   );
 }
 
+const sorters = {
+  source: (item) => discoverySourceTypeLabels[item.source.type],
+  name: (item) => item.name,
+  website: (item) => item.websiteDomain,
+  status: (item) => !!item.matchedProvider,
+} satisfies TableSorters<CandidateItem>;
+
 export function DiscoveryCandidateReviewTable({ items }: { items: CandidateItem[] }) {
   const [drafts, setDrafts] = useState<Record<string, PromoteDraft>>(() => Object.fromEntries(items.map((item) => [item.id, defaultDraft(item)])));
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
   const [bulkError, setBulkError] = useState<string>();
   const [isPending, startTransition] = useTransition();
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [onlyFlagged, setOnlyFlagged] = useState(false);
 
   const itemsById = useMemo(() => new Map(items.map((item) => [item.id, item])), [items]);
   const flaggedCount = useMemo(() => items.filter((item) => readEdFilterAudit(item.rawPayload)).length, [items]);
   const visibleItems = useMemo(() => (onlyFlagged ? items.filter((item) => readEdFilterAudit(item.rawPayload)) : items), [items, onlyFlagged]);
-  const pages = Math.max(1, Math.ceil(visibleItems.length / pageSize));
-  const currentPage = Math.min(page, pages);
-  const pagedItems = useMemo(
-    () => visibleItems.slice((currentPage - 1) * pageSize, currentPage * pageSize),
-    [visibleItems, currentPage, pageSize],
-  );
+  const view = useTableView(visibleItems, sorters);
+  const pagedItems = view.rows;
   // "Select all" only covers the visible page — selecting across all 243+ candidates in one click
   // risks bulk-promoting rows staff never actually looked at (unedited defaults can fail validation
   // or, worse, silently promote with placeholder data). Individual checkboxes still accumulate
@@ -477,14 +479,9 @@ export function DiscoveryCandidateReviewTable({ items }: { items: CandidateItem[
     });
   }
 
-  function handlePageSizeChange(nextPageSize: number) {
-    setPageSize(nextPageSize);
-    setPage(1);
-  }
-
   function handleToggleOnlyFlagged(checked: boolean) {
     setOnlyFlagged(checked);
-    setPage(1);
+    view.pagination.setPage(1);
   }
 
   function handleBulkReject() {
@@ -530,7 +527,7 @@ export function DiscoveryCandidateReviewTable({ items }: { items: CandidateItem[
 
   return (
     <Card>
-      <CardHeader className="flex-row flex-wrap items-center justify-between gap-2">
+      <CardHeader className="flex flex-wrap items-center justify-between gap-2">
         <CardTitle>Discovery candidates ({items.length})</CardTitle>
         {items.length > 0 ? (
           <div className="flex flex-wrap items-center gap-2">
@@ -561,16 +558,16 @@ export function DiscoveryCandidateReviewTable({ items }: { items: CandidateItem[
                 <TableHead minWidth={44}>
                   <Checkbox checked={allOnPageSelected} onCheckedChange={(checked) => handleToggleAll(checked === true)} aria-label="Select all candidates on this page" />
                 </TableHead>
-                <TableHead minWidth={170}>Source</TableHead>
-                <TableHead minWidth={160}>Trading name</TableHead>
+                <TableHead minWidth={170} {...view.sortProps("source")}>Source</TableHead>
+                <TableHead minWidth={160} {...view.sortProps("name")}>Trading name</TableHead>
                 <TableHead minWidth={160}>Legal name</TableHead>
-                <TableHead minWidth={190}>Website</TableHead>
+                <TableHead minWidth={190} {...view.sortProps("website")}>Website</TableHead>
                 <TableHead minWidth={150}>Regulator</TableHead>
                 <TableHead minWidth={130}>Reg. reference</TableHead>
                 <TableHead minWidth={160}>Dispensing partner</TableHead>
                 <TableHead minWidth={150}>Regions</TableHead>
                 <TableHead minWidth={200}>Identifiers</TableHead>
-                <TableHead minWidth={100}>Status</TableHead>
+                <TableHead minWidth={100} {...view.sortProps("status")}>Status</TableHead>
                 <TableHead className="text-right" minWidth={140}>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -592,7 +589,7 @@ export function DiscoveryCandidateReviewTable({ items }: { items: CandidateItem[
       </CardContent>
       {visibleItems.length > 0 ? (
         <CardFooter className="border-t">
-          <Pagination page={currentPage} setPage={setPage} pages={pages} total={visibleItems.length} pageSize={pageSize} onPageSizeChange={handlePageSizeChange} />
+          <Pagination {...view.pagination} />
         </CardFooter>
       ) : null}
     </Card>

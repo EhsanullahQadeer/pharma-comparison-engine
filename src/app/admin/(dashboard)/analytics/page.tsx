@@ -12,6 +12,7 @@ import { PurchaseModelChart } from "@/components/admin/charts/purchase-model-cha
 import { RegulatorMixChart } from "@/components/admin/charts/regulator-mix-chart";
 import { StaffByRoleChart } from "@/components/admin/charts/staff-by-role-chart";
 import { StatusDonutChart } from "@/components/admin/charts/status-donut-chart";
+import Link from "@/components/Link";
 
 import type { Metadata } from "next";
 
@@ -21,10 +22,13 @@ export default async function AnalyticsPage() {
   const analytics = await getAdminAnalytics();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-semibold">Analytics</h1>
-        <p className="mt-1 text-sm text-muted-foreground">A full view across the provider pipeline, catalogue, review queues and clicks to pharmacies.</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          A full view across the provider pipeline, catalogue, review queues and clicks to pharmacies. For every pharmacy and product over any period, see the{" "}
+          <Link href="/admin/analytics/clicks" className="text-primary hover:underline">clicks report</Link>.
+        </p>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <ProviderFunnelChart data={analytics.funnel} />

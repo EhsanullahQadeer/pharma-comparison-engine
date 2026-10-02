@@ -137,8 +137,7 @@ export async function getPendingPriceCollectionForProvider(providerId: string) {
     where: { providerId, status: "CONFIRMED" },
     orderBy: { reviewedAt: "desc" },
     include: {
-      productVariant: { select: { ingredient: true, brandName: true, strengthMg: true, packQuantity: true, formulation: true } },
-      offer: { select: { itemPricePence: true, deliveryFeePence: true, retrievedAt: true, updatedAt: true, publishedAt: true } },
+      productVariant: { select: { id: true, ingredient: true, brandName: true, strengthMg: true, packQuantity: true, formulation: true } },
     },
   });
 }

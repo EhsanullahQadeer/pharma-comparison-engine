@@ -12,6 +12,7 @@ import { runVariantScrape } from "@/lib/price-collection/run-variant-scrape";
 import { prisma } from "@/lib/prisma";
 import { requireStaffRole } from "@/lib/staff-auth";
 import type { VariantScheduleSummary } from "@/types/pricing";
+import type { RequestedSort, SortOrder } from "@/types/table";
 
 const productVariantSchema = z.object({
   ingredient: z.enum(Ingredient),
@@ -91,17 +92,30 @@ export async function deleteProductVariant(id: string): Promise<DeleteProductVar
   return {};
 }
 
-export async function getProductVariants(search?: string, page = 1, pageSize: number = DEFAULT_PAGE_SIZE) {
+// Columns the catalogue list can be sorted by (the `sort` search param).
+const productVariantOrderBy: Record<string, (order: SortOrder) => Prisma.ProductVariantOrderByWithRelationInput> = {
+  ingredient: (order) => ({ ingredient: order }),
+  brand: (order) => ({ brandName: { sort: order, nulls: "last" } }),
+  strength: (order) => ({ strengthMg: order }),
+  formulation: (order) => ({ formulation: order }),
+  pack: (order) => ({ packQuantity: order }),
+  classification: (order) => ({ supplyClassification: order }),
+};
+
+export async function getProductVariants(search?: string, page = 1, pageSize: number = DEFAULT_PAGE_SIZE, sort?: RequestedSort) {
   await requireStaffRole(["CATALOGUE_EDITOR", "CONTENT_REVIEWER", "ADMINISTRATOR", "COMMERCIAL_MANAGER"]);
   const query = search?.trim();
   const where = query
     ? { OR: [{ brandName: { contains: query, mode: "insensitive" as const } }, { formulation: { contains: query, mode: "insensitive" as const } }] }
     : undefined;
 
+  const requested = sort ? productVariantOrderBy[sort.sortBy] : undefined;
+
   const [variants, total] = await Promise.all([
     prisma.productVariant.findMany({
       where,
-      orderBy: [{ ingredient: "asc" }, { strengthMg: "asc" }],
+      // The default order breaks ties, so pages stay stable when many rows share a sorted value.
+      orderBy: [...(requested ? [requested(sort?.sortOrder ?? "asc")] : []), { ingredient: "asc" }, { strengthMg: "asc" }, { packQuantity: "asc" }, { id: "asc" }],
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),

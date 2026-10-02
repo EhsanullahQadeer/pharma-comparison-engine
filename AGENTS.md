@@ -110,9 +110,10 @@ for what's actually built vs. in progress.
      `common/tooltip.tsx`/`TooltipWrapper.tsx`, `common/empty-state.tsx`,
      `common/skeleton.tsx`, `common/mutate-button.tsx`,
      `common/pagination.tsx`/`PaginationServer.tsx`,
-     `common/theme-toggle.tsx`, `common/input-fields.tsx`. Import from these
+     `common/theme-toggle.tsx`, `common/input-fields.tsx`,
+     `common/popover.tsx`. Import from these
      instead of `ui/*` directly. There is currently no `common/` wrapper for
-     `ui/calendar.tsx`/`ui/popover.tsx`/`ui/separator.tsx`/`ui/alert.tsx` —
+     `ui/calendar.tsx`/`ui/separator.tsx`/`ui/alert.tsx` —
      if a feature needs one of those, add a thin wrapper to `common/` rather
      than importing the `ui/*` primitive directly, following the same
      pattern as the existing thin wrappers.
@@ -271,14 +272,22 @@ for what's actually built vs. in progress.
     with hand-written `<TableHead>` columns per page (no column registry —
     `src/hooks/table-columns-registry.ts` exists as scaffolding but is
     currently an empty `Record`, unused). Use `common/empty-state.tsx` for
-    the zero-results state. Add server-side pagination via
-    `common/PaginationServer.tsx` + `src/lib/pagination.ts`'s
-    `parsePageSize` (already used by `audit-log`, `catalogue/product-variants`,
-    and `discovery-candidate-review-table`) once a list is large enough to
-    need it; smaller admin lists (`pharmacies`, `staff`, `discovery-sources`)
-    currently render their full result set with no pagination — that's
-    consistent with the current data volumes described in
-    `docs/current-tasks.md`, not a gap to fix reflexively. Don't invent a
+    the zero-results state. **Every admin table has a page-size picker,
+    pagination and sortable column headings.** A table that already holds
+    all its rows (most of them) uses `useTableView(rows, sorters)`
+    (`src/hooks/useTableView.ts`): render `view.rows`, spread
+    `view.sortProps("key")` onto each sortable `TableHead`, and put
+    `<TableViewPagination pagination={view.pagination} />`
+    (`common/table-view-pagination.tsx`) under the table; that needs a
+    client component, so a server page hands its rows to a table component
+    under `src/components/admin/`. A list the database pages (`audit-log`,
+    `catalogue/product-variants`) uses `common/PaginationServer.tsx` +
+    `parsePageSize` (`src/lib/pagination.ts`) and `UrlSortTableHead`
+    (`common/url-sort-table-head.tsx`), with `parseSort`
+    (`src/lib/table-sort.ts`) passed to an `orderBy` map inside its action.
+    Columns holding only buttons or free text stay unsortable; with tick
+    boxes, selection covers the current page only. Public-site tables are
+    exempt (they are ranked by design). Don't invent a
     new `CardWrapper`/registry abstraction speculatively — if a real,
     repeated need for one emerges across several pages, add it deliberately
     with real call sites in the same change, the same way `common/card.tsx`

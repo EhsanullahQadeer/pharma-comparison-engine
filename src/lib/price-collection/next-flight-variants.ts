@@ -4,13 +4,16 @@ import type { PricedVariantLabel } from "@/types/pricing";
 // Next.js App Router storefronts have no `__NEXT_DATA__`: the page's data streams in
 // `self.__next_f.push([1,"…"])` script chunks (a JSON-escaped string each). The page's own product
 // is found by its slug — the page address's last segment — because the stream can also carry
-// related products. Two variant shapes are read:
+// related products. Three variant shapes are read:
 // - Pharmacy Online: `"slug":"viagra","title":"Viagra","variants":[{ "price":2499 (pence),
 //   "units_available":9999, "attributes":[{"attribute_name":"Strength","attribute_value":"25mg"},
 //   {"attribute_name":"Pack Size","attribute_value":"4"}], "sale_price"… }]`
 // - SynovaMed: `"slug":"cialis-together","name":"Cialis Together",…,"variants":[{ "name":"10mg - 4 Tablets",
 //   "price":{"currency":"GBP","amount":1999}, "oneOffPrice":{…}, "inStock":false, "strength":"10mg",
 //   "packSize":"4" }]` — the one-off price, never a subscription price.
+// - The Independent Pharmacy: `"slug":"cialis-once-daily-tablets","title":…,"variants":[{
+//   "name":"Cialis 5mg Tablets", "pack_size":"28 tablets", "available":true,
+//   "quantities":[{"quantity":1,"price":8799},{"quantity":2,"price":15598}] }]` — packs × pack size.
 
 type Money = { currency?: unknown; amount?: unknown };
 type FlightVariant = {
@@ -27,6 +30,11 @@ type FlightVariant = {
   strength?: unknown;
   packSize?: unknown;
   attributes?: { attribute_name?: unknown; attribute_value?: unknown }[];
+  name?: unknown;
+  pack_size?: unknown;
+  available?: unknown;
+  public?: unknown;
+  quantities?: { quantity?: unknown; price?: unknown }[];
 };
 
 function readFlightStream(html: string): string {
@@ -75,19 +83,70 @@ function availability(entry: FlightVariant): PricedVariantLabel["availability"] 
   return "UNKNOWN";
 }
 
-// The page's own product: its slug, then its name/title and variants before any other product's slug.
+// Index of the quote closing the JSON string that opens at `open`.
+function stringEnd(text: string, open: number) {
+  let index = open + 1;
+  while (index < text.length && text[index] !== "\"") index += text[index] === "\\" ? 2 : 1;
+  return index;
+}
+
+// Reads the rest of the object a slug sits in, from just after the slug: nested objects and arrays
+// are stepped over, so only that object's own `title`/`name` and `variants` count — never a nested
+// slug's (the product's condition) or a sibling product's. The variants may also sit directly
+// beside the product object in its parent (The Independent Pharmacy:
+// `{"treatment":{slug,title,…},"variants":[…]}`), so the scan continues one level up, where only
+// the parent's own keys count. Undefined when the parent closes without variants.
+function readOwnProduct(stream: string, start: number) {
+  let depth = 0;
+  // The level whose keys count: 0 inside the product object, -1 once it has closed.
+  let level = 0;
+  let title = "";
+  for (let index = start; index < stream.length; index += 1) {
+    const char = stream[index];
+    if (char === "\"") {
+      const end = stringEnd(stream, index);
+      const key = depth === level && stream[end + 1] === ":" ? stream.slice(index + 1, end) : "";
+      if (key === "variants") {
+        const variants = extractEmbeddedJson(stream.slice(index), /"variants":/);
+        return Array.isArray(variants) ? { title, variants: variants as FlightVariant[] } : undefined;
+      }
+      if (level === 0 && (key === "title" || key === "name") && !title && stream[end + 2] === "\"") {
+        title = JSON.parse(stream.slice(end + 2, stringEnd(stream, end + 2) + 1)) as string;
+      }
+      index = end;
+    } else if (char === "{" || char === "[") {
+      depth += 1;
+    } else if (char === "}" || char === "]") {
+      depth -= 1;
+      if (depth < -1) return undefined;
+      level = Math.min(level, depth);
+    }
+  }
+  return undefined;
+}
+
+// The page's own product: the first object carrying the page's slug that also has variants (the
+// slug alone can appear earlier in a menu or breadcrumb entry).
 function pageProduct(stream: string, slug: string) {
-  const escapedSlug = slug.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const at = stream.search(new RegExp(`"slug":"${escapedSlug}"`));
-  if (at < 0) return undefined;
-  const rest = stream.slice(at + 1);
-  const next = rest.search(/"slug":"/);
-  const own = next < 0 ? rest : rest.slice(0, next);
-  const variantsAt = own.indexOf("\"variants\":[");
-  const name = own.match(/"(?:title|name)":("(?:[^"\\]|\\.)*")/)?.[1];
-  if (variantsAt < 0 || !name) return undefined;
-  const variants = extractEmbeddedJson(rest.slice(variantsAt), /"variants":/);
-  return Array.isArray(variants) ? { title: JSON.parse(name) as string, variants: variants as FlightVariant[] } : undefined;
+  const marker = `"slug":${JSON.stringify(slug)}`;
+  for (let at = stream.indexOf(marker); at >= 0; at = stream.indexOf(marker, at + 1)) {
+    const product = readOwnProduct(stream, at + marker.length);
+    if (product) return product;
+  }
+  return undefined;
+}
+
+// The Independent Pharmacy: a variant per strength, sold as 1, 2 or 3 packs — the tablet count is
+// packs × the pack size ("28 tablets"), each with its own total price in pence.
+function packQuantityLabels(entry: FlightVariant): PricedVariantLabel[] {
+  const packSize = Number(String(entry.pack_size ?? "").match(/\d{1,3}/)?.[0]);
+  if (typeof entry.name !== "string" || !(packSize > 0) || entry.public === false) return [];
+  const name = entry.name;
+  const stock = ({ true: "IN_STOCK", false: "OUT_OF_STOCK" } as const)[String(entry.available) as "true" | "false"] ?? "UNKNOWN";
+  return (entry.quantities ?? []).flatMap((option) => {
+    if (typeof option.quantity !== "number" || typeof option.price !== "number" || !(option.price > 0)) return [];
+    return [{ productName: name, optionText: "", label: `${name} ${packSize * option.quantity} tablets`, itemPricePence: Math.round(option.price), availability: stock }];
+  });
 }
 
 export function flightStreamLabels(html: string, sourceUrl: string): PricedVariantLabel[] {
@@ -98,6 +157,8 @@ export function flightStreamLabels(html: string, sourceUrl: string): PricedVaria
   const now = new Date();
   return product.variants.flatMap((entry) => {
     if (entry.is_active === false || entry.is_bundle === true || entry.deleted_at) return [];
+    if (Array.isArray(entry.quantities)) return packQuantityLabels(entry);
+    if (!product.title) return [];
     const amount = pricePence(entry, now);
     const { strength, pack } = strengthAndPack(entry);
     if (typeof amount !== "number" || !(amount > 0) || !strength || !pack) return [];

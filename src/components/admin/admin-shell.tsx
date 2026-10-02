@@ -53,7 +53,9 @@ export function AdminShell({
         <main
           id="main-content"
           tabIndex={-1}
-          className="min-w-0 flex-1 bg-card mx-4 px-4 py-6 lg:px-6 lg:py-8 rounded-2xl"
+          // Tables and cards read this to tighten their padding inside the admin (see ui/table, ui/card).
+          data-density="compact"
+          className="min-w-0 flex-1 bg-card mx-4 px-4 py-4 lg:px-5 lg:py-5 rounded-2xl"
         >
           {children}
         </main>

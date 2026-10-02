@@ -7,7 +7,10 @@ import { reviewEvidence } from "@/actions/evidence/evidence";
 import { Button } from "@/components/common/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/card";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/common/table";
+import { TableViewPagination } from "@/components/common/table-view-pagination";
 import Link from "@/components/Link";
+import { useTableView } from "@/hooks/useTableView";
+import type { TableSorters } from "@/types/table";
 
 type EvidenceItem = {
   id: string;
@@ -16,6 +19,12 @@ type EvidenceItem = {
   provider: { tradingName: string } | null;
   offer: { id: string; providerId: string } | null;
 };
+
+const sorters = {
+  source: (item) => item.sourceUrl,
+  provider: (item) => item.provider?.tradingName,
+  retrieved: (item) => item.retrievedAt,
+} satisfies TableSorters<EvidenceItem>;
 
 function EvidenceRow({ item }: { item: EvidenceItem }) {
   const [isPending, startTransition] = useTransition();
@@ -58,6 +67,7 @@ function EvidenceRow({ item }: { item: EvidenceItem }) {
 }
 
 export function EvidenceReviewTable({ items }: { items: EvidenceItem[] }) {
+  const view = useTableView(items, sorters);
   return (
     <Card>
       <CardHeader>
@@ -67,19 +77,22 @@ export function EvidenceReviewTable({ items }: { items: EvidenceItem[] }) {
         {items.length === 0 ? (
           <p className="px-4 py-8 text-center text-sm text-muted-foreground">Nothing pending review.</p>
         ) : (
+          <>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Source</TableHead>
-                <TableHead>Provider</TableHead>
-                <TableHead>Retrieved</TableHead>
+                <TableHead {...view.sortProps("source")}>Source</TableHead>
+                <TableHead {...view.sortProps("provider")}>Provider</TableHead>
+                <TableHead {...view.sortProps("retrieved")}>Retrieved</TableHead>
                 <TableHead className="text-right">Decision</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item) => <EvidenceRow key={item.id} item={item} />)}
+              {view.rows.map((item) => <EvidenceRow key={item.id} item={item} />)}
             </TableBody>
           </Table>
+          <TableViewPagination pagination={view.pagination} className="px-(--card-spacing)" />
+          </>
         )}
       </CardContent>
     </Card>

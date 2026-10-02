@@ -8,9 +8,12 @@ import { Button } from "@/components/common/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/card";
 import { EmptyState } from "@/components/common/empty-state";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/common/table";
+import { TableViewPagination } from "@/components/common/table-view-pagination";
 import Link from "@/components/Link";
 import type { CorrectionStatus } from "@/generated/prisma/client";
+import { useTableView } from "@/hooks/useTableView";
 import { correctionStatusBadgeVariant, correctionStatusLabels, correctionStatusValues } from "@/lib/review-labels";
+import type { TableSorters } from "@/types/table";
 
 type CorrectionItem = {
   id: string;
@@ -21,6 +24,13 @@ type CorrectionItem = {
   provider: { tradingName: string } | null;
   assignedOwner: { name: string } | null;
 };
+
+const sorters = {
+  issue: (item) => item.reportedIssue,
+  provider: (item) => item.provider?.tradingName,
+  owner: (item) => item.assignedOwner?.name,
+  status: (item) => correctionStatusLabels[item.status],
+} satisfies TableSorters<CorrectionItem>;
 
 function CorrectionRow({ item }: { item: CorrectionItem }) {
   const [isPending, startTransition] = useTransition();
@@ -78,6 +88,7 @@ function CorrectionRow({ item }: { item: CorrectionItem }) {
 }
 
 export function CorrectionReviewTable({ items }: { items: CorrectionItem[] }) {
+  const view = useTableView(items, sorters);
   return (
     <Card>
       <CardHeader>
@@ -87,20 +98,23 @@ export function CorrectionReviewTable({ items }: { items: CorrectionItem[] }) {
         {items.length === 0 ? (
           <EmptyState title="No corrections reported." />
         ) : (
+          <>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Issue</TableHead>
-                <TableHead>Provider</TableHead>
-                <TableHead>Owner</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead {...view.sortProps("issue")}>Issue</TableHead>
+                <TableHead {...view.sortProps("provider")}>Provider</TableHead>
+                <TableHead {...view.sortProps("owner")}>Owner</TableHead>
+                <TableHead {...view.sortProps("status")}>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item) => <CorrectionRow key={item.id} item={item} />)}
+              {view.rows.map((item) => <CorrectionRow key={item.id} item={item} />)}
             </TableBody>
           </Table>
+          <TableViewPagination pagination={view.pagination} className="px-(--card-spacing)" />
+          </>
         )}
       </CardContent>
     </Card>

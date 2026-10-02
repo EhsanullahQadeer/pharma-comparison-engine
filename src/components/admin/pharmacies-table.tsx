@@ -11,16 +11,29 @@ import { ProviderStatusControl } from "@/components/admin/provider-status-contro
 import { Badge } from "@/components/common/badge";
 import { Checkbox } from "@/components/common/checkbox";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/common/table";
+import { TableViewPagination } from "@/components/common/table-view-pagination";
 import Link from "@/components/Link";
 import type { StaffRole } from "@/generated/prisma/client";
 import { useRowSelection } from "@/hooks/useRowSelection";
+import { useTableView } from "@/hooks/useTableView";
 import { providerStatusLabels, providerStatusBadgeVariant, regulatorTypeLabels } from "@/lib/provider-labels";
+import type { TableSorters } from "@/types/table";
 
 type ProviderRow = Awaited<ReturnType<typeof getProviders>>[number];
 
+const sorters = {
+  name: (provider) => provider.tradingName,
+  website: (provider) => provider.websiteDomain,
+  regulator: (provider) => regulatorTypeLabels[provider.regulatorType],
+  regions: (provider) => provider.serviceRegions.join(", "),
+  status: (provider) => providerStatusLabels[provider.status],
+} satisfies TableSorters<ProviderRow>;
+
 // Without a staff role (no session) the table is read-only: no selection, status shown as a badge.
 export function PharmaciesTable({ providers, role }: { providers: ProviderRow[]; role: StaffRole | null }) {
-  const ids = useMemo(() => providers.map((provider) => provider.id), [providers]);
+  const view = useTableView(providers, sorters);
+  // Selection covers the rows on the current page, so "select all" never reaches rows out of view.
+  const ids = useMemo(() => view.rows.map((provider) => provider.id), [view.rows]);
   const selection = useRowSelection(ids);
   const selectedProviders = useMemo(
     () => providers.filter((provider) => selection.selectedIds.includes(provider.id)).map(({ id, status, _count }) => ({ id, status, draftCount: _count.offers })),
@@ -38,16 +51,16 @@ export function PharmaciesTable({ providers, role }: { providers: ProviderRow[];
                 <SelectAllCheckbox allSelected={selection.allSelected} someSelected={selection.someSelected} onToggleAll={selection.toggleAll} label="Select all pharmacies" />
               </TableHead>
             ) : null}
-            <TableHead>Trading name</TableHead>
-            <TableHead>Website</TableHead>
-            <TableHead>Regulator</TableHead>
-            <TableHead>Service regions</TableHead>
-            <TableHead>Status</TableHead>
+            <TableHead {...view.sortProps("name")}>Trading name</TableHead>
+            <TableHead {...view.sortProps("website")}>Website</TableHead>
+            <TableHead {...view.sortProps("regulator")}>Regulator</TableHead>
+            <TableHead {...view.sortProps("regions")}>Service regions</TableHead>
+            <TableHead {...view.sortProps("status")}>Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {providers.map((provider) => {
+          {view.rows.map((provider) => {
             const selected = selection.isSelected(provider.id);
             return (
               <TableRow key={provider.id} data-state={selected ? "selected" : undefined} className="hover:bg-muted/50">
@@ -101,6 +114,7 @@ export function PharmaciesTable({ providers, role }: { providers: ProviderRow[];
           })}
         </TableBody>
       </Table>
+      <TableViewPagination pagination={view.pagination} />
     </>
   );
 }

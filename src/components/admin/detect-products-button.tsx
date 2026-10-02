@@ -1,5 +1,6 @@
 "use client";
 
+import { ScanSearch } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { runProductDetectionForProvider, type RunProductDetectionState } from "@/actions/product-matches/product-matches";
@@ -26,7 +27,8 @@ export function DetectProductsButton({ providerId }: { providerId: string }) {
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <Button type="button" size="sm" variant="outline" disabled={isPending} onClick={handleRun}>
+      <Button type="button" variant="outline" disabled={isPending} onClick={handleRun}>
+        <ScanSearch aria-hidden="true" className="size-4" />
         {isPending ? "Detecting…" : "Detect products"}
       </Button>
       {isPending ? (

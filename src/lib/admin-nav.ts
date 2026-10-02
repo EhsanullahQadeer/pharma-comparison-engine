@@ -1,4 +1,4 @@
-import { BarChart3, ClipboardList, FileText, History, Inbox, LayoutDashboard, Pill, Radar, ShieldCheck, Users } from "lucide-react";
+import { BarChart3, ClipboardList, FileText, History, Inbox, LayoutDashboard, MousePointerClick, Pill, Radar, ShieldCheck, Users } from "lucide-react";
 
 import type { LucideIcon } from "lucide-react";
 
@@ -21,6 +21,7 @@ export const adminNavSections: AdminNavSection[] = [
     label: "Reports",
     items: [
       { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+      { href: "/admin/analytics/clicks", label: "Clicks to pharmacies", icon: MousePointerClick },
       { href: "/admin/audit-log", label: "Audit log", icon: History },
     ],
   },

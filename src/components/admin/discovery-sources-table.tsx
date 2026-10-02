@@ -10,11 +10,21 @@ import { Badge } from "@/components/common/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/card";
 import { EmptyState } from "@/components/common/empty-state";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/common/table";
+import { TableViewPagination } from "@/components/common/table-view-pagination";
 import type { DiscoverySourceType } from "@/generated/prisma/client";
+import { useTableView } from "@/hooks/useTableView";
 import { discoverySourceCredentialFields } from "@/lib/discovery-credential-fields";
 import { discoveryCadenceLabels, discoveryRunStatusBadgeVariant, discoveryRunStatusLabels, discoverySourceTypeLabels } from "@/lib/discovery-labels";
+import type { TableSorters } from "@/types/table";
 
 type Source = Awaited<ReturnType<typeof getDiscoverySources>>[number];
+
+const sorters = {
+  source: (source) => discoverySourceTypeLabels[source.type],
+  status: (source) => source.enabled,
+  cadence: (source) => discoveryCadenceLabels[source.cadence],
+  lastRun: (source) => source.runs[0]?.startedAt,
+} satisfies TableSorters<Source>;
 
 function CredentialsStatus({ type, configuredKeys }: { type: DiscoverySourceType; configuredKeys: string[] }) {
   const expected = discoverySourceCredentialFields[type];
@@ -26,9 +36,10 @@ function CredentialsStatus({ type, configuredKeys }: { type: DiscoverySourceType
 
 export function DiscoverySourcesTable({ sources }: { sources: Source[] }) {
   const [lastResult, setLastResult] = useState<{ sourceType: DiscoverySourceType; result: DiscoveryRunResult }>();
+  const view = useTableView(sources, sorters);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Card>
         <CardHeader>
           <CardTitle className="text-sm text-muted-foreground">{sources.length} source{sources.length === 1 ? "" : "s"}</CardTitle>
@@ -37,19 +48,20 @@ export function DiscoverySourcesTable({ sources }: { sources: Source[] }) {
           {sources.length === 0 ? (
             <EmptyState title="No discovery sources configured yet." />
           ) : (
+            <>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Source</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Cadence</TableHead>
+                  <TableHead {...view.sortProps("source")}>Source</TableHead>
+                  <TableHead {...view.sortProps("status")}>Status</TableHead>
+                  <TableHead {...view.sortProps("cadence")}>Cadence</TableHead>
                   <TableHead>Credentials</TableHead>
-                  <TableHead>Last run</TableHead>
+                  <TableHead {...view.sortProps("lastRun")}>Last run</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sources.map((source) => {
+                {view.rows.map((source) => {
                   const lastRun = source.runs[0];
                   return (
                     <TableRow key={source.id}>
@@ -96,6 +108,8 @@ export function DiscoverySourcesTable({ sources }: { sources: Source[] }) {
                 })}
               </TableBody>
             </Table>
+            <TableViewPagination pagination={view.pagination} className="px-(--card-spacing)" />
+            </>
           )}
         </CardContent>
       </Card>

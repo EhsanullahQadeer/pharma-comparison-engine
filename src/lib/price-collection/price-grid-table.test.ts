@@ -60,6 +60,15 @@ test("rows naming their own product are that product, not the page's (Dr Fox Via
   assert.equal(pickPriceGridTable(together, ["cialis", "tadalafil"], { strengthMg: 10, packQuantity: 4, generic: true }, url)?.itemPricePence, 795);
 });
 
+test("rows for a medicine we don't compare are never the page's product (Cloud Pharmacy)", () => {
+  const comparison = `<h1>Tadalafil Tablets</h1><table><tr><th>Treatment</th><th>4 Tablets</th></tr>
+<tr><td>Tadalafil 10mg Tablets</td><td>£8.49</td></tr><tr><td>Vardenafil 5mg Tablets</td><td>£21.97</td></tr></table>`;
+  const tadalafil = ["cialis", "tadalafil"];
+  const cloud = "https://www.cloudpharmacy.co.uk/products/tadalafil/";
+  assert.equal(pickPriceGridTable(comparison, tadalafil, { strengthMg: 10, packQuantity: 4, generic: true }, cloud)?.itemPricePence, 849);
+  assert.equal(pickPriceGridTable(comparison, tadalafil, { strengthMg: 5, packQuantity: 4, generic: true }, cloud), undefined);
+});
+
 test("reads every price table on the page, not just the first", () => {
   // Somer Pharmacy's tadalafil page: an on-demand table (packs of 4–8) then a daily one (28–56).
   const somerTadalafil = `<title>Tadalafil &#8211; Somer Pharmacy</title>

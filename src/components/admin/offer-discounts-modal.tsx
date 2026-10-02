@@ -4,7 +4,6 @@ import { Tag, Trash2 } from "lucide-react";
 import { useActionState, useState, useTransition } from "react";
 
 import { createDiscount, deleteDiscount, type DiscountState } from "@/actions/discounts/discounts";
-import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
 import { Input } from "@/components/common/input";
 import { Label } from "@/components/common/label";
@@ -102,10 +101,10 @@ export function OfferDiscountsModal({ offerId, providerId, discounts }: { offerI
       open={open}
       onOpenChange={setOpen}
       trigger={
-        <Button type="button" variant="outline" size="sm">
+        <Button type="button" variant="ghost" size="sm" className="gap-1 px-1.5" title="Discounts">
           <Tag aria-hidden="true" className="size-3.5" />
-          Discounts
-          {discounts.length > 0 && <Badge variant="secondary">{discounts.length}</Badge>}
+          <span className="sr-only">Discounts</span>
+          {discounts.length > 0 && <span className="text-xs tabular-nums">{discounts.length}</span>}
         </Button>
       }
     >

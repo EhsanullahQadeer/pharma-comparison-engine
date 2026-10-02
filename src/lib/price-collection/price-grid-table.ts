@@ -25,6 +25,7 @@ const PACK = /\b(\d{1,3})\s*(?:x\s*)?(?:tablets?|tabs?|pills?|capsules?)\b/i;
 const PRICE = /£\s*(\d+(?:\.\d{1,2})?)|^(\d{1,4}\.\d{2})$/;
 const BARE_COUNT = /^(\d{1,3})$/;
 const PRODUCT_WORD = /\b(?:sildenafil|viagra|tadalafil|cialis|generic)\b/i;
+const OTHER_MEDICINE = /\b(?:vardenafil|levitra|avanafil|spedra|eroxon|vitaros|alprostadil)\b/i;
 const QUANTITY_HEADING = /\b(?:quantity|qty|pack(?:\s*size)?|tablets?|pills?|capsules?)\b/i;
 
 // "Viagra – Somer Pharmacy" → "Viagra": the site-name suffix would otherwise sit in the name.
@@ -70,6 +71,9 @@ export function pickPriceGridTable(html: string, matchedTokens: string[], varian
         // A strength label that names its own product ("Generic Viagra 25mg" beside "Viagra 25mg",
         // or "Sildenafil 50mg" alternatives on a Viagra Connect page — Dr Fox) is that product, branded
         // or generic by its own wording; a bare strength ("25mg") is the page's product.
+        // A row for a medicine we don't compare ("Vardenafil 5mg Tablets" in Cloud Pharmacy's
+        // comparison table) is never the page's product.
+        if (OTHER_MEDICINE.test(strength)) continue;
         const product = PRODUCT_WORD.test(strength) ? strength : name;
         if (!brandSideMatches(product, "", matchedTokens[0], variant.generic)) continue;
         const label = product === strength ? `${strength} ${pack}` : `${token} ${strength} ${pack}`;

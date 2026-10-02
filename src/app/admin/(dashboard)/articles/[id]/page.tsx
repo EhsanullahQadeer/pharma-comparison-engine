@@ -22,7 +22,7 @@ export default async function EditArticlePage(props: PageProps<"/admin/articles/
   const slugOptions = articleSlugOptions(articles.map((entry) => entry.slug), article.slug);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Link href="/admin/articles" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft aria-hidden="true" className="size-3.5" />
         Back to articles

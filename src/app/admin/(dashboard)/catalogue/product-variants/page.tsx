@@ -11,22 +11,24 @@ import { EmptyState } from "@/components/common/empty-state";
 import { Input } from "@/components/common/input";
 import PaginationServer from "@/components/common/PaginationServer";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/common/table";
+import { UrlSortTableHead } from "@/components/common/url-sort-table-head";
 import { ingredientLabels, supplyClassificationLabels } from "@/lib/catalogue-labels";
 import { parsePageSize } from "@/lib/pagination";
+import { parseSort } from "@/lib/table-sort";
 
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Product variants", robots: { index: false, follow: false } };
 
 export default async function ProductVariantsPage(props: PageProps<"/admin/catalogue/product-variants">) {
-  const { q, page: pageParam, pageSize: pageSizeParam } = await props.searchParams;
+  const { q, page: pageParam, pageSize: pageSizeParam, sort, order } = await props.searchParams;
   const query = typeof q === "string" ? q : undefined;
   const page = Number(pageParam) > 0 ? Number(pageParam) : 1;
   const pageSize = parsePageSize(typeof pageSizeParam === "string" ? pageSizeParam : undefined);
 
-  const { variants, total, pages, schedules } = await getProductVariants(query, page, pageSize);
+  const { variants, total, pages, schedules } = await getProductVariants(query, page, pageSize, parseSort(sort, order));
   return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold">Product variants</h1>
@@ -36,7 +38,7 @@ export default async function ProductVariantsPage(props: PageProps<"/admin/catal
         </div>
         <ProductVariantScrapeProgress />
         <Card>
-          <CardHeader className="flex-row items-center justify-between gap-4 space-y-0">
+          <CardHeader className="flex flex-wrap items-center justify-between gap-4">
             <CardTitle className="text-sm text-muted-foreground">{total} variant{total === 1 ? "" : "s"}</CardTitle>
             <form action="/admin/catalogue/product-variants" className="relative w-full max-w-xs">
               <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -50,12 +52,12 @@ export default async function ProductVariantsPage(props: PageProps<"/admin/catal
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead style={{ width: 110 }}>Ingredient</TableHead>
-                    <TableHead style={{ width: 100 }}>Brand</TableHead>
-                    <TableHead style={{ width: 90 }}>Strength</TableHead>
-                    <TableHead style={{ width: 190 }}>Formulation</TableHead>
-                    <TableHead style={{ width: 70 }}>Pack</TableHead>
-                    <TableHead style={{ width: 200 }}>Classification</TableHead>
+                    <UrlSortTableHead sortKey="ingredient" style={{ width: 120 }}>Ingredient</UrlSortTableHead>
+                    <UrlSortTableHead sortKey="brand" style={{ width: 100 }}>Brand</UrlSortTableHead>
+                    <UrlSortTableHead sortKey="strength" style={{ width: 105 }}>Strength</UrlSortTableHead>
+                    <UrlSortTableHead sortKey="formulation" style={{ width: 190 }}>Formulation</UrlSortTableHead>
+                    <UrlSortTableHead sortKey="pack" style={{ width: 80 }}>Pack</UrlSortTableHead>
+                    <UrlSortTableHead sortKey="classification" style={{ width: 200 }}>Classification</UrlSortTableHead>
                     <TableHead style={{ width: 170 }}>Schedule</TableHead>
                     <TableHead className="text-right" style={{ width: 250 }}>Actions</TableHead>
                   </TableRow>

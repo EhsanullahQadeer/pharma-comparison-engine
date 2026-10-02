@@ -13,11 +13,14 @@ import { ProductVariantPriceHistoryModal } from "@/components/admin/product-vari
 import { Badge } from "@/components/common/badge";
 import { Checkbox } from "@/components/common/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/common/table";
+import { TableViewPagination } from "@/components/common/table-view-pagination";
 import type { ProductVariant } from "@/generated/prisma/client";
 import { useRowSelection } from "@/hooks/useRowSelection";
+import { useTableView } from "@/hooks/useTableView";
 import { effectivePriceCadence } from "@/lib/catalogue-labels";
 import { formatPence } from "@/lib/money";
 import type { BulkPriceRow } from "@/types/pricing";
+import type { TableSorters } from "@/types/table";
 
 type VariantOffer = Awaited<ReturnType<typeof getProductVariantPricePage>>["offers"][number];
 
@@ -31,8 +34,24 @@ function statusLabel(value?: string | null) {
   return value ? value.replaceAll("_", " ").toLowerCase() : "not configured";
 }
 
+function offerTotal(offer: VariantOffer) {
+  return offer.itemPricePence + offer.deliveryFeePence + offer.consultationFeePence + offer.otherMandatoryFeesPence;
+}
+
+const sorters = {
+  pharmacy: (offer) => offer.provider.tradingName,
+  itemPrice: (offer) => offer.itemPricePence,
+  delivery: (offer) => offer.deliveryFeePence,
+  total: offerTotal,
+  updated: (offer) => offer.updatedAt,
+  status: (offer) => statusLabel(offer.productMatch?.lastScrapeStatus),
+  published: (offer) => !!offer.publishedAt,
+} satisfies TableSorters<VariantOffer>;
+
 export function VariantOffersTable({ offers, variants }: { offers: VariantOffer[]; variants: ProductVariant[] }) {
-  const ids = useMemo(() => offers.map((offer) => offer.id), [offers]);
+  const view = useTableView(offers, sorters);
+  // Selection covers the rows on the current page, so "select all" never reaches rows out of view.
+  const ids = useMemo(() => view.rows.map((offer) => offer.id), [view.rows]);
   const selection = useRowSelection(ids);
   const selectedRows = useMemo<BulkPriceRow[]>(() => {
     const byId = new Map(offers.map((offer) => [offer.id, offer]));
@@ -51,22 +70,22 @@ export function VariantOffersTable({ offers, variants }: { offers: VariantOffer[
             <TableHead className="w-10" resizable={false}>
               <SelectAllCheckbox allSelected={selection.allSelected} someSelected={selection.someSelected} onToggleAll={selection.toggleAll} label="Select all prices" />
             </TableHead>
-            <TableHead style={{ width: 190 }}>Pharmacy</TableHead>
+            <TableHead style={{ width: 190 }} {...view.sortProps("pharmacy")}>Pharmacy</TableHead>
             <TableHead style={{ width: 190 }}>Product page</TableHead>
-            <TableHead style={{ width: 100 }}>Item price</TableHead>
-            <TableHead style={{ width: 100 }}>Delivery</TableHead>
-            <TableHead style={{ width: 100 }}>Total</TableHead>
-            <TableHead style={{ width: 160 }}>Last updated</TableHead>
-            <TableHead style={{ width: 150 }}>Scrape status</TableHead>
+            <TableHead style={{ width: 110 }} {...view.sortProps("itemPrice")}>Item price</TableHead>
+            <TableHead style={{ width: 110 }} {...view.sortProps("delivery")}>Delivery</TableHead>
+            <TableHead style={{ width: 100 }} {...view.sortProps("total")}>Total</TableHead>
+            <TableHead style={{ width: 160 }} {...view.sortProps("updated")}>Last updated</TableHead>
+            <TableHead style={{ width: 150 }} {...view.sortProps("status")}>Scrape status</TableHead>
             <TableHead style={{ width: 160 }}>Schedule</TableHead>
-            <TableHead style={{ width: 110 }}>Public site</TableHead>
+            <TableHead style={{ width: 120 }} {...view.sortProps("published")}>Public site</TableHead>
             <TableHead className="text-right" style={{ width: 210 }}>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {offers.map((offer) => {
+          {view.rows.map((offer) => {
             const { provider: _provider, priceHistory: _priceHistory, productMatch: match, ...offerFields } = offer;
-            const total = offer.itemPricePence + offer.deliveryFeePence + offer.consultationFeePence + offer.otherMandatoryFeesPence;
+            const total = offerTotal(offer);
             const selected = selection.isSelected(offer.id);
             return (
               <TableRow key={offer.id} data-state={selected ? "selected" : undefined}>
@@ -119,6 +138,7 @@ export function VariantOffersTable({ offers, variants }: { offers: VariantOffer[
           })}
         </TableBody>
       </Table>
+      <TableViewPagination pagination={view.pagination} className="px-(--card-spacing)" />
     </>
   );
 }

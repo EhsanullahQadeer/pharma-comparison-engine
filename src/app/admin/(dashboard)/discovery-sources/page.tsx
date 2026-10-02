@@ -11,7 +11,7 @@ export default async function DiscoverySourcesPage() {
   const [sources, availableTypes] = await Promise.all([getDiscoverySources(), getAvailableDiscoverySourceTypesForCreate()]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">Discovery sources</h1>

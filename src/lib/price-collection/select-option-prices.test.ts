@@ -27,3 +27,26 @@ test("uses a sale price only when the option is on sale, and refuses unlisted pa
   assert.equal(pickSelectOptionPrice(page, tokens, { strengthMg: 50, packQuantity: 16, generic: false }, url), undefined);
   assert.equal(pickSelectOptionPrice(page.replace(/<h1[\s\S]*?<\/h1>/, ""), tokens, { strengthMg: 50, packQuantity: 4, generic: false }, url), undefined);
 });
+
+// Trimmed from Cloud Pharmacy: one custom listbox of buttons, each holding strength, pack and price.
+const listbox = (options: [string, string, string][]) => options.map(([name, price, stock]) => `<button type="button" class="pdpv2-dose__option" role="option" data-size-id="1" data-name="${name}" data-price="${price}" data-was="" data-stock="In Stock" data-in-stock="${stock}" >`).join("");
+const cloudUrl = "https://www.cloudpharmacy.co.uk/products/cialis-together/";
+
+test("reads a single dropdown holding strength, pack and price together (Cloud Pharmacy)", () => {
+  const together = `<h1 class="pdpv2-buy__title">Cialis Together Tablets</h1><div role="listbox" aria-label="Pack Size">${listbox([["10mg x 4", "£18.99", "1"], ["10mg x 8", "£33.99", "0"]])}</div>`;
+  const togetherTokens = ["cialis together", "tadalafil", "cialis"];
+  const four = pickSelectOptionPrice(together, togetherTokens, { strengthMg: 10, packQuantity: 4, generic: false }, cloudUrl);
+  assert.equal(four?.itemPricePence, 1899);
+  assert.equal(four?.availability, "IN_STOCK");
+  assert.equal(pickSelectOptionPrice(together, togetherTokens, { strengthMg: 10, packQuantity: 8, generic: false }, cloudUrl)?.availability, "OUT_OF_STOCK");
+  // Never prescription Cialis.
+  assert.equal(pickSelectOptionPrice(together, ["cialis", "tadalafil"], { strengthMg: 10, packQuantity: 4, generic: false }, cloudUrl), undefined);
+});
+
+test("a heading that lists every strength doesn't clash with the option's own", () => {
+  const sildenafil = `<h1>Sildenafil Tablets (25mg, 50mg &amp; 100mg)</h1>${listbox([["25mg x 4", "£6.99", "1"], ["50mg x 4", "£11.99", "1"], ["100mg x 8", "£19.99", "1"]])}`;
+  assert.equal(pickSelectOptionPrice(sildenafil, tokens, { strengthMg: 50, packQuantity: 4, generic: true }, cloudUrl)?.itemPricePence, 1199);
+  assert.equal(pickSelectOptionPrice(sildenafil, tokens, { strengthMg: 100, packQuantity: 8, generic: true }, cloudUrl)?.itemPricePence, 1999);
+  // A generic sildenafil page never prices branded Viagra.
+  assert.equal(pickSelectOptionPrice(sildenafil, tokens, { strengthMg: 50, packQuantity: 4, generic: false }, cloudUrl), undefined);
+});

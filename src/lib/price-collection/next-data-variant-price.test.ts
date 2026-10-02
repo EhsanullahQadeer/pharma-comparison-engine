@@ -118,6 +118,34 @@ test("reads SynovaMed's streamed variants: one-off GBP price blocks and plain st
   assert.equal(pickNextDataVariantPrice(page, ["cialis", "tadalafil"], { strengthMg: 10, packQuantity: 4, generic: false }, url), undefined);
 });
 
+test("reads The Independent Pharmacy's variants: packs × pack size, past a nested slug", () => {
+  // As streamed: the treatment object nests its condition's slug, and the variants sit beside the
+  // treatment in its parent. A menu entry with the same slug comes first, and a list of related
+  // products (one with its own variants) elsewhere must never be read as this page's.
+  const treatment = {
+    slug: "cialis-once-daily-tablets",
+    title: "Cialis Once Daily Tablets (2.5mg & 5mg)",
+    condition: { primaryCondition: { slug: "erectile-dysfunction-ed", title: "Erectile Dysfunction" } },
+    selectedReview: { averageRating: 4.2, sku: "TIP-3602;" },
+  };
+  const variants = [
+    { name: "Cialis 5mg Tablets", pack_size: "28 tablets", available: true, quantities: [{ quantity: 1, label: "x 28 tablets", price: 8799 }, { quantity: 2, label: "x 28 tablets", price: 15598 }] },
+    { name: "Cialis 2.5mg Tablets", pack_size: "28 tablets", available: false, quantities: [{ quantity: 1, label: "x 28 tablets", price: 8799 }] },
+  ];
+  const related = [{ slug: "cialis-once-daily-tablets", title: "Cialis Once Daily" }, { treatment: { slug: "tadalafil-tablets", title: "Tadalafil" }, variants: [{ name: "Tadalafil 5mg Tablets", pack_size: "28 tablets", available: true, quantities: [{ quantity: 1, price: 1999 }] }] }];
+  const payload = `7:${JSON.stringify({ menu: related })}\n8:${JSON.stringify({ treatment, variants })}`;
+  const page = `<script>self.__next_f.push([1,${JSON.stringify(payload)}])</script>`;
+  const url = "https://www.theindependentpharmacy.co.uk/erectile-dysfunction-ed/cialis-once-daily-tablets";
+  const cialis = ["cialis", "tadalafil"];
+  const single = pickNextDataVariantPrice(page, cialis, { strengthMg: 5, packQuantity: 28, generic: false }, url);
+  assert.equal(single?.itemPricePence, 8799);
+  assert.equal(single?.availability, "IN_STOCK");
+  // Two packs of 28 are a 56-tablet purchase.
+  assert.equal(pickNextDataVariantPrice(page, cialis, { strengthMg: 5, packQuantity: 56, generic: false }, url)?.itemPricePence, 15598);
+  // A branded Cialis page never prices generic tadalafil.
+  assert.equal(pickNextDataVariantPrice(page, cialis, { strengthMg: 5, packQuantity: 28, generic: true }, url), undefined);
+});
+
 test("keeps branded and generic apart and refuses ambiguity or missing data", () => {
   assert.equal(pickNextDataVariantPrice(html, tokens, { strengthMg: 50, packQuantity: 4, generic: true }, url)?.itemPricePence, 1299);
   assert.equal(pickNextDataVariantPrice(html, tokens, { strengthMg: 50, packQuantity: 4 }, url), undefined);

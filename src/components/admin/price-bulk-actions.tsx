@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban, CalendarClock, ChevronDown, Eye, EyeOff, RefreshCw, Square, Trash2 } from "lucide-react";
+import { Ban, CalendarClock, ChevronDown, Eye, EyeOff, RefreshCw, Square, Trash2, UserCheck } from "lucide-react";
 import { useRef } from "react";
 
 import { deleteOffers, setOffersPublished } from "@/actions/offers/offers";
@@ -17,7 +17,7 @@ import { confirm } from "@/lib/confirm-store";
 import { cn } from "@/lib/utils";
 import type { BulkPriceRow } from "@/types/pricing";
 
-export type PriceBulkAction = "publish" | "schedule" | "scrape" | "reject" | "delete";
+export type PriceBulkAction = "publish" | "schedule" | "scrape" | "humanScrape" | "reject" | "delete";
 
 // Shared by the bulk toolbar and each row's own Reject button, so both ask the same question.
 export async function confirmRejectPages(pages: number, withPrice: number) {
@@ -32,7 +32,8 @@ export async function confirmRejectPages(pages: number, withPrice: number) {
 
 // Toolbar shown above a price table while rows are selected. Each action only touches the rows it
 // applies to (publish/delete need a saved price, schedule/scrape need a tracked product page).
-export function PriceBulkActions({ rows, actions, onClear }: { rows: BulkPriceRow[]; actions: readonly PriceBulkAction[]; onClear: () => void }) {
+// With `emptyHint` the toolbar stays visible (buttons disabled) while nothing is selected.
+export function PriceBulkActions({ rows, actions, onClear, emptyHint }: { rows: BulkPriceRow[]; actions: readonly PriceBulkAction[]; onClear: () => void; emptyHint?: string }) {
   const router = useRouter();
   const bulk = useBulkRun(onClear);
   const { state, run } = bulk;
@@ -42,6 +43,9 @@ export function PriceBulkActions({ rows, actions, onClear }: { rows: BulkPriceRo
   const matchIds = rows.flatMap((row) => row.matchId ?? []);
   const untracked = rows.length - matchIds.length;
   const has = (action: PriceBulkAction) => actions.includes(action);
+  // Where pages can be rejected, "Remove" only takes prices no page is tracking: removing a tracked
+  // price would let the next check bring it back, so those go through "Reject" instead.
+  const removableOfferIds = has("reject") ? rows.flatMap((row) => (row.matchId ? [] : row.offerId ?? [])) : offerIds;
 
   function handlePublish(published: boolean) {
     void run(async () => {
@@ -63,8 +67,9 @@ export function PriceBulkActions({ rows, actions, onClear }: { rows: BulkPriceRo
   }
 
   // One scrape at a time, like the scheduled runner — pharmacy sites are fetched politely, and staff
-  // can stop between pages.
-  function handleScrape() {
+  // can stop between pages. Human-assisted opens each page in the visible Chrome window, where a
+  // person completes any security check.
+  function handleScrape(humanAssist: boolean) {
     stopRequested.current = false;
     void run(async () => {
       const ids = [...matchIds];
@@ -73,7 +78,7 @@ export function PriceBulkActions({ rows, actions, onClear }: { rows: BulkPriceRo
       for (const [index, matchId] of ids.entries()) {
         if (stopRequested.current) break;
         bulk.setProgress(`Scraping ${index + 1} of ${ids.length}…`);
-        const result = await runPriceCollectionForMatch(matchId);
+        const result = await runPriceCollectionForMatch(matchId, humanAssist);
         if (result.error) failures.push(result.error);
         else scraped += 1;
       }
@@ -97,22 +102,25 @@ export function PriceBulkActions({ rows, actions, onClear }: { rows: BulkPriceRo
 
   async function handleDelete() {
     const ok = await confirm({
-      title: `Remove ${plural(offerIds.length, "price")}?`,
+      title: `Remove ${plural(removableOfferIds.length, "price")}?`,
       message: "The selected prices and their price history will be removed. Published prices disappear from the public site.",
       confirmText: "Remove",
       variant: "destructive",
     });
     if (!ok) return;
     void run(async () => {
-      const result = await deleteOffers(offerIds);
-      return result.error ? { error: result.error } : { message: `Removed ${plural(result.updated ?? 0, "price")}.` };
+      const result = await deleteOffers(removableOfferIds);
+      if (result.error) return { error: result.error };
+      const kept = offerIds.length - removableOfferIds.length;
+      const skipped = kept > 0 ? ` ${plural(kept, "tracked price")} left alone — use Reject for those.` : "";
+      return { message: `Removed ${plural(result.updated ?? 0, "price")}.${skipped}` };
     });
   }
 
   const disabled = state.busy || rows.length === 0;
 
   return (
-    <BulkActionBar count={rows.length} bulk={bulk} onClear={onClear}>
+    <BulkActionBar count={rows.length} bulk={bulk} onClear={onClear} emptyHint={emptyHint}>
       {has("publish") ? (
         <>
           <Button type="button" size="sm" variant="outline" disabled={disabled || offerIds.length === 0} onClick={() => handlePublish(true)}>
@@ -146,9 +154,15 @@ export function PriceBulkActions({ rows, actions, onClear }: { rows: BulkPriceRo
         </DropdownMenu>
       ) : null}
       {has("scrape") ? (
-        <Button type="button" size="sm" variant="outline" disabled={disabled || matchIds.length === 0} onClick={handleScrape}>
+        <Button type="button" size="sm" variant="outline" disabled={disabled || matchIds.length === 0} onClick={() => handleScrape(false)}>
           <RefreshCw aria-hidden="true" className={cn("size-4", state.busy && state.progress && "animate-spin")} />
           Scrape now
+        </Button>
+      ) : null}
+      {has("humanScrape") ? (
+        <Button type="button" size="sm" variant="outline" disabled={disabled || matchIds.length === 0} onClick={() => handleScrape(true)}>
+          <UserCheck aria-hidden="true" className="size-4" />
+          Human-assisted scrape
         </Button>
       ) : null}
       {has("reject") ? (
@@ -158,7 +172,7 @@ export function PriceBulkActions({ rows, actions, onClear }: { rows: BulkPriceRo
         </Button>
       ) : null}
       {has("delete") ? (
-        <Button type="button" size="sm" variant="ghost" disabled={disabled || offerIds.length === 0} onClick={handleDelete} className="text-destructive">
+        <Button type="button" size="sm" variant="ghost" disabled={disabled || removableOfferIds.length === 0} onClick={handleDelete} className="text-destructive">
           <Trash2 aria-hidden="true" className="size-4" />
           Remove
         </Button>

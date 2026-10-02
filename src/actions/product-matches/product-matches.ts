@@ -7,7 +7,7 @@ import { recordAuditLog } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 import { ensureCatalogueVariant, type CatalogueVariant } from "@/lib/product-detection/catalogue-variants";
 import { detectEdProductMatchesWithBrowserFallback } from "@/lib/product-detection/detect-products-in-browser";
-import { findOfferedOptionsOnPage } from "@/lib/product-detection/page-variants";
+import { findOfferedOptionsOnPage, pageAffinity } from "@/lib/product-detection/page-variants";
 import { revalidatePublicSite } from "@/lib/revalidate-public-site";
 import { requireStaffRole } from "@/lib/staff-auth";
 import type { ProductDetectionMethod } from "@/types/product-detection";
@@ -51,22 +51,40 @@ export async function runProductDetectionForProvider(providerId: string): Promis
 
   let newMatches = 0;
   let newVariants = 0;
+
+  // First pass: every strength/pack option each page has a price for — each option's catalogue
+  // variant is added first if the catalogue lacks it. Several pages can list the same option (its
+  // own page, plus comparison tables on sibling pages), so each variant goes to the one page whose
+  // address fits its product best.
+  const pages: { match: (typeof detected)[number]; variantIds: string[] }[] = [];
+  const bestPage = new Map<string, { url: string; affinity: number }>();
   for (const match of detected) {
-    const existing = await prisma.productMatch.findMany({
-      where: { providerId, candidateUrl: match.candidateUrl },
-      select: { id: true, status: true, productVariantId: true },
-    });
-    // A page offering several strengths/packs gets a suggested (still NEW) match per option it has
-    // a price for — each option's catalogue variant is added first if the catalogue lacks it; staff
-    // confirm or reject each match. Variants already matched on this page, in any status, are left alone.
-    const priced: { variantId: string }[] = [];
+    const variantIds: string[] = [];
     for (const option of await findOfferedOptionsOnPage(match.candidateUrl, match.ingredient)) {
       const { variant, created } = await ensureCatalogueVariant(option, catalogue, staffUser.id);
       if (created) newVariants += 1;
-      priced.push({ variantId: variant.id });
+      variantIds.push(variant.id);
+      const affinity = pageAffinity(match.candidateUrl, option);
+      if (affinity > (bestPage.get(variant.id)?.affinity ?? -1)) bestPage.set(variant.id, { url: match.candidateUrl, affinity });
     }
+    pages.push({ match, variantIds });
+  }
+
+  const providerMatches = await prisma.productMatch.findMany({
+    where: { providerId },
+    select: { id: true, status: true, candidateUrl: true, productVariantId: true },
+  });
+  // A variant this pharmacy already has an undecided or confirmed match for keeps that page.
+  const placed = new Set(providerMatches.filter((row) => row.status !== "REJECTED").map((row) => row.productVariantId));
+
+  // Second pass: a suggested (still NEW) match per option on its page; staff confirm or reject each.
+  // Variants already matched on a page, in any status, are left alone there.
+  for (const { match, variantIds: priced } of pages) {
+    const existing = providerMatches.filter((row) => row.candidateUrl === match.candidateUrl);
     const known = new Set(existing.map((row) => row.productVariantId));
-    const suggestions = priced.filter(({ variantId }) => !known.has(variantId));
+    const suggestions = priced
+      .filter((variantId) => bestPage.get(variantId)?.url === match.candidateUrl && !known.has(variantId) && !placed.has(variantId))
+      .map((variantId) => ({ variantId }));
     if (suggestions.length > 0) {
       await prisma.productMatch.createMany({
         data: suggestions.map(({ variantId }) => ({

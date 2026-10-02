@@ -23,7 +23,7 @@ const TableResizableContext = React.createContext(false);
 const StickyHeaderContext = React.createContext(false);
 
 interface TableProps extends React.ComponentProps<typeof TableRoot> {
-  /** Enables column-width resizing for every `TableHead` inside (override per column via its own `resizable` prop). Defaults to on. */
+  /** Enables column-width resizing for every `TableHead` inside (override per column via its own `resizable` prop). Defaults to on. Columns are always at least as wide as their content (the table scrolls sideways when they don't fit), so dragging can widen a column but not squeeze it under its content. */
   resizable?: boolean;
   /** Makes the header row sticky when the table's scrollable parent has a constrained height. */
   stickyHeader?: boolean;
@@ -76,8 +76,8 @@ function Table({
     <TableResizableContext.Provider value={resizable}>
       <StickyHeaderContext.Provider value={stickyHeader}>
         <TableRoot
-          className={cn("", className)}
-          style={resizable ? { tableLayout: "fixed", ...style } : style}
+          className={className}
+          style={style}
           {...props}
         >
           {columns ? (
@@ -170,7 +170,7 @@ interface TableHeadProps extends React.ComponentProps<"th"> {
   onSort?: () => void;
   /** Defaults to the parent `Table`'s `resizable` setting; set to override per column. */
   resizable?: boolean;
-  /** Floor for manual resizing. Also applied as the column's initial CSS min-width (unset by default) — pass this to force a sensible width on a dense, many-column table instead of letting `table-layout: fixed` squeeze every column equally. */
+  /** Floor for manual resizing. Also applied as the column's initial CSS min-width (unset by default) — pass this to give a column more room than its content needs. */
   minWidth?: number;
   maxWidth?: number;
 }

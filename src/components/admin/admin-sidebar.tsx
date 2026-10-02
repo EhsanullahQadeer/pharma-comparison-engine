@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 export function AdminSidebar({ panelOpen, onTogglePanel }: { panelOpen: boolean; onTogglePanel: () => void }) {
   return (
     <aside className="sticky top-0 hidden h-dvh shrink-0 lg:flex">
-      <AdminIconRail onToggle={onTogglePanel} />
+      <AdminIconRail panelOpen={panelOpen} onToggle={onTogglePanel} />
       <div
         className={cn(
           "flex h-full flex-col overflow-hidden bg-sidebar text-sidebar-foreground transition-[width] duration-200",

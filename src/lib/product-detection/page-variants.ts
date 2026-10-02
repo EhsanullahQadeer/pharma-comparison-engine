@@ -57,3 +57,17 @@ export async function findOfferedOptionsOnPage(url: string, ingredient: Ingredie
   }
   return options;
 }
+
+const ingredientWords: Record<Ingredient, string> = { SILDENAFIL: "sildenafil", TADALAFIL: "tadalafil" };
+const otcProductSlugs = ["viagra-connect", "cialis-together"];
+
+// How well a page's address fits an option's product, for choosing one page when several list the
+// same option (a product's own page plus comparison tables on its siblings' pages): 2 when the
+// address names that product, 0 when it names an over-the-counter product the option isn't, else 1.
+export function pageAffinity(url: string, option: Pick<OfferedOption, "ingredient" | "brandName" | "generic">): number {
+  const path = new URL(url).pathname.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const brandSlug = option.brandName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  if (otcProductSlugs.includes(brandSlug)) return path.includes(brandSlug) ? 2 : 1;
+  if (otcProductSlugs.some((slug) => path.includes(slug))) return 0;
+  return path.includes(option.generic ? ingredientWords[option.ingredient] : brandSlug) ? 2 : 1;
+}

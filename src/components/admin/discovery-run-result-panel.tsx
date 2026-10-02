@@ -9,10 +9,13 @@ import { Button } from "@/components/common/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/card";
 import { EmptyState } from "@/components/common/empty-state";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/common/table";
+import { TableViewPagination } from "@/components/common/table-view-pagination";
 import Link from "@/components/Link";
 import type { DiscoveryRunStatus, DiscoverySourceType } from "@/generated/prisma/client";
+import { useTableView } from "@/hooks/useTableView";
 import { identifierSummary } from "@/lib/discovery-identifier-summary";
 import { discoveryCandidateStatusBadgeVariant, discoveryCandidateStatusLabels, discoveryRunStatusBadgeVariant, discoveryRunStatusLabels, discoverySourceTypeLabels } from "@/lib/discovery-labels";
+import type { TableSorters } from "@/types/table";
 
 export type DiscoveryRunResult = {
   status: DiscoveryRunStatus | null;
@@ -69,21 +72,29 @@ function RequestSummary({ summary }: { summary: string }) {
   );
 }
 
+const sorters = {
+  name: (candidate) => candidate.name,
+  postcode: (candidate) => candidate.postcode,
+  website: (candidate) => candidate.websiteDomain,
+  status: (candidate) => discoveryCandidateStatusLabels[candidate.status],
+} satisfies TableSorters<DiscoveryRunResultCandidate>;
+
 function TableView({ candidates }: { candidates: DiscoveryRunResultCandidate[] }) {
+  const view = useTableView(candidates, sorters);
   return (
     <>
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Postcode</TableHead>
-            <TableHead>Website</TableHead>
+            <TableHead {...view.sortProps("name")}>Name</TableHead>
+            <TableHead {...view.sortProps("postcode")}>Postcode</TableHead>
+            <TableHead {...view.sortProps("website")}>Website</TableHead>
             <TableHead>Registration no.</TableHead>
-            <TableHead>Status</TableHead>
+            <TableHead {...view.sortProps("status")}>Status</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {candidates.map((candidate) => (
+          {view.rows.map((candidate) => (
             <TableRow key={candidate.id}>
               <TableCell className="font-medium">{candidate.name}</TableCell>
               <TableCell className="text-muted-foreground">{candidate.postcode ?? "—"}</TableCell>
@@ -96,6 +107,7 @@ function TableView({ candidates }: { candidates: DiscoveryRunResultCandidate[] }
           ))}
         </TableBody>
       </Table>
+      <TableViewPagination pagination={view.pagination} className="px-(--card-spacing)" />
       <p className="px-4 pt-3 text-sm text-muted-foreground">
         <Link href="/admin/reviews" className="underline hover:no-underline">Review these in the Discovery candidates queue</Link>
       </p>

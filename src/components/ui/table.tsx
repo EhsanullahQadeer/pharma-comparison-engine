@@ -5,8 +5,8 @@ import * as React from "react"
 
 function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
-    <div className="relative w-full overflow-hidden rounded-xl border border-border bg-card">
-      <div data-slot="table-container" className="w-full overflow-x-auto">
+    <div className="relative w-full overflow-hidden rounded-b-xl border border-border bg-card">
+      <div data-slot="table-container" className="w-full overflow-x-auto [scrollbar-color:color-mix(in_oklab,var(--muted-foreground)_50%,transparent)_transparent] scrollbar-thin">
         <table
           data-slot="table"
           className={cn("w-full caption-bottom text-sm", className)}
@@ -22,7 +22,7 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
     <thead
       data-slot="table-header"
       className={cn(
-        "bg-muted [&_tr]:border-b [&_tr]:hover:bg-transparent [&_tr:first-child>*:first-child]:rounded-tl-xl [&_tr:first-child>*:last-child]:rounded-tr-xl",
+        "bg-muted [&_tr]:border-b [&_tr]:hover:bg-transparent",
         className
       )}
       {...props}
@@ -74,7 +74,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "h-11 px-4 text-left align-middle text-sm font-medium whitespace-nowrap text-muted-foreground has-[[role=checkbox]]:pr-0",
+        "h-11 px-4 in-data-[density=compact]:h-8 in-data-[density=compact]:px-3 in-data-[density=compact]:text-xs text-left align-middle text-sm font-medium whitespace-nowrap text-muted-foreground has-[[role=checkbox]]:pr-0",
         className
       )}
       {...props}
@@ -87,7 +87,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
     <td
       data-slot="table-cell"
       className={cn(
-        "px-4 py-3.5 align-middle whitespace-nowrap has-[[role=checkbox]]:pr-0",
+        "px-4 py-3.5 in-data-[density=compact]:px-3 in-data-[density=compact]:py-1.5 align-middle whitespace-nowrap has-[[role=checkbox]]:pr-0",
         className
       )}
       {...props}

@@ -11,7 +11,7 @@ export default async function NewProviderPage({ searchParams }: { searchParams: 
   const candidate = fromCandidate ? await getDiscoveryCandidateForPromotion(fromCandidate) : null;
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl space-y-4">
       <div>
         <h1 className="text-2xl font-semibold">Add a pharmacy</h1>
         <p className="mt-1 text-sm text-muted-foreground">

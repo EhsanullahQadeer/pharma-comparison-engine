@@ -89,7 +89,7 @@ function isFlatProductPath(lowerSegments: string[]): boolean {
 export function matchEdProductPath(pathname: string): EdPathMatch | undefined {
   const segments = pathname.split("/").filter(Boolean);
   const lowerSegments = segments.map((segment) => segment.toLowerCase());
-  if (lowerSegments.some((segment) => blockedPathSegments.has(segment))) return undefined;
+  if (lowerSegments.some((segment) => blockedPathSegments.has(segment)) || isInformationPath(pathname)) return undefined;
   if (!lowerSegments.some((segment) => allowedPathSegments.has(segment)) && !isFlatProductPath(lowerSegments)) return undefined;
 
   // A token counts only at the start of a word ("viagra-connect", "viagraconnect", "sildenafil100mg"),
@@ -151,7 +151,21 @@ export function matchEdProductTitle(title: string): EdPathMatch | undefined {
   return { ingredient, matchedTokens, confidence: "HIGH" };
 }
 
-const informationSlugWords = new Set(["side", "effects", "dosage", "dose", "doses", "alternatives", "alternative", "vs", "versus", "comparison", "compare", "doesnt", "reviews", "review", "causes", "symptoms", "interactions", "warnings", "leaflet"]);
+// Words that mark an information page rather than a product page: side-effect/dosage/comparison
+// pages, and article titles ("how-sildenafil-works", "is-sildenafil-25mg-enough",
+// "alcohol-and-sildenafil" — Medicina nests these under /erectile-dysfunction/).
+const informationSlugWords = new Set([
+  "side", "effects", "dosage", "dose", "doses", "alternatives", "alternative", "vs", "versus", "comparison", "compare", "doesnt", "reviews", "review", "causes", "symptoms", "interactions", "warnings", "leaflet", "pil",
+  "how", "what", "why", "when", "which", "who", "is", "are", "does", "can", "should", "mistakes", "explained", "works", "safety", "information", "enough", "reduces", "alcohol", "guide",
+]);
+
+// An information page or document by its address: an article-style last segment, or a PDF (a
+// patient leaflet such as Dr Fox's /pdf/erectile-dysfunction/mylan-tadalafil-PIL.pdf).
+export function isInformationPath(pathname: string): boolean {
+  const segments = pathname.split("/").filter(Boolean).map((segment) => segment.toLowerCase());
+  const last = segments[segments.length - 1] ?? "";
+  return last.endsWith(".pdf") || segments.includes("pdf") || last.split(/[-_.]+/).some((word) => informationSlugWords.has(word));
+}
 
 // The product name a site shows on a link (its anchor text) names what the linked page sells, so
 // it's exempt from the body-text ban like a feed title — catching opaque slugs such as
@@ -163,7 +177,7 @@ export function matchEdProductLinkText(text: string, pathname: string): EdPathMa
   if (segments.length === 0 || segments.some((segment) => blockedPathSegments.has(segment))) return undefined;
   // Information pages a condition page links with the drug's name ("Viagra side effects" →
   // /uk/viagra-side-effects.html) aren't product pages.
-  if (segments[segments.length - 1].split(/[-_.]+/).some((word) => informationSlugWords.has(word))) return undefined;
+  if (isInformationPath(pathname)) return undefined;
   const name = text.replace(/\s+/g, " ").trim();
   if (!name || name.length > 200) return undefined;
   const match = matchEdProductTitle(name);

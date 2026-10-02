@@ -36,6 +36,16 @@ test("a token buried inside another word never matches (Well)", () => {
   assert.equal(matchEdProductPath("/tadalafil-daily-5mg-28-pack-subscription/")?.ingredient, "TADALAFIL");
 });
 
+test("articles and PDF leaflets under a condition folder aren't product pages (Medicina, Dr Fox)", () => {
+  for (const path of ["/erectile-dysfunction/how-sildenafil-works", "/erectile-dysfunction/sildenafil-vs-viagra", "/erectile-dysfunction/is-sildenafil-25mg-enough", "/erectile-dysfunction/alcohol-and-sildenafil", "/erectile-dysfunction/common-mistakes-when-taking-sildenafil", "/erectile-dysfunction/sildenafil-safety-information", "/erectile-dysfunction/sildenafil-dosage-guide", "/pdf/erectile-dysfunction/mylan-tadalafil-PIL.pdf"]) {
+    assert.equal(matchEdProductPath(path), undefined, path);
+  }
+  // Product pages in the same folder still match.
+  for (const path of ["/erectile-dysfunction/sildenafil-50mg", "/erectile-dysfunction/tadalafil-20mg", "/erectile-dysfunction/sildenafil-tablets", "/erectile-dysfunction/sildenafil-generic-viagra", "/product/23685522/tadalafil-tablets-for-erectile-dysfunction"]) {
+    assert.equal(matchEdProductPath(path)?.confidence, "HIGH", path);
+  }
+});
+
 test("flat pages exclude information pages, other countries and unrelated products", () => {
   for (const path of ["/uk/viagra-side-effects.html", "/uk/viagra-dosage.html", "/uk/viagra-alternatives.html", "/uk/viagra-doesnt-work.html", "/fr/viagra.html", "/de/sildenafil.html", "/uk/erectile-dysfunction-treatment.html", "/uk/paracetamol.html", "/uk/viagra-vs-cialis.html"]) {
     assert.equal(matchEdProductPath(path), undefined, path);

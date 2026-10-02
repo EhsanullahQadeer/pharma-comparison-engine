@@ -18,7 +18,7 @@ export default async function AdminPharmaciesPage(props: PageProps<"/admin/pharm
   const [providers, staffUser] = await Promise.all([getProviders(query), getStaffUser()]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">Pharmacies</h1>
@@ -27,7 +27,7 @@ export default async function AdminPharmaciesPage(props: PageProps<"/admin/pharm
         <AddPharmacyModal />
       </div>
       <Card>
-        <CardHeader className="flex-row items-center justify-between gap-4 space-y-0">
+        <CardHeader className="flex flex-wrap items-center justify-between gap-4">
           <CardTitle className="text-sm text-muted-foreground">Provider catalogue</CardTitle>
           <form action="/admin/pharmacies" className="relative w-full max-w-xs">
             <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />

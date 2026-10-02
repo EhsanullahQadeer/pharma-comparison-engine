@@ -1,5 +1,52 @@
 # Product updates
 
+## 2026-10-02
+
+- "Detect products" no longer mistakes advice articles or patient-leaflet PDFs for product pages when they sit in a pharmacy’s erectile dysfunction section, for example "How sildenafil works" or "Sildenafil vs Viagra" on Medicina Pharmacy.
+- Cleaned up 42 old product matches across 10 pharmacies that had been confirmed against a product the page doesn’t sell: articles, leaflets, or Viagra Connect and Cialis Together pages matched to a prescription product. They had never produced a price and kept showing as failed.
+- In the admin panel's narrow icon bar, every icon now opens the same small menu on hover when the side menu is closed, showing the section name and its pages. Icons for sections with one page still go straight to that page when clicked.
+
+- In the admin panel's narrow icon bar, sections with several pages (Reviews and Reports) are now a single icon each. With the side menu closed, hovering over that icon opens a small menu to its right listing the section's pages; clicking the icon opens it too. Sections with one page are still a single click.
+
+- Fixed the small hover labels on icon buttons being hidden behind a table's heading row. On the first rows of a list, the label for a button (for example "Human-assisted") was cut off by the "Actions" heading; it now always shows on top.
+
+- New "Clicks to pharmacies" report in the admin panel, under Reports in the side menu (also linked from the Analytics page). It shows how many visitors we sent to pharmacy websites over a period you choose: the last 7, 30 or 90 days, all time, or any two dates.
+- The report has three lists: clicks for every pharmacy, clicks for every product (with strength and pack size), and which product was clicked at each pharmacy. Each line shows the number of clicks, its share of all clicks and when the last click happened, and every list can be sorted.
+- Four totals sit above the lists: clicks to pharmacies, pharmacies clicked, products clicked, and clicks filtered out as likely bots (these are never counted in the figures).
+
+- Fixed table columns overlapping each other across the whole admin panel and public site (for example, long email addresses running into the Role column on the Staff page). Every column is now at least as wide as its content, and a table that no longer fits the screen scrolls sideways. Columns can still be dragged wider.
+
+- On a pharmacy's admin page, the "Detect products" button moved into the title bar of the "Prices" list, next to "Publish all" and "Add offer", and the three buttons are now the same height.
+
+- On a pharmacy's admin page, the "Offers" and "Price collection" lists are now one list called "Prices". Each price appears once, with its product, price and delivered total, availability, whether it is on the public site, the latest price check, its schedule and all its buttons on one row. Before, every collected price appeared twice, once in each list.
+- In the "Prices" list, a price typed in by hand shows "Entered by hand" and "Not tracked"; a product page that has not been read yet shows "Awaiting price".
+- One toolbar above the "Prices" list covers everything for the ticked rows: Publish, Unpublish, Schedule, Scrape now, Human-assisted scrape, Reject and Remove.
+- A price collected from a product page can now only be taken away with "Reject", which also stops the page being checked. "Remove" is kept for prices typed in by hand. Before, removing a collected price left its page being checked, so the price came back on the next check.
+
+- The "Suggested product matches" list is more compact. The four buttons on each row are now small icon buttons side by side (confirm and scrape, confirm only, human-assisted scrape, reject), each with a label when you hover over it, and the variant picker is smaller. On a narrow screen the list scrolls sideways instead of squeezing its columns.
+- The "Suggested product matches" list (on a pharmacy's admin page and on the Reviews page) now has tick boxes and a toolbar for working on several suggested pages at once: "Confirm & scrape", "Confirm", "Human scrape" and "Reject". Confirming uses the exact variant chosen in each row; ticked rows with no variant chosen are skipped and counted in the result. Scraping goes through the pages one at a time and can be stopped in between. "Reject" asks for confirmation first.
+- Removed the "Back to pharmacies" link from the top of a pharmacy's admin page. The "Pharmacies" item in the side menu goes to the same place.
+- On a pharmacy's admin page, the affiliate programme box and the "Delivery charge and discounts from the website" box now sit side by side on a large screen, instead of one above the Offers list and one below it. On smaller screens they stack.
+- In the admin panel, the button or search box in a list's title bar now sits in the top-right corner, level with the title, instead of dropping onto its own line underneath. This fixes "Add offer" on a pharmacy's Offers list and the same layout on the pharmacies, product variants, product prices, inbox, audit log and discovery candidates lists.
+- Every list in the admin panel can now be sorted: click a column heading to sort by it, click again to reverse the order, and a third time to go back to the normal order. An arrow on the heading shows which column is in use. Columns that only hold buttons or free text are not sortable.
+- Every list in the admin panel now has page controls underneath: "Page 1 of 3 (61 total)", previous and next buttons, and a "Rows per page" choice of 25, 50, 100 or 200. This covers the pharmacies list, each pharmacy's Offers, Price collection and Suggested product matches, the prices for a product and their history, discovery sources, everything on the Reviews page, staff, articles, the inbox, the audit log and product variants.
+- In lists with tick boxes, "select all" now ticks only the rows on the page you are looking at, so a bulk action never touches rows you can't see.
+
+- When a table is wide enough to scroll sideways, its scroll bar is now a slim bar on its own, without the white strip and arrow buttons behind it.
+- Fixed the "Price collection" list on a pharmacy's admin page overlapping its own text on smaller screens. Each column is now as wide as its content, and on a narrow screen the list scrolls sideways instead.
+- Every table now has a square-cornered heading row, with only the bottom corners of the table rounded. Before, the heading row's top corners were rounded too, which looked out of place under a toolbar.
+- On a pharmacy's admin page, the "Price collection" list is more compact, so each product page takes about half the height. The three stacked buttons on each row ("Refresh price", "Human-assisted", "Reject") are now small icon buttons side by side, each with a label when you hover over it. The last and next check times share one line, the price shows "Published" or "Draft" beside it, and the schedule tick box, frequency and save button sit on one line.
+- On a pharmacy's admin page, the "Price collection" list now always shows its toolbar for working on several product pages at once: tick the pages, then choose "Schedule", "Scrape now", "Human-assisted scrape" or "Reject". Before, the toolbar only appeared after a page was ticked, so it was easy to miss.
+- "Human-assisted scrape" is new in that toolbar. It works through the ticked pages one at a time in the visible Chrome window, so a person can complete any security check, and it can be stopped between pages.
+- Price collection and "Detect products" can now read The Independent Pharmacy's product pages, where each strength is sold as one, two or three packs. For example, Cialis Once Daily 5mg is £87.99 for 28 tablets and £155.98 for 56. This also brings in all the strength and pack options on its Viagra, sildenafil, Cialis and Viagra Connect pages.
+- On a pharmacy's admin page, the "Delivery charge and discounts from the website" box takes up less room: the "Check website now" button now sits in the top-right corner instead of stretching across its own row, and each finding shows its website wording, source link and "last seen" date on one line.
+- On a pharmacy's admin page, a long error message in the "Price collection" list now wraps onto several lines inside its row. Before, it ran on one line and pushed the list wider than its box, so the right-hand buttons were cut off.
+- On a pharmacy's admin page, the "Offers" list has a new "Product" column showing the product's name (for example "Viagra", "Cialis Together" or "Generic sildenafil") next to the medicine, strength and pack size. Before, a Viagra price and a generic sildenafil price both read just "Sildenafil 50mg × 4".
+- Price collection and "Detect products" can now read product pages that put strength, pack size and price together in a single dropdown, such as Cloud Pharmacy's: for example "10mg x 4 — £18.99" on its Cialis Together page. It also records whether each option is in stock.
+- "Detect products" now suggests each strength and pack size only once per pharmacy, on that product's own page. Before, the same option could be suggested several times when a pharmacy also listed it in a comparison table on other product pages.
+- Fixed comparison tables that include a medicine we don't cover (for example Vardenafil) having that row's price read as tadalafil or sildenafil.
+- The admin panel is more compact, so more fits on screen with less scrolling. Table rows are noticeably shorter, boxes have less padding, and the gaps between sections and around the page are smaller. The sidebar, the top bar and the public site are unchanged.
+
 ## 2026-10-01
 
 - On the admin Reviews page, the Promoted and Linked lists under "Discovery candidates" now have tick boxes and a "Detect products" button above the list. Tick several pharmacies (or all of them) and one click checks each pharmacy's website for products, one pharmacy at a time. A progress line shows which pharmacy is being checked, a "Stop" button ends the run after the current pharmacy, and the result says how many pharmacies were checked and how many new products were found. The "Products found" column updates when the run ends.

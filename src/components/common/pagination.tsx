@@ -30,8 +30,8 @@ const Pagination = ({
   onPageSizeChange?: (pageSize: number) => void;
 }) => {
   return (
-    <div className="flex items-center justify-between w-full">
-      <div className="flex items-center gap-4">
+    <div className="flex w-full flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
         <div className="text-sm text-muted-foreground">
           Page {page} of {pages || 1} ({total} total)
         </div>

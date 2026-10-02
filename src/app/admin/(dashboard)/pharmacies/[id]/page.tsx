@@ -1,4 +1,4 @@
-import { ArrowLeft, Globe, MapPin, ShieldCheck } from "lucide-react";
+import { Globe, MapPin, ShieldCheck } from "lucide-react";
 
 import { getPendingPriceCollectionForProvider } from "@/actions/price-collection/price-collection";
 import { getProviderSiteOffers } from "@/actions/price-collection/site-offers";
@@ -7,12 +7,10 @@ import { getAllProductVariants } from "@/actions/product-variants/product-varian
 import { getProvider } from "@/actions/providers/providers";
 import { getAffiliateProgramme } from "@/actions/referrals/programmes";
 import { AffiliateProgrammeCard } from "@/components/admin/affiliate-programme-card";
-import { DetectProductsButton } from "@/components/admin/detect-products-button";
 import { EditPharmacyModal } from "@/components/admin/edit-pharmacy-modal";
-import { ProductMatchPricingSection } from "@/components/admin/product-match-pricing-section";
 import { ProductMatchReviewTable } from "@/components/admin/product-match-review-table";
 import { ProviderLinkToggle } from "@/components/admin/provider-link-toggle";
-import { ProviderOffersSection } from "@/components/admin/provider-offers-section";
+import { ProviderPricesSection } from "@/components/admin/provider-prices-section";
 import { ProviderSiteOffersSection } from "@/components/admin/provider-site-offers-section";
 import { ProviderStatusControl } from "@/components/admin/provider-status-control";
 import { Badge } from "@/components/common/badge";
@@ -46,12 +44,7 @@ export default async function ProviderDetailPage(props: PageProps<"/admin/pharma
   const suggestedMatches = canReviewMatches ? await getProductMatchesForReview(id) : [];
 
   return (
-    <div className="space-y-6">
-      <Link href="/admin/pharmacies" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft aria-hidden="true" className="size-3.5" />
-        Back to pharmacies
-      </Link>
-
+    <div className="space-y-4">
       <Card>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-start justify-between gap-4">
@@ -82,27 +75,22 @@ export default async function ProviderDetailPage(props: PageProps<"/admin/pharma
         </CardContent>
       </Card>
 
-      <AffiliateProgrammeCard
-        providerId={provider.id}
-        providerName={provider.tradingName}
-        programme={programme}
-        sampleUrl={provider.offers[0]?.sourceUrl ?? null}
-        canEdit={canEditCommercial}
-      />
-
-      <div className="flex items-center justify-end">
-        <DetectProductsButton providerId={provider.id} />
+      <div className="grid gap-4 xl:grid-cols-2">
+        <AffiliateProgrammeCard
+          providerId={provider.id}
+          providerName={provider.tradingName}
+          programme={programme}
+          sampleUrl={provider.offers[0]?.sourceUrl ?? null}
+          canEdit={canEditCommercial}
+        />
+        <ProviderSiteOffersSection providerId={provider.id} siteOffers={siteOffers} canReview={canReviewMatches} />
       </div>
 
-      <ProviderOffersSection providerId={provider.id} providerPublished={provider.status === "PUBLISHED"} offers={provider.offers} variants={variants} />
-
-      <ProviderSiteOffersSection providerId={provider.id} siteOffers={siteOffers} canReview={canReviewMatches} />
+      <ProviderPricesSection providerId={provider.id} providerPublished={provider.status === "PUBLISHED"} offers={provider.offers} matches={pendingMatches} variants={variants} />
 
       {suggestedMatches.length > 0 && (
         <ProductMatchReviewTable items={suggestedMatches} variants={variants} title="Suggested product matches" showProvider={false} />
       )}
-
-      <ProductMatchPricingSection items={pendingMatches} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>

@@ -5,6 +5,9 @@ import { History } from "lucide-react";
 import { Button } from "@/components/common/button";
 import Modal from "@/components/common/modal";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/common/table";
+import { TableViewPagination } from "@/components/common/table-view-pagination";
+import { useTableView } from "@/hooks/useTableView";
+import type { TableSorters } from "@/types/table";
 
 type PriceHistoryItem = {
   id: string;
@@ -19,6 +22,14 @@ type PriceHistoryItem = {
   activeDiscountSnapshot: unknown;
 };
 
+const sorters = {
+  date: (item) => item.recordedAt,
+  item: (item) => item.itemPricePence,
+  delivery: (item) => item.deliveryFeePence,
+  total: (item) => item.deliveredTotalPence,
+  availability: (item) => item.availability,
+} satisfies TableSorters<PriceHistoryItem>;
+
 function formatPence(pence: number): string {
   return `£${(pence / 100).toFixed(2)}`;
 }
@@ -28,6 +39,7 @@ function formatDate(value: Date): string {
 }
 
 export function ProductVariantPriceHistoryModal({ pharmacyName, history }: { pharmacyName: string; history: PriceHistoryItem[] }) {
+  const view = useTableView(history, sorters);
   return (
     <Modal
       title={`${pharmacyName} price history`}
@@ -43,19 +55,20 @@ export function ProductVariantPriceHistoryModal({ pharmacyName, history }: { pha
       {history.length === 0 ? (
         <p className="text-sm text-muted-foreground">No price history has been saved yet.</p>
       ) : (
+        <>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Item</TableHead>
-              <TableHead>Delivery</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>Availability</TableHead>
+              <TableHead {...view.sortProps("date")}>Date</TableHead>
+              <TableHead {...view.sortProps("item")}>Item</TableHead>
+              <TableHead {...view.sortProps("delivery")}>Delivery</TableHead>
+              <TableHead {...view.sortProps("total")}>Total</TableHead>
+              <TableHead {...view.sortProps("availability")}>Availability</TableHead>
               <TableHead>Discount</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {history.map((item) => (
+            {view.rows.map((item) => (
               <TableRow key={item.id}>
                 <TableCell className="text-xs text-muted-foreground">{formatDate(item.recordedAt)}</TableCell>
                 <TableCell>{formatPence(item.itemPricePence)}</TableCell>
@@ -69,6 +82,8 @@ export function ProductVariantPriceHistoryModal({ pharmacyName, history }: { pha
             ))}
           </TableBody>
         </Table>
+        <TableViewPagination pagination={view.pagination} />
+        </>
       )}
     </Modal>
   );

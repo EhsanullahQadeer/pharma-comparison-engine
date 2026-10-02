@@ -55,7 +55,7 @@ export function PublishAllOffersButton({ providerId, draftCount, providerPublish
   return (
     <div className="flex flex-col items-end gap-1">
       <TooltipWrapper label={hint}>
-        <Button type="button" variant="outline" size="sm" disabled={isPending || !providerPublished} onClick={() => run(() => publishProviderOffers(providerId))}>
+        <Button type="button" variant="outline" disabled={isPending || !providerPublished} onClick={() => run(() => publishProviderOffers(providerId))}>
           <Globe aria-hidden="true" className="size-4" />
           Publish all ({draftCount})
         </Button>

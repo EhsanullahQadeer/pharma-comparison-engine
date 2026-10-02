@@ -47,7 +47,7 @@ export default async function AdminDashboardPage() {
   const firstName = staffUser?.name.split(" ")[0] ?? "there";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Card className="bg-primary/10">
         <CardContent className="flex flex-wrap items-center justify-between gap-4">
           <div>

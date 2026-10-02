@@ -4,9 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/ca
 import { EmptyState } from "@/components/common/empty-state";
 import PaginationServer from "@/components/common/PaginationServer";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/common/table";
+import { UrlSortTableHead } from "@/components/common/url-sort-table-head";
 import Link from "@/components/Link";
 import type { AuditAction } from "@/generated/prisma/client";
 import { parsePageSize } from "@/lib/pagination";
+import { parseSort } from "@/lib/table-sort";
 
 import type { Metadata } from "next";
 
@@ -21,26 +23,26 @@ const auditActionBadgeVariant: Record<AuditAction, "default" | "outline" | "dest
 };
 
 export default async function AuditLogPage(props: PageProps<"/admin/audit-log">) {
-  const { entityType, action, page: pageParam, pageSize: pageSizeParam } = await props.searchParams;
+  const { entityType, action, page: pageParam, pageSize: pageSizeParam, sort, order } = await props.searchParams;
   const entityTypeFilter = typeof entityType === "string" && entityType ? entityType : undefined;
   const actionFilter = typeof action === "string" && auditActionValues.includes(action as AuditAction) ? (action as AuditAction) : undefined;
   const page = Number(pageParam) > 0 ? Number(pageParam) : 1;
   const pageSize = parsePageSize(typeof pageSizeParam === "string" ? pageSizeParam : undefined);
 
   const [{ entries, total, pages }, entityTypes] = await Promise.all([
-    getAuditLog({ entityType: entityTypeFilter, action: actionFilter }, page, pageSize),
+    getAuditLog({ entityType: entityTypeFilter, action: actionFilter }, page, pageSize, parseSort(sort, order)),
     getAuditLogEntityTypes(),
   ]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-semibold">Audit log</h1>
         <p className="mt-1 text-sm text-muted-foreground">Every create/update/delete recorded across the catalogue.</p>
       </div>
 
       <Card>
-        <CardHeader className="flex-row flex-wrap items-center justify-between gap-3 space-y-0">
+        <CardHeader className="flex flex-wrap items-center justify-between gap-3">
           <CardTitle className="text-sm text-muted-foreground">{total} entr{total === 1 ? "y" : "ies"}</CardTitle>
           <form action="/admin/audit-log" className="flex flex-wrap items-center gap-2">
             <select
@@ -73,10 +75,10 @@ export default async function AuditLogPage(props: PageProps<"/admin/audit-log">)
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>When</TableHead>
-                  <TableHead>Actor</TableHead>
-                  <TableHead>Action</TableHead>
-                  <TableHead>Entity</TableHead>
+                  <UrlSortTableHead sortKey="when">When</UrlSortTableHead>
+                  <UrlSortTableHead sortKey="actor">Actor</UrlSortTableHead>
+                  <UrlSortTableHead sortKey="action">Action</UrlSortTableHead>
+                  <UrlSortTableHead sortKey="entity">Entity</UrlSortTableHead>
                   <TableHead>Changes</TableHead>
                 </TableRow>
               </TableHeader>

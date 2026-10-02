@@ -31,7 +31,7 @@ export default async function ProductVariantPricesPage(props: VariantPricesPageP
   const title = `${variant.brandName ?? ingredientLabels[variant.ingredient]} ${variant.strengthMg}mg × ${variant.packQuantity}`;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Link href="/admin/catalogue/product-variants" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft aria-hidden="true" className="size-3.5" />
         Back to product variants
@@ -45,7 +45,7 @@ export default async function ProductVariantPricesPage(props: VariantPricesPageP
       </div>
 
       <Card>
-        <CardHeader className="flex-row flex-wrap items-center justify-between gap-4 space-y-0">
+        <CardHeader className="flex flex-wrap items-center justify-between gap-4">
           <CardTitle>Pharmacy prices ({variant.offers.length})</CardTitle>
           <AddOfferModal providers={providerOptions} variants={formVariants} />
         </CardHeader>

@@ -62,16 +62,16 @@ function FindingRow({ action, finding, checkedAt, canReview, onResult }: { actio
   // Found on an earlier check but not on the latest one — the pharmacy may have withdrawn it.
   const missing = !!checkedAt && !!finding.lastSeenAt && new Date(finding.lastSeenAt) < new Date(checkedAt);
   return (
-    <li className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-border px-3 py-2 text-sm">
-      <div className="min-w-0 flex-1 space-y-1">
+    <li className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border px-3 py-1.5 text-sm">
+      <div className="min-w-0 flex-1 space-y-0.5">
         <div className="flex flex-wrap items-center gap-2">
           <p className="font-medium">{finding.title}</p>
           <Badge variant={scrapeReviewStatusBadgeVariant[finding.status]}>{scrapeReviewStatusLabels[finding.status]}</Badge>
           {missing ? <Badge variant="destructive">Not found on the last check</Badge> : null}
         </div>
-        {finding.detail ? <p className="text-muted-foreground">{finding.detail}</p> : null}
-        {finding.evidenceText ? <p className="text-xs text-muted-foreground">Website wording: “{finding.evidenceText}”</p> : null}
+        {finding.detail ? <p className="text-xs text-muted-foreground">{finding.detail}</p> : null}
         <p className="flex flex-wrap items-center gap-x-3 text-xs text-muted-foreground">
+          {finding.evidenceText ? <span>Website wording: “{finding.evidenceText}”</span> : null}
           {finding.sourceUrl ? (
             <a href={finding.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
               <ExternalLink aria-hidden="true" className="size-3" />
@@ -88,9 +88,9 @@ function FindingRow({ action, finding, checkedAt, canReview, onResult }: { actio
 
 function FindingList({ heading, empty, children }: { heading: string; empty: string; children: ReactNode[] }) {
   return (
-    <div className="space-y-2">
-      <h3 className="text-sm font-medium">{heading}</h3>
-      {children.length > 0 ? <ul className="space-y-2">{children}</ul> : <p className="text-sm text-muted-foreground">{empty}</p>}
+    <div className="space-y-1">
+      <h3 className="text-xs font-medium text-muted-foreground">{heading}</h3>
+      {children.length > 0 ? <ul className="space-y-1">{children}</ul> : <p className="text-xs text-muted-foreground">{empty}</p>}
     </div>
   );
 }
@@ -124,22 +124,22 @@ export function ProviderSiteOffersSection({ providerId, siteOffers, canReview }:
 
   return (
     <Card>
-      <CardHeader className="flex-row flex-wrap items-start justify-between gap-4 space-y-0">
-        <div className="space-y-1">
+      <CardHeader className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div className="min-w-0 flex-1 basis-64">
           <CardTitle>Delivery charge and discounts from the website</CardTitle>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Read from the pharmacy&apos;s own website. Nothing here is used or shown publicly until it is approved.{" "}
             {siteOffers.checkedAt ? `Last checked ${formatDate(siteOffers.checkedAt)}.` : "Not checked yet."}
           </p>
         </div>
         {canReview ? (
-          <Button type="button" size="sm" variant="outline" disabled={check.isPending} onClick={() => check.mutate(providerId)}>
+          <Button type="button" size="sm" variant="outline" className="shrink-0" disabled={check.isPending} onClick={() => check.mutate(providerId)}>
             <RefreshCw aria-hidden="true" className={check.isPending ? "size-3.5 animate-spin" : "size-3.5"} />
             {check.isPending ? "Checking…" : "Check website now"}
           </Button>
         ) : null}
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-2">
         {check.data?.error ? <p className="text-sm text-destructive">{check.data.error}</p> : null}
         {reviewError ? <p className="text-sm text-destructive">{reviewError}</p> : null}
         {result ? (
