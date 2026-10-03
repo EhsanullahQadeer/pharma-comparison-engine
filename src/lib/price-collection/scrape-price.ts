@@ -3,8 +3,10 @@ import { chromium, type Page } from "patchright";
 import { collectPublicWebsite, ROBOTS_BEHIND_CHALLENGE } from "@/lib/discovery/public-web";
 import { pickBigCommercePrice } from "@/lib/price-collection/bigcommerce-price";
 import { openHumanBrowser, waitForHumanVerification } from "@/lib/price-collection/human-browser";
+import { pickLabelledOptionRowPrice } from "@/lib/price-collection/labelled-option-rows";
 import { pickNextDataVariantPrice } from "@/lib/price-collection/next-data-variant-price";
 import { pickNuxtPayloadPrice } from "@/lib/price-collection/nuxt-payload-price";
+import { pickPackBlockPrice } from "@/lib/price-collection/pack-block-prices";
 import { pickPerTabletPriceTable } from "@/lib/price-collection/per-tablet-price-table";
 import { pickPharmacyPluginPrice } from "@/lib/price-collection/pharmacy-plugin-price";
 import { readPriceCheckerDropdown } from "@/lib/price-collection/price-checker-dropdown";
@@ -159,9 +161,48 @@ function pickStructuredVariantPrice(html: string, matchedTokens: string[], varia
     }
   }
   const preferred = preferPrescriptionLabels(matches, (match) => match.evidence);
+  if (preferred.length === 0) return pickSingleProductHeadingPrice(html, matchedTokens, variant, sourceUrl);
   if (new Set(preferred.map((match) => match.itemPricePence)).size !== 1) return undefined;
   return {
     ...preferred[0],
+    deliveryFeePence: 0,
+    deliveryAssumption: "As shown on the provider's product page at collection time",
+    sourceUrl,
+    source: "json-ld-product-offer",
+  };
+}
+
+function pathOf(url: string, base: string) {
+  try {
+    return new URL(url, base).pathname.replace(/\/+$/, "");
+  } catch {
+    return undefined;
+  }
+}
+
+// A page for one exact pack whose JSON-LD names the product with an SEO title instead of the pack
+// (Live Well Nationwide: "Buy Viagra Connect Online | Live Well Nationwide", £10.85) while the
+// page's own <h1> names it exactly ("Viagra Connect (50mg) Tablets 2 Pack (Branded Sildenafil)").
+// Only when the page describes a single product with a single GBP offer for this same address —
+// never a price range or a product with variants — is the heading taken as that offer's name.
+function pickSingleProductHeadingPrice(html: string, matchedTokens: string[], variant: VariantSpec, sourceUrl: string): ScrapedPrice | undefined {
+  const products = extractJsonLdBlocks(html).filter((node) => hasType(node, "Product"));
+  if (products.length !== 1 || asRecords(products[0].hasVariant).length > 0) return undefined;
+  const [product] = products;
+  const offers = asRecords(product.offers);
+  if (offers.length !== 1 || hasType(offers[0], "AggregateOffer") || offers[0].priceCurrency !== "GBP") return undefined;
+  const [offer] = offers;
+  const offerUrl = textField(offer, "url") || textField(product, "url");
+  if (offerUrl && pathOf(offerUrl, sourceUrl) !== pathOf(sourceUrl, sourceUrl)) return undefined;
+
+  const heading = (html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? "").replace(/<[^>]+>/g, " ").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
+  if (!heading || !brandSideMatches(heading, "", matchedTokens[0], variant.generic) || !labelMatchesVariant(heading, matchedTokens, variant)) return undefined;
+  const itemPricePence = toPence(offer.price);
+  if (itemPricePence === undefined) return undefined;
+  return {
+    itemPricePence,
+    availability: typeof offer.availability === "string" ? (availabilityMap[offer.availability] ?? "UNKNOWN") : "UNKNOWN",
+    evidence: heading,
     deliveryFeePence: 0,
     deliveryAssumption: "As shown on the provider's product page at collection time",
     sourceUrl,
@@ -180,6 +221,8 @@ function pickEmbeddedVariantPrice(html: string, matchedTokens: string[], variant
     ?? pickShopifyMetaPrice(html, matchedTokens, variant, sourceUrl)
     ?? pickPriceGridTable(html, matchedTokens, variant, sourceUrl)
     ?? pickPriceTableColumns(html, matchedTokens, variant, sourceUrl)
+    ?? pickPackBlockPrice(html, matchedTokens, variant, sourceUrl)
+    ?? pickLabelledOptionRowPrice(html, matchedTokens, variant, sourceUrl)
     ?? pickSelectOptionPrice(html, matchedTokens, variant, sourceUrl);
 }
 

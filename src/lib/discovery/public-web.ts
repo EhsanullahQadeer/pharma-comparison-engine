@@ -17,7 +17,9 @@ async function resolveHostname(hostname: string) {
   }
 }
 
-async function readPage(url: URL, signal: AbortSignal) {
+// skipErrorBody: a page that didn't answer 200 is judged on its status alone, so its body isn't
+// downloaded — a shop's styled 404 page can run to 250 KB, and a feed sweep meets a dozen of them.
+async function readPage(url: URL, signal: AbortSignal, skipErrorBody = false) {
   signal.throwIfAborted();
   const addresses = await resolveHostname(url.hostname);
   if (!addresses.length || addresses.some(address => !isPublicIpv4(address))) throw new Error("Website resolves to a restricted network address.");
@@ -29,6 +31,11 @@ async function readPage(url: URL, signal: AbortSignal) {
       lookup: (_hostname, _options, callback) => callback(null, addresses[0], 4),
       headers: { "User-Agent": "PharmaCompareDiscovery/1.0", Accept: "text/html,text/plain", "Accept-Encoding": "identity" },
     }, response => {
+      if (skipErrorBody && response.statusCode !== 200) {
+        resolve({ status: response.statusCode ?? 0, location: response.headers.location, type: response.headers["content-type"] ?? "", text: "", challenge: false });
+        response.destroy();
+        return;
+      }
       const chunks: Buffer[] = [];
       response.on("data", (chunk: Buffer) => {
         chunks.push(chunk);
@@ -41,6 +48,24 @@ async function readPage(url: URL, signal: AbortSignal) {
     req.on("error", reject);
     req.end();
   });
+}
+
+// One robots.txt read per origin, shared by every request to it for a minute. A product check asks
+// one site for ~18 pages; re-reading robots.txt (and the bare-domain redirect in front of it) for
+// each tripled the connections opened, enough for a small shop's rate limiter to reset every
+// connection from this address — the Chrome window's included (goodcure.co.uk).
+const ROBOTS_TTL_MS = 60_000;
+const robotsByOrigin = new Map<string, { expires: number; read: ReturnType<typeof readPage> }>();
+
+function readRobots(origin: string) {
+  const now = Date.now();
+  for (const [key, entry] of robotsByOrigin) if (entry.expires <= now) robotsByOrigin.delete(key);
+  const cached = robotsByOrigin.get(origin);
+  if (cached) return cached.read;
+  const read = readPage(new URL("/robots.txt", origin), AbortSignal.timeout(12_000));
+  robotsByOrigin.set(origin, { expires: now + ROBOTS_TTL_MS, read });
+  read.catch(() => robotsByOrigin.delete(origin));
+  return read;
 }
 
 // A robots.txt answered by a human-verification page (Cloudflare "Just a moment…", or an AWS WAF
@@ -58,7 +83,7 @@ async function collectPublicResource(input: string, accept: RegExp, { detectChal
   const signal = AbortSignal.timeout(12_000);
   let url = normalizePublicUrl(input);
   for (let redirects = 0; redirects <= 3; redirects++) {
-    const robots = await readPage(new URL("/robots.txt", url), signal);
+    const robots = await readRobots(url.origin);
     if ([301, 302, 303, 307, 308].includes(robots.status) && robots.location) {
       // robots.txt itself redirecting (e.g. the bare domain -> "www.") means the whole origin
       // does — resolve to that origin before judging robots rules or fetching the page, rather
@@ -76,7 +101,7 @@ async function collectPublicResource(input: string, accept: RegExp, { detectChal
     if (robots.status !== 404 && !robotsAllows(robots.text, url.pathname + url.search)) {
       throw new Error("Collection stopped: robots rules do not permit this page. Review it manually.");
     }
-    const page = await readPage(url, signal);
+    const page = await readPage(url, signal, true);
     if ([301, 302, 303, 307, 308].includes(page.status) && page.location) {
       url = normalizePublicUrl(new URL(page.location, url).href);
       continue;

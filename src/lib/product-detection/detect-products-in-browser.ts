@@ -1,11 +1,12 @@
 import type { Ingredient } from "@/generated/prisma/client";
+import { collectPublicWebsite } from "@/lib/discovery/public-web";
 import { FINAL_REFUSAL, normalizePublicUrl, robotsAllows } from "@/lib/discovery/public-web-policy";
 import { openHumanBrowser, waitForHumanVerification } from "@/lib/price-collection/human-browser";
 import { readRobotsInBrowser } from "@/lib/price-collection/robots-in-browser";
 import { clickThroughEdProductCards, isEdCategoryLink, isShopLink, openEdCategoryByClick, passPostcodePrompt, readRenderedLinks } from "@/lib/product-detection/browser-shop-pages";
-import { detectEdProductMatches, matchEdProductLinks, type DetectedProductMatch } from "@/lib/product-detection/detect-products";
+import { detectEdProductMatches, findEdCategoryUrls, matchEdProductLinks, type DetectedProductMatch } from "@/lib/product-detection/detect-products";
 import { offeredOptionsInHtml } from "@/lib/product-detection/page-variants";
-import { collectFeedCandidates } from "@/lib/product-detection/site-feeds";
+import { collectFeedCandidates, type FeedCandidate } from "@/lib/product-detection/site-feeds";
 import type { OfferedOption, PageLink, ProductDetectionMethod } from "@/types/product-detection";
 
 import type { Page } from "patchright";
@@ -49,9 +50,8 @@ function uniqueUrls(links: PageLink[], keep: (link: PageLink) => boolean, limit:
   return [...new Set(links.filter(keep).map((link) => link.url))].slice(0, limit);
 }
 
-async function detectEdProductMatchesInBrowser(websiteDomain: string, { postcode }: DetectionOptions): Promise<DetectedProductMatch[]> {
+async function detectEdProductMatchesInBrowser(websiteDomain: string, feedCandidates: FeedCandidate[], { postcode }: DetectionOptions): Promise<DetectedProductMatch[]> {
   const homepage = normalizePublicUrl(`https://${websiteDomain}`);
-  const feedCandidates = await collectFeedCandidates(websiteDomain);
   const browser = await openHumanBrowser();
   try {
     const reader = siteReader(browser.page, homepage.hostname, postcode);
@@ -107,20 +107,46 @@ export async function readOfferedOptionsInBrowser(pages: { url: string; ingredie
   return options;
 }
 
+const ingredientTokens: Record<Ingredient, string> = { SILDENAFIL: "sildenafil", TADALAFIL: "tadalafil" };
+
+// A pharmacy with no product pages of its own may sell everything from its one ED page (Phlo
+// Clinic's /male-health/erectile-dysfunction lists each treatment's strengths, packs and prices).
+// Such a page counts as a product page for an ingredient only when it really shows priced options
+// for it — an ordinary category page that just links onwards never does.
+async function detectCombinedEdPages(websiteDomain: string, feedCandidates: FeedCandidate[]): Promise<DetectedProductMatch[]> {
+  const matches: DetectedProductMatch[] = [];
+  for (const url of await findEdCategoryUrls(websiteDomain, feedCandidates)) {
+    try {
+      const page = await collectPublicWebsite(url);
+      for (const ingredient of Object.keys(ingredientTokens) as Ingredient[]) {
+        if (offeredOptionsInHtml(page.html, page.finalUrl, ingredient).length === 0) continue;
+        matches.push({ candidateUrl: page.finalUrl, ingredient, matchedTokens: [ingredientTokens[ingredient]], confidence: "MEDIUM" });
+      }
+    } catch {
+      // An unreadable page isn't evidence either way; the browser pass may still find products.
+    }
+  }
+  return matches;
+}
+
 // Plain request first; the Chrome window only when that was blocked or found no product pages
 // (links built by JavaScript, a shop behind a postcode prompt, or a site that turns away visitors
-// from outside the UK).
+// from outside the UK). The site's feeds are read once and shared by both passes — a second sweep
+// right before the Chrome window opens is what got that window's own connection reset.
 export async function detectEdProductMatchesWithBrowserFallback(websiteDomain: string, options: DetectionOptions = {}): Promise<{ matches: DetectedProductMatch[]; method: ProductDetectionMethod }> {
+  const feedCandidates = await collectFeedCandidates(websiteDomain);
   let plainError: unknown;
   try {
-    const matches = await detectEdProductMatches(websiteDomain);
+    const matches = await detectEdProductMatches(websiteDomain, feedCandidates);
     if (matches.length > 0) return { matches, method: "http" };
+    const combined = await detectCombinedEdPages(websiteDomain, feedCandidates);
+    if (combined.length > 0) return { matches: combined, method: "http" };
   } catch (error) {
     if (error instanceof Error && FINAL_REFUSAL.test(error.message)) throw error;
     plainError = error;
   }
   try {
-    return { matches: await detectEdProductMatchesInBrowser(websiteDomain, options), method: "browser" };
+    return { matches: await detectEdProductMatchesInBrowser(websiteDomain, feedCandidates, options), method: "browser" };
   } catch (error) {
     const plain = plainError instanceof Error ? `The plain request failed (${plainError.message})` : "The plain request found no product pages";
     throw new Error(`${plain}, and the Chrome window check failed: ${error instanceof Error ? error.message : String(error)}`);

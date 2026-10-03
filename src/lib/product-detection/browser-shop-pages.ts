@@ -48,6 +48,7 @@ export async function readRenderedLinks(page: Page, siteHostname: string): Promi
       const url = new URL(link.url);
       if (!/^https?:$/.test(url.protocol) || !isSameSite(url.hostname, siteHostname)) return [];
       url.protocol = "https:";
+      url.hash = "";
       return [{ url: url.href, text: link.text }];
     } catch {
       return [];

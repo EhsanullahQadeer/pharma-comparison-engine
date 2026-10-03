@@ -24,6 +24,8 @@ export function extractSameOriginLinks(html: string, base: URL): PageLink[] {
   for (const [, href] of html.matchAll(/href\s*=\s*["']([^"']+)["']/gi)) {
     try {
       const url = new URL(href, base);
+      // An in-page anchor ("/viagra#section-5" on Treated) is the same page, not another one.
+      url.hash = "";
       if (isSameSite(url.hostname, base.hostname)) links.push({ url: url.href, text: texts.get(href) ?? "" });
     } catch {
       // Malformed/relative-scheme href (mailto:, tel:, javascript:) — not a page to consider.
@@ -84,18 +86,31 @@ const MAX_CATEGORY_PAGES = 3;
 // Links on the pharmacy's ED condition pages (found on its homepage or in its sitemap) — where
 // product pages missing from the sitemap are linked, e.g. Zava's /uk/erectile-dysfunction-treatment.html
 // → /uk/viagra.html behind a country-picker homepage. A page that can't be read is skipped.
+function edCategoryUrls(urls: string[]): string[] {
+  return [...new Set(urls)].filter((url) => isEdCategoryPagePath(new URL(url).pathname)).slice(0, MAX_CATEGORY_PAGES);
+}
+
+// The pharmacy's own ED condition pages, from its homepage links and sitemap — for a caller that
+// found no product pages and wants to check whether one of these sells everything itself.
+export async function findEdCategoryUrls(websiteDomain: string, knownFeedCandidates?: FeedCandidate[]): Promise<string[]> {
+  const [homepage, feedCandidates] = await Promise.all([collectPublicWebsite(`https://${websiteDomain}`), knownFeedCandidates ?? collectFeedCandidates(websiteDomain)]);
+  const homepageLinks = extractSameOriginLinks(homepage.html, new URL(homepage.finalUrl));
+  return edCategoryUrls([...homepageLinks.map((link) => link.url), ...feedCandidates.map((candidate) => candidate.url)]);
+}
+
 async function collectEdCategoryLinks(urls: string[]): Promise<PageLink[]> {
-  const categoryUrls = [...new Set(urls)].filter((url) => isEdCategoryPagePath(new URL(url).pathname)).slice(0, MAX_CATEGORY_PAGES);
+  const categoryUrls = edCategoryUrls(urls);
   const pages = await Promise.all(categoryUrls.map((url) => collectPublicWebsite(url).catch(() => undefined)));
   return pages.flatMap((page) => (page ? extractSameOriginLinks(page.html, new URL(page.finalUrl)) : []));
 }
 
 // Plain-request pass over the homepage, every recognized sitemap/product feed and the ED condition
 // pages those link to. Returns candidates for staff review; nothing here is written to the database.
-export async function detectEdProductMatches(websiteDomain: string): Promise<DetectedProductMatch[]> {
+// A caller already holding the site's feed candidates passes them in rather than have them re-read.
+export async function detectEdProductMatches(websiteDomain: string, knownFeedCandidates?: FeedCandidate[]): Promise<DetectedProductMatch[]> {
   const [homepage, feedCandidates] = await Promise.all([
     collectPublicWebsite(`https://${websiteDomain}`),
-    collectFeedCandidates(websiteDomain),
+    knownFeedCandidates ?? collectFeedCandidates(websiteDomain),
   ]);
   const homepageLinks = extractSameOriginLinks(homepage.html, new URL(homepage.finalUrl));
   const categoryLinks = await collectEdCategoryLinks([...homepageLinks.map((link) => link.url), ...feedCandidates.map((candidate) => candidate.url)]);

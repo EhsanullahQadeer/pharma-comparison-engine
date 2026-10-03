@@ -1,5 +1,5 @@
 import type { ScrapedPrice } from "@/lib/price-collection/scrape-price";
-import { brandSideMatches, labelMatchesVariant, type VariantSpec } from "@/lib/price-collection/variant-label";
+import { brandSideMatches, labelMatchesVariant, otcProductMismatch, type VariantSpec } from "@/lib/price-collection/variant-label";
 
 import type { Page } from "patchright";
 
@@ -13,25 +13,33 @@ import type { Page } from "patchright";
 const CHECKER = ".single-price-checker";
 const STRENGTHS = ".single-doses-list li";
 const QUANTITIES = ".single-doses-price-list li";
+const SINGLE_STRENGTH = 'input[name="strength"]';
 
 // Treated sells "Viagra" and "Sildenafil" as separate pages with separate prices, so the page name
 // decides the branded/generic side (brandSideMatches), then must carry an ingredient/brand token.
 function pageToken(name: string, matchedTokens: string[], variant: VariantSpec) {
+  // The row labels below carry only the matched token, so the page's full name is checked here:
+  // a "Viagra Connect" page is never prescription Viagra.
+  if (otcProductMismatch(name, matchedTokens)) return undefined;
   if (!brandSideMatches(name, "", matchedTokens[0], variant.generic)) return undefined;
   return matchedTokens.find((token) => name.toLowerCase().includes(token.toLowerCase()));
 }
 
 export async function readPriceCheckerDropdown(page: Page, matchedTokens: string[], variant: VariantSpec): Promise<Omit<ScrapedPrice, "sourceUrl" | "source"> | undefined> {
   const checker = page.locator(CHECKER).first();
-  if ((await checker.locator(STRENGTHS).count()) === 0) return undefined;
+  if ((await checker.locator(QUANTITIES).count()) === 0) return undefined;
   const name = (await page.locator("h1").first().innerText().catch(() => "")).trim();
   const token = pageToken(name, matchedTokens, variant);
   if (!token) return undefined;
 
-  const strengths = await checker.locator(STRENGTHS).evaluateAll((items) => items.map((item) => ({
+  const listed = await checker.locator(STRENGTHS).evaluateAll((items) => items.map((item) => ({
     text: (item.querySelector(".quantity")?.textContent ?? item.textContent ?? "").trim(),
     active: item.classList.contains("active"),
   })));
+  // A product sold in one strength (Viagra Connect) shows it as a fixed field, not a list to pick
+  // from — that strength is the one already shown.
+  const fixed = listed.length === 0 ? await checker.locator(SINGLE_STRENGTH).first().inputValue().catch(() => "") : "";
+  const strengths = listed.length > 0 ? listed : [{ text: fixed.trim(), active: true }];
   const wanted = strengths
     .map((strength, index) => ({ ...strength, index, mg: Number(strength.text.match(/(\d+(?:\.\d+)?)\s*mg/i)?.[1]) }))
     .filter((strength) => strength.mg === variant.strengthMg);

@@ -88,3 +88,10 @@ test("link text only fills in pages that the path or feed title did not already 
     ["https://example.co.uk/products/hezkue", ["sildenafil"], "MEDIUM"],
   ]);
 });
+
+test("an ED page may sit under a health-section folder (Phlo Clinic)", () => {
+  assert.equal(isEdCategoryPagePath("/male-health/erectile-dysfunction"), true);
+  assert.equal(isEdCategoryPagePath("/online-doctor/erectile-dysfunction/"), true);
+  assert.equal(isEdCategoryPagePath("/male-health/hair-loss"), false);
+  assert.equal(isEdCategoryPagePath("/health-advice/erectile-dysfunction"), false);
+});

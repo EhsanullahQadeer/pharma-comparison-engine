@@ -1,5 +1,20 @@
 # Product updates
 
+## 2026-10-03
+
+- Fixed prices on Pharmica’s product pages, where the price changes as you pick generic or branded, a strength and a quantity. We were only reading a few of the packs, and none at all for Cialis Together. Every option in its dropdowns is now read at the price the page shows, for example Cialis Together 4 tablets £21.99 and 8 tablets £37.99, branded Viagra 50mg × 4 £34.99, and daily Cialis 5mg × 28 £69.99. This covers its Viagra, sildenafil, Viagra Connect, Cialis, tadalafil and Cialis Together pages.
+- "Detect products" no longer suggests a single-tablet pack for Pharmica that it does not sell.
+- Price collection can now read treatment pages that list each option as labelled details under the medicine’s name, such as Phlo Clinic’s erectile dysfunction page ("Strength: 50mg, Quantity: 8, £16.99" under "Sildenafil"). Its generic sildenafil 100mg × 8 price of £19.99 can be collected again.
+- "Detect products" now works for pharmacies that sell everything from one erectile dysfunction page and have no separate product pages, such as Phlo Clinic. It suggests every strength and pack that page lists: five sildenafil and two tadalafil options for Phlo.
+- Price collection and "Detect products" can now read product pages that show prices in a block per pack size, with a tab for each strength, such as Your Pharmacy’s. For example "Pack Size – 4 tablets" with 25mg, 50mg and 100mg tabs gives Viagra 50mg × 4 at £29.95. This covers its Viagra, sildenafil, Viagra Connect, Cialis and tadalafil pages.
+- Price collection now reads Treated’s price checker when a product comes in only one strength, such as Viagra Connect (£39.95 for 4 tablets, £69.95 for 8). Before, it only worked on pages with a choice of strengths.
+- Fixed Treated’s Viagra Connect price being offered as the prescription Viagra price as well.
+- "Detect products" no longer lists the same page twice when a link points to a section within it, and no longer suggests review, explainer or comparison pages as products.
+- Price collection and "Detect products" can now read MedHut’s product pages, where each option’s price is stored before tax along with the tax rate. For example, Cialis 5mg × 28 at £68.96 (currently out of stock), plus every strength and pack on its Viagra, sildenafil and tadalafil pages.
+- Price collection can now read product pages that give the price in their page data under a marketing title (for example "Buy Viagra Connect Online") while the exact pack is only named in the page heading. Live Well Nationwide’s Viagra Connect pages are an example: 2 tablets £10.85, 4 tablets £21.95 and 8 tablets £34.99 are now collected. This only applies when the page is about a single product with a single price.
+- Fixed "Detect products" failing on Good Cure with a "connection reset" error. The check was asking the website for too many pages at once, so the website briefly blocked us, including the Chrome window. It now asks for fewer pages, a few at a time, and found Good Cure’s four erectile dysfunction products.
+- "Detect products" is quicker on websites that don’t have the product lists it looks for.
+
 ## 2026-10-02
 
 - "Detect products" can now list every strength and pack size on websites that put a security check in front of every page, such as Oxford Online Pharmacy. It reads those product pages in the Chrome window, where a staff member completes any check, as it already did to find the pages. On Oxford Online Pharmacy this finds 63 options across its Cialis, tadalafil, Viagra, sildenafil, Viagra Connect and Cialis Together pages.

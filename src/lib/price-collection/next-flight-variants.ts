@@ -4,7 +4,7 @@ import type { PricedVariantLabel } from "@/types/pricing";
 // Next.js App Router storefronts have no `__NEXT_DATA__`: the page's data streams in
 // `self.__next_f.push([1,"…"])` script chunks (a JSON-escaped string each). The page's own product
 // is found by its slug — the page address's last segment — because the stream can also carry
-// related products. Three variant shapes are read:
+// related products. Four variant shapes are read:
 // - Pharmacy Online: `"slug":"viagra","title":"Viagra","variants":[{ "price":2499 (pence),
 //   "units_available":9999, "attributes":[{"attribute_name":"Strength","attribute_value":"25mg"},
 //   {"attribute_name":"Pack Size","attribute_value":"4"}], "sale_price"… }]`
@@ -14,6 +14,8 @@ import type { PricedVariantLabel } from "@/types/pricing";
 // - The Independent Pharmacy: `"slug":"cialis-once-daily-tablets","title":…,"variants":[{
 //   "name":"Cialis 5mg Tablets", "pack_size":"28 tablets", "available":true,
 //   "quantities":[{"quantity":1,"price":8799},{"quantity":2,"price":15598}] }]` — packs × pack size.
+// - MedHut: `"tax_code":{"rate_percentage":0},…,"slug":"cialis",…,"product_variations":[{
+//   "title":"Cialis 28 x 5mg", "quantity":0 (stock), "price_ex_tax":68.96 }]` — price plus tax.
 
 type Money = { currency?: unknown; amount?: unknown };
 type FlightVariant = {
@@ -35,6 +37,9 @@ type FlightVariant = {
   available?: unknown;
   public?: unknown;
   quantities?: { quantity?: unknown; price?: unknown }[];
+  title?: unknown;
+  price_ex_tax?: unknown;
+  quantity?: unknown;
 };
 
 function readFlightStream(html: string): string {
@@ -83,57 +88,75 @@ function availability(entry: FlightVariant): PricedVariantLabel["availability"] 
   return "UNKNOWN";
 }
 
-// Index of the quote closing the JSON string that opens at `open`.
-function stringEnd(text: string, open: number) {
-  let index = open + 1;
-  while (index < text.length && text[index] !== "\"") index += text[index] === "\\" ? 2 : 1;
-  return index;
+// Index of the quote opening the JSON string that closes at `close` (a quote is escaped when an odd
+// number of backslashes precede it).
+function stringStart(text: string, close: number) {
+  for (let index = close - 1; index >= 0; index -= 1) {
+    if (text[index] !== "\"") continue;
+    let backslashes = 0;
+    while (text[index - 1 - backslashes] === "\\") backslashes += 1;
+    if (backslashes % 2 === 0) return index;
+  }
+  return -1;
 }
 
-// Reads the rest of the object a slug sits in, from just after the slug: nested objects and arrays
-// are stepped over, so only that object's own `title`/`name` and `variants` count — never a nested
-// slug's (the product's condition) or a sibling product's. The variants may also sit directly
-// beside the product object in its parent (The Independent Pharmacy:
-// `{"treatment":{slug,title,…},"variants":[…]}`), so the scan continues one level up, where only
-// the parent's own keys count. Undefined when the parent closes without variants.
-function readOwnProduct(stream: string, start: number) {
+// The object literal that directly contains position `at`, parsed whole — found by walking back to
+// its opening brace, stepping over strings and already-closed objects/arrays. Undefined when the
+// position sits directly in an array (a list of sibling products is never climbed out of) or the
+// text there isn't valid JSON.
+function enclosingObject(stream: string, at: number): { start: number; value: Record<string, unknown> } | undefined {
   let depth = 0;
-  // The level whose keys count: 0 inside the product object, -1 once it has closed.
-  let level = 0;
-  let title = "";
-  for (let index = start; index < stream.length; index += 1) {
+  for (let index = at - 1; index >= 0; index -= 1) {
     const char = stream[index];
     if (char === "\"") {
-      const end = stringEnd(stream, index);
-      const key = depth === level && stream[end + 1] === ":" ? stream.slice(index + 1, end) : "";
-      if (key === "variants") {
-        const variants = extractEmbeddedJson(stream.slice(index), /"variants":/);
-        return Array.isArray(variants) ? { title, variants: variants as FlightVariant[] } : undefined;
-      }
-      if (level === 0 && (key === "title" || key === "name") && !title && stream[end + 2] === "\"") {
-        title = JSON.parse(stream.slice(end + 2, stringEnd(stream, end + 2) + 1)) as string;
-      }
-      index = end;
-    } else if (char === "{" || char === "[") {
-      depth += 1;
+      index = stringStart(stream, index);
     } else if (char === "}" || char === "]") {
-      depth -= 1;
-      if (depth < -1) return undefined;
-      level = Math.min(level, depth);
+      depth += 1;
+    } else if (char === "{" || char === "[") {
+      if (depth > 0) {
+        depth -= 1;
+        continue;
+      }
+      if (char === "[") return undefined;
+      const value = extractEmbeddedJson(stream.slice(index), /\{/);
+      return value && typeof value === "object" && !Array.isArray(value) ? { start: index, value: value as Record<string, unknown> } : undefined;
     }
   }
   return undefined;
 }
 
-// The page's own product: the first object carrying the page's slug that also has variants (the
-// slug alone can appear earlier in a menu or breadcrumb entry).
+function variantList(value: Record<string, unknown> | undefined) {
+  const list = value?.variants ?? value?.product_variations;
+  return Array.isArray(list) ? (list as FlightVariant[]) : undefined;
+}
+
+// The page's own product: the first object carrying the page's slug that has variants (the slug
+// alone can appear earlier in a menu or breadcrumb entry) — its own, or directly beside it in its
+// parent (The Independent Pharmacy: `{"treatment":{slug,title,…},"variants":[…]}`). The object is
+// read whole, so a nested slug (the product's condition) or keys that come before the slug
+// (MedHut's title and tax rate) are no obstacle, and a sibling product's variants never count.
 function pageProduct(stream: string, slug: string) {
   const marker = `"slug":${JSON.stringify(slug)}`;
   for (let at = stream.indexOf(marker); at >= 0; at = stream.indexOf(marker, at + 1)) {
-    const product = readOwnProduct(stream, at + marker.length);
-    if (product) return product;
+    const own = enclosingObject(stream, at);
+    if (!own) continue;
+    const variants = variantList(own.value) ?? variantList(enclosingObject(stream, own.start)?.value);
+    if (!variants) continue;
+    const title = [own.value.title, own.value.name].find((name) => typeof name === "string") as string | undefined;
+    const taxRate = (own.value.tax_code as { rate_percentage?: unknown } | undefined)?.rate_percentage;
+    return { title: title ?? "", variants, taxRatePercent: typeof taxRate === "number" ? taxRate : undefined };
   }
   return undefined;
+}
+
+// MedHut: `product_variations` entries titled in full ("Cialis 28 x 5mg") with `price_ex_tax` in
+// pounds and the stock count in `quantity`; the product's `tax_code.rate_percentage` gives the
+// price charged. Without a known tax rate no price is taken.
+function taxedTitleLabels(entry: FlightVariant, taxRatePercent: number | undefined): PricedVariantLabel[] {
+  if (typeof entry.title !== "string" || typeof entry.price_ex_tax !== "number" || !(entry.price_ex_tax > 0) || taxRatePercent === undefined) return [];
+  const inStock = typeof entry.quantity === "number" ? entry.quantity > 0 : undefined;
+  const availability = ({ true: "IN_STOCK", false: "OUT_OF_STOCK" } as const)[String(inStock) as "true" | "false"] ?? "UNKNOWN";
+  return [{ productName: entry.title, optionText: "", label: entry.title, itemPricePence: Math.round(entry.price_ex_tax * (100 + taxRatePercent)), availability }];
 }
 
 // The Independent Pharmacy: a variant per strength, sold as 1, 2 or 3 packs — the tablet count is
@@ -158,6 +181,7 @@ export function flightStreamLabels(html: string, sourceUrl: string): PricedVaria
   return product.variants.flatMap((entry) => {
     if (entry.is_active === false || entry.is_bundle === true || entry.deleted_at) return [];
     if (Array.isArray(entry.quantities)) return packQuantityLabels(entry);
+    if (entry.price_ex_tax !== undefined) return taxedTitleLabels(entry, product.taxRatePercent);
     if (!product.title) return [];
     const amount = pricePence(entry, now);
     const { strength, pack } = strengthAndPack(entry);

@@ -46,11 +46,13 @@ export function isEdCategoryRootPath(pathname: string): boolean {
 // folder and with a file extension: "/erectile-dysfunction", "/uk/erectile-dysfunction-treatment.html".
 // Consultation, trial-pack or article pages ("-consultation", "-causes") don't count.
 const edCategoryPageWords = new Set(["treatment", "treatments", "medication", "medications", "medicine", "medicines", "pills", "tablets", "online", "uk"]);
+// Section folders an ED page commonly sits under ("/male-health/erectile-dysfunction" on Phlo Clinic).
+const edCategoryParentSegments = new Set(["male-health", "mens-health", "men", "mens", "conditions", "condition", "treatments", "treatment", "online-doctor", "online-clinic", "services", "health", "shop"]);
 
 export function isEdCategoryPagePath(pathname: string): boolean {
   const segments = pathname.split("/").filter(Boolean).map((segment) => segment.toLowerCase());
   const last = segments[segments.length - 1]?.replace(/\.(?:html?|php|aspx?)$/, "") ?? "";
-  if (!last || !segments.slice(0, -1).every((segment) => ukLocaleSegments.has(segment))) return false;
+  if (!last || !segments.slice(0, -1).every((segment) => ukLocaleSegments.has(segment) || edCategoryParentSegments.has(segment))) return false;
   if (edCategoryRootSegments.has(last)) return true;
   const rest = last.replace(/^erectile-dysfunction(?:-ed)?/, "");
   return rest !== last && rest.split("-").filter(Boolean).every((word) => edCategoryPageWords.has(word));

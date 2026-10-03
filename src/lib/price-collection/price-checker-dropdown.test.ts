@@ -73,3 +73,29 @@ test("keeps branded and generic pages apart and refuses unknown strengths", asyn
     await browser.close();
   }
 });
+
+// Trimmed from Treated's Viagra Connect page: one strength, shown as a read-only field with no list.
+const singleStrengthPage = `<h1>Viagra Connect</h1>
+  <div class="single-price-checker">
+    <div class="form-group" data-dl="dosage"><input type="text" value="50mg" readonly="readonly" name="strength" placeholder="Strength:"></div>
+    <div class="dropdown-list single-doses-price-list"><ul class="options">
+      <li class="active"><span class="quantity">4 Tablets </span><span class="price"><strong data-price="39.95">£39.95</strong></span></li>
+      <li><span class="quantity">8 Tablets </span><span class="price"><strong data-price="69.95">£69.95</strong><span>Save <span class="you-saved" data-price="9.95">£9.95</span></span></span></li>
+    </ul></div>
+  </div>`;
+
+test("reads a checker with one fixed strength and no strength list", async () => {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    await page.setContent(singleStrengthPage);
+    const connect = ["viagra connect", "sildenafil", "viagra"];
+    assert.equal((await readPriceCheckerDropdown(page, connect, { strengthMg: 50, packQuantity: 4, generic: false }))?.itemPricePence, 3995);
+    assert.equal((await readPriceCheckerDropdown(page, connect, { strengthMg: 50, packQuantity: 8, generic: false }))?.itemPricePence, 6995);
+    // Not a pack it sells, and never prescription Viagra.
+    assert.equal(await readPriceCheckerDropdown(page, connect, { strengthMg: 50, packQuantity: 16, generic: false }), undefined);
+    assert.equal(await readPriceCheckerDropdown(page, ["viagra", "sildenafil"], { strengthMg: 50, packQuantity: 4, generic: false }), undefined);
+  } finally {
+    await browser.close();
+  }
+});

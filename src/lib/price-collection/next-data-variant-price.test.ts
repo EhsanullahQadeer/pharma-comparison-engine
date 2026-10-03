@@ -146,6 +146,31 @@ test("reads The Independent Pharmacy's variants: packs × pack size, past a nest
   assert.equal(pickNextDataVariantPrice(page, cialis, { strengthMg: 5, packQuantity: 28, generic: true }, url), undefined);
 });
 
+test("reads MedHut's product variations: full titles, price before tax, keys ahead of the slug", () => {
+  const product = (rate: number) => ({
+    title: "Cialis",
+    tax_code: { id: "t1", rate_percentage: rate },
+    slug: "cialis",
+    active_ingredient: "Tadalafil",
+    product_variations: [
+      { title: "Cialis 28 x 5mg", quantity: 0, strength: "5mg", is_active: true, price_ex_tax: 68.96, original_price: null },
+      { title: "Cialis 4 x 10mg", quantity: 12, strength: "10mg", is_active: true, price_ex_tax: 30, original_price: null },
+      { title: "Cialis 4 x 20mg", quantity: 5, strength: "20mg", is_active: false, price_ex_tax: 35, original_price: null },
+    ],
+  });
+  const page = (rate: number) => `<script>self.__next_f.push([1,${JSON.stringify(`9:["$","div",null,{"product":${JSON.stringify(product(rate))}}]`)}])</script>`;
+  const url = "https://www.medhut.co.uk/products/cialis";
+  const cialis = ["cialis", "tadalafil"];
+  const daily = pickNextDataVariantPrice(page(0), cialis, { strengthMg: 5, packQuantity: 28, generic: false }, url);
+  assert.equal(daily?.itemPricePence, 6896);
+  assert.equal(daily?.availability, "OUT_OF_STOCK");
+  assert.equal(pickNextDataVariantPrice(page(0), cialis, { strengthMg: 10, packQuantity: 4, generic: false }, url)?.availability, "IN_STOCK");
+  // The tax rate is applied to the price before tax.
+  assert.equal(pickNextDataVariantPrice(page(20), cialis, { strengthMg: 10, packQuantity: 4, generic: false }, url)?.itemPricePence, 3600);
+  // An inactive variation is not on sale.
+  assert.equal(pickNextDataVariantPrice(page(0), cialis, { strengthMg: 20, packQuantity: 4, generic: false }, url), undefined);
+});
+
 test("keeps branded and generic apart and refuses ambiguity or missing data", () => {
   assert.equal(pickNextDataVariantPrice(html, tokens, { strengthMg: 50, packQuantity: 4, generic: true }, url)?.itemPricePence, 1299);
   assert.equal(pickNextDataVariantPrice(html, tokens, { strengthMg: 50, packQuantity: 4 }, url), undefined);

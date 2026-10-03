@@ -1,7 +1,7 @@
 import { collectPublicResourceText } from "@/lib/discovery/public-web";
 
 // Candidate feed/sitemap paths to check before ever falling back to a full-browser (patchright)
-// crawl — tried in parallel, fast, and silently skipped when a path 404s or isn't recognizable XML
+// crawl — tried a few at a time, fast, and silently skipped when a path 404s or isn't recognizable XML
 // (most won't exist on any given site; this is a cheap sweep, not a guarantee). Ordered roughly by
 // likely usefulness: sitemap family first (most sites that expose anything expose this), then
 // merchant/product feeds (highest-signal when present — an explicit product catalog with titles),
@@ -159,6 +159,23 @@ async function fetchFeedText(url: string): Promise<string | undefined> {
   }
 }
 
+// Feed paths asked of one site at a time. All of them at once reads as a flood to a small shop's
+// rate limiter, which then resets every connection from this address (goodcure.co.uk).
+const MAX_CONCURRENT_FEEDS = 4;
+
+async function fetchFeedTexts(urls: string[]): Promise<(string | undefined)[]> {
+  const texts: (string | undefined)[] = [];
+  let next = 0;
+  async function worker() {
+    while (next < urls.length) {
+      const index = next++;
+      texts[index] = await fetchFeedText(urls[index]);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(MAX_CONCURRENT_FEEDS, urls.length) }, worker));
+  return texts;
+}
+
 // Parses a feed/sitemap response already in hand (used by both the plain-fetch path below and the
 // patchright-page-based human-assist path, which fetches the same URLs through the browser
 // instead) into either same-domain page URLs (sitemap-style) or the nested sitemap URLs to follow
@@ -168,7 +185,7 @@ export function parseFeedText(text: string, base: URL): { locs: string[]; items:
   return { locs: extractLocs(text, base), items: extractFeedItems(text, base), isIndex: false };
 }
 
-// Fetches every candidate feed path in parallel, parses whichever ones exist and are recognizable
+// Fetches every candidate feed path (a few at a time), parses whichever ones exist and are recognizable
 // XML, follows one bounded level of sitemap-index nesting (e.g. Shopify's sitemap.xml often just
 // lists sitemap_products_1.xml, sitemap_pages_1.xml, ...), and returns a deduped list of same-domain
 // URLs — with a product title alongside, when the feed that found it carries one. Never throws — an
@@ -176,10 +193,8 @@ export function parseFeedText(text: string, base: URL): { locs: string[]; items:
 // given site; this is a wide, cheap sweep before ever escalating to a full browser render.
 export async function collectFeedCandidates(websiteDomain: string): Promise<FeedCandidate[]> {
   const base = new URL(`https://${websiteDomain}`);
-  const fetched = await Promise.all(FEED_PATHS.map(async (path) => {
-    const text = await fetchFeedText(new URL(path, base).href);
-    return text ? parseFeedText(text, base) : undefined;
-  }));
+  const texts = await fetchFeedTexts(FEED_PATHS.map((path) => new URL(path, base).href));
+  const fetched = texts.map((text) => (text ? parseFeedText(text, base) : undefined));
 
   const candidates = new Map<string, FeedCandidate>();
   const nestedSitemapUrls = new Set<string>();
@@ -196,7 +211,7 @@ export async function collectFeedCandidates(websiteDomain: string): Promise<Feed
     }
   }
 
-  const nested = await Promise.all([...nestedSitemapUrls].slice(0, 10).map(fetchFeedText));
+  const nested = await fetchFeedTexts([...nestedSitemapUrls].slice(0, 10));
   for (const text of nested) {
     if (!text) continue;
     for (const loc of extractLocs(text, base)) if (!candidates.has(loc)) candidates.set(loc, { url: loc });
