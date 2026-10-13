@@ -1,17 +1,16 @@
 "use client";
 
 import { Ban, CalendarClock, ChevronDown, Eye, EyeOff, RefreshCw, Square, Trash2, UserCheck } from "lucide-react";
-import { useRef } from "react";
 
 import { deleteOffers, setOffersPublished } from "@/actions/offers/offers";
-import { runPriceCollectionForMatch, updatePriceCollectionSchedules } from "@/actions/price-collection/price-collection";
+import { updatePriceCollectionSchedules } from "@/actions/price-collection/price-collection";
 import { rejectConfirmedProductMatches } from "@/actions/product-matches/product-matches";
 import { BulkActionBar, plural } from "@/components/admin/bulk-action-bar";
 import { Button } from "@/components/common/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/common/dropdown-menu";
 import type { PriceScrapeCadence } from "@/generated/prisma/client";
 import { useBulkRun } from "@/hooks/useBulkRun";
-import { useRouter } from "@/hooks/useRouter";
+import { useBulkScrape } from "@/hooks/useBulkScrape";
 import { priceScrapeCadenceLabels, priceScrapeCadenceValues } from "@/lib/catalogue-labels";
 import { confirm } from "@/lib/confirm-store";
 import { cn } from "@/lib/utils";
@@ -34,10 +33,9 @@ export async function confirmRejectPages(pages: number, withPrice: number) {
 // applies to (publish/delete need a saved price, schedule/scrape need a tracked product page).
 // With `emptyHint` the toolbar stays visible (buttons disabled) while nothing is selected.
 export function PriceBulkActions({ rows, actions, onClear, emptyHint }: { rows: BulkPriceRow[]; actions: readonly PriceBulkAction[]; onClear: () => void; emptyHint?: string }) {
-  const router = useRouter();
   const bulk = useBulkRun(onClear);
   const { state, run } = bulk;
-  const stopRequested = useRef(false);
+  const { scrapeMatches, stop } = useBulkScrape(bulk.setProgress);
 
   const offerIds = rows.flatMap((row) => row.offerId ?? []);
   const matchIds = rows.flatMap((row) => row.matchId ?? []);
@@ -66,27 +64,8 @@ export function PriceBulkActions({ rows, actions, onClear, emptyHint }: { rows: 
     });
   }
 
-  // One scrape at a time, like the scheduled runner — pharmacy sites are fetched politely, and staff
-  // can stop between pages. Human-assisted opens each page in the visible Chrome window, where a
-  // person completes any security check.
   function handleScrape(humanAssist: boolean) {
-    stopRequested.current = false;
-    void run(async () => {
-      const ids = [...matchIds];
-      let scraped = 0;
-      const failures: string[] = [];
-      for (const [index, matchId] of ids.entries()) {
-        if (stopRequested.current) break;
-        bulk.setProgress(`Scraping ${index + 1} of ${ids.length}…`);
-        const result = await runPriceCollectionForMatch(matchId, humanAssist);
-        if (result.error) failures.push(result.error);
-        else scraped += 1;
-      }
-      router.refresh();
-      const stopped = stopRequested.current ? " Stopped early." : "";
-      if (failures.length === 0) return { message: `Scraped ${plural(scraped, "price")}.${stopped}` };
-      return { error: `Scraped ${scraped}, ${failures.length} failed (first error: ${failures[0]}).${stopped}` };
-    }, `Scraping 1 of ${matchIds.length}…`);
+    void run(() => scrapeMatches(matchIds.map((matchId) => ({ matchId })), humanAssist ? "human" : "automatic"), `Scraping 1 of ${matchIds.length}…`);
   }
 
   async function handleReject() {
@@ -178,7 +157,7 @@ export function PriceBulkActions({ rows, actions, onClear, emptyHint }: { rows: 
         </Button>
       ) : null}
       {state.busy && state.progress ? (
-        <Button type="button" size="sm" variant="ghost" onClick={() => { stopRequested.current = true; }}>
+        <Button type="button" size="sm" variant="ghost" onClick={stop}>
           <Square aria-hidden="true" className="size-3.5" />
           Stop
         </Button>

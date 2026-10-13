@@ -1,18 +1,21 @@
 "use client";
 
-import { ArrowRightLeft, ChevronDown, Globe } from "lucide-react";
+import { ArrowRightLeft, ChevronDown, Globe, RefreshCw, Square } from "lucide-react";
 import { useMemo } from "react";
 
 import { publishProvidersOffers } from "@/actions/offers/offers";
+import { getPublishedPricePages } from "@/actions/price-collection/price-collection";
 import { transitionProviderStatuses } from "@/actions/providers/providers";
 import { BulkActionBar, plural } from "@/components/admin/bulk-action-bar";
 import { Button } from "@/components/common/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/common/dropdown-menu";
 import type { ProviderStatus, StaffRole } from "@/generated/prisma/client";
 import { useBulkRun } from "@/hooks/useBulkRun";
+import { useBulkScrape } from "@/hooks/useBulkScrape";
 import { confirm } from "@/lib/confirm-store";
 import { providerStatusLabels } from "@/lib/provider-labels";
 import { destructiveProviderStatuses, getAllowedNextStatuses } from "@/lib/provider-status-transitions";
+import { cn } from "@/lib/utils";
 
 const statusOrder = Object.keys(providerStatusLabels) as ProviderStatus[];
 
@@ -21,10 +24,13 @@ type SelectedProvider = { id: string; status: ProviderStatus; draftCount: number
 // Toolbar on top of the Pharmacies list. "Move to…" only offers statuses at least one selected
 // pharmacy can reach, with how many can; the rest of the selection is skipped by the same
 // step-by-step rules as the single-pharmacy buttons. "Publish draft prices" only counts drafts of
-// selected pharmacies that are already published.
+// selected pharmacies that are already published. "Scrape published prices" re-checks every
+// published price of the selection that is tracked from a product page, one page at a time: a plain
+// request, then a background browser, then the visible Chrome window for a page neither could price.
 export function ProviderBulkActions({ providers, role, onClear }: { providers: SelectedProvider[]; role: StaffRole; onClear: () => void }) {
   const bulk = useBulkRun(onClear);
   const { state, run } = bulk;
+  const { scrapeMatches, stop } = useBulkScrape(bulk.setProgress);
 
   const options = useMemo(
     () => statusOrder
@@ -62,8 +68,19 @@ export function ProviderBulkActions({ providers, role, onClear }: { providers: S
     });
   }
 
+  function handleScrapePrices() {
+    void run(async () => {
+      const lookup = await getPublishedPricePages(providers.map((provider) => provider.id));
+      if (lookup.error) return { error: lookup.error };
+      const untracked = lookup.untracked ? ` ${plural(lookup.untracked, "published price")} skipped — entered by hand, not tracked from a product page.` : "";
+      if (lookup.pages.length === 0) return { error: `No published price to scrape for the selected pharmacies.${untracked}` };
+      const result = await scrapeMatches(lookup.pages, "automaticThenHuman");
+      return result.error ? { error: `${result.error}${untracked}` } : { message: `${result.message}${untracked}` };
+    }, "Finding published prices…");
+  }
+
   return (
-    <BulkActionBar count={providers.length} bulk={bulk} onClear={onClear} emptyHint="Select pharmacies to change their status or publish their prices in bulk.">
+    <BulkActionBar count={providers.length} bulk={bulk} onClear={onClear} emptyHint="Select pharmacies to change their status, or to publish or scrape their prices in bulk.">
       <DropdownMenu>
         <DropdownMenuTrigger render={<Button type="button" size="sm" variant="outline" disabled={state.busy || options.length === 0} />}>
           <ArrowRightLeft aria-hidden="true" className="size-4" />
@@ -91,6 +108,16 @@ export function ProviderBulkActions({ providers, role, onClear }: { providers: S
         <Globe aria-hidden="true" className="size-4" />
         Publish draft prices{publishableDrafts > 0 ? ` (${publishableDrafts})` : ""}
       </Button>
+      <Button type="button" size="sm" variant="outline" disabled={state.busy || providers.length === 0} onClick={handleScrapePrices}>
+        <RefreshCw aria-hidden="true" className={cn("size-4", state.busy && state.progress && "animate-spin")} />
+        Scrape published prices
+      </Button>
+      {state.busy && state.progress ? (
+        <Button type="button" size="sm" variant="ghost" onClick={stop}>
+          <Square aria-hidden="true" className="size-3.5" />
+          Stop
+        </Button>
+      ) : null}
       {providers.length > 0 && options.length === 0 ? (
         <span className="text-xs text-muted-foreground">No status change available for these pharmacies with your role.</span>
       ) : null}

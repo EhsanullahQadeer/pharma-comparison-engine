@@ -2,6 +2,8 @@
 
 ## 2026-10-13
 
+- The Pharmacies list in the admin has a new bulk button, "Scrape published prices". Tick one or more pharmacies and press it to re-check every published price of those pharmacies on the pharmacy's own website, one at a time. It shows progress as it goes, can be stopped part-way, and finishes with how many prices were checked and how many failed. Prices that were typed in by hand are skipped, because there is no product page to check them against.
+- When that bulk check cannot read a price automatically, it now tries once more in the visible Chrome window on the server computer, where a person can complete a security check. If nobody completes the check for a pharmacy, its remaining prices are not sent to the window again in that run. The result says how many prices came through the Chrome window.
 - The "Filter and sort" box on the price comparison page has been redesigned. The long rows of buttons are replaced by a single row of dropdowns: Product, Strength, Form, Pack size, Buying and Sort by. Product and medicine are now one dropdown, with each product listed under its medicine.
 - The box now shows how many prices match, and lists the filters in use underneath. Each one can be removed on its own, or all at once with "Clear all".
 - Prices are no longer hidden when they were last checked more than 48 hours ago. Every published price now stays on the comparison, price and pharmacy pages; one checked more than 24 hours ago is marked "may have changed" and shows the date it was last checked. The pages that explain how prices are handled have been updated to say this.

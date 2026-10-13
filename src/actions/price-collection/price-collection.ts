@@ -7,6 +7,7 @@ import type { PriceScrapeCadence, PriceScrapeStatus } from "@/generated/prisma/c
 import { recordAuditLog } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 import { requireStaffRole } from "@/lib/staff-auth";
+import type { BulkScrapePage } from "@/types/pricing";
 
 export type RunPriceCollectionState = {
   error?: string;
@@ -31,6 +32,33 @@ export async function runPriceCollectionForMatch(matchId: string, humanAssist = 
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Price collection failed." };
   }
+}
+
+export type PublishedPricePagesState = { error?: string; pages: BulkScrapePage[]; untracked: number };
+
+// The tracked product pages behind the published prices of the given pharmacies — what a bulk
+// "Scrape published prices" works through. `untracked` counts published prices no product page
+// tracks (entered by hand), which a scrape can't refresh.
+export async function getPublishedPricePages(providerIds: string[]): Promise<PublishedPricePagesState> {
+  try {
+    await requireStaffRole(["CATALOGUE_EDITOR", "ADMINISTRATOR"]);
+  } catch {
+    return { error: "You are not authorized to run price collection.", pages: [], untracked: 0 };
+  }
+
+  const ids = [...new Set(providerIds.filter(Boolean))];
+  if (ids.length === 0) return { error: "Select at least one pharmacy.", pages: [], untracked: 0 };
+  if (ids.length > 500) return { error: "Select 500 pharmacies or fewer.", pages: [], untracked: 0 };
+
+  const [matches, untracked] = await Promise.all([
+    prisma.productMatch.findMany({
+      where: { providerId: { in: ids }, status: "CONFIRMED", offer: { publishedAt: { not: null } } },
+      select: { id: true, providerId: true },
+      orderBy: [{ providerId: "asc" }, { id: "asc" }],
+    }),
+    prisma.offer.count({ where: { providerId: { in: ids }, publishedAt: { not: null }, productMatch: { is: null } } }),
+  ]);
+  return { pages: matches.map((match) => ({ matchId: match.id, providerId: match.providerId })), untracked };
 }
 
 function isScrapeCadence(value: string): value is PriceScrapeCadence {

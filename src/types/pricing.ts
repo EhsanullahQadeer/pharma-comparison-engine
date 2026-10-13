@@ -16,6 +16,14 @@ export type BulkPriceRow = {
   providerPublished: boolean;
 };
 
+// One tracked product page in a bulk scrape. `providerId` lets a run stop sending a pharmacy's pages
+// to the visible Chrome window once its security check has gone unanswered.
+export type BulkScrapePage = { matchId: string; providerId?: string };
+
+// How a bulk scrape reads each page: automatically, in the visible Chrome window, or automatically
+// with the visible window as the last resort.
+export type BulkScrapeMode = "automatic" | "human" | "automaticThenHuman";
+
 // Schedule state across every confirmed product page of one catalogue variant (Product variants
 // list). `cadence` is null when nothing is tracked yet, "MIXED" when the pages disagree.
 export type VariantScheduleSummary = {
