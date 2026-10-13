@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:google-ai": "tsx scripts/dev-google-ai.ts",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "test": "tsx --test \"src/**/*.test.ts\" \"scripts/**/*.test.ts\"",
@@ -72,6 +72,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "axe-core": "^4.13.0",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "husky": "^9.1.7",
