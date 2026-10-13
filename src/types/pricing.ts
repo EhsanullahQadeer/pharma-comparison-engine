@@ -24,6 +24,19 @@ export type BulkScrapePage = { matchId: string; providerId?: string };
 // with the visible window as the last resort.
 export type BulkScrapeMode = "automatic" | "human" | "automaticThenHuman";
 
+export type BulkScrapeResult = { message?: string; error?: string };
+
+// The one bulk scrape a browser tab runs at a time, kept outside any page so it survives moving
+// around the admin. `scope` is the path of the page that started it; `ownerMounted` says whether
+// that page's toolbar is on screen (it then shows the run itself, and the admin-wide strip hides).
+export type BulkScrapeRun = {
+  scope: string | null;
+  running: boolean;
+  progress: string | null;
+  result: BulkScrapeResult | null;
+  ownerMounted: boolean;
+};
+
 // Schedule state across every confirmed product page of one catalogue variant (Product variants
 // list). `cadence` is null when nothing is tracked yet, "MIXED" when the pages disagree.
 export type VariantScheduleSummary = {

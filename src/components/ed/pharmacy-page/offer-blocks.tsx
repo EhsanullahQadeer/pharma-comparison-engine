@@ -1,4 +1,4 @@
-import { ArrowUpRight, CalendarClock, Globe, Layers, PackageSearch, TicketPercent } from "lucide-react";
+import { ArrowUpRight, CalendarClock, Layers, PackageSearch, TicketPercent } from "lucide-react";
 
 import { Button } from "@/components/common/button";
 import { CopyCodeButton } from "@/components/ed/copy-code-button";
@@ -24,18 +24,10 @@ const visitButtonClass: Record<VisitTone, string> = {
   outline: "",
 };
 
-// The one call to action. Partners: tracked link to the cheapest offer's page (/go), or their
-// homepage if nothing is priced yet. Everyone else: the domain as plain text, never a link.
+// The one call to action: a counted link to the cheapest offer's page (/go), or the pharmacy's
+// homepage (not counted) if nothing is priced yet.
 export function VisitAction({ model, tone = "primary", className, full = false }: { model: PharmacyPageModel; tone?: VisitTone; className?: string; full?: boolean }) {
-  const { provider, linked, bestOffer } = model;
-  if (!linked) {
-    return (
-      <div className={className}>
-        <p className="inline-flex items-center gap-2 font-medium"><Globe aria-hidden="true" className="size-4 opacity-70" />{provider.websiteDomain}</p>
-        <LinkNote linked={false} className="mt-1 text-current opacity-75" />
-      </div>
-    );
-  }
+  const { provider, partner, bestOffer } = model;
   const label = (
     <>
       See {provider.name}&apos;s current offer
@@ -44,12 +36,12 @@ export function VisitAction({ model, tone = "primary", className, full = false }
     </>
   );
   const link = bestOffer
-    ? <OutboundLink offerId={bestOffer.id} placement="PHARMACY_PROFILE">{label}</OutboundLink>
+    ? <OutboundLink offerId={bestOffer.id} placement="PHARMACY_PROFILE" partner={partner}>{label}</OutboundLink>
     : <a href={`https://${provider.websiteDomain}`} target="_blank" rel="nofollow noopener noreferrer">{label}</a>;
   return (
     <div className={className}>
       <Button size="lg" variant={tone === "outline" ? "outline" : "default"} nativeButton={false} className={cn("h-auto rounded-full px-6 py-3 whitespace-normal transition-transform active:scale-95", full && "w-full", visitButtonClass[tone])} render={link} />
-      <LinkNote linked className="mt-2 text-current opacity-75" />
+      {partner ? <LinkNote className="mt-2 text-current opacity-75" /> : null}
     </div>
   );
 }

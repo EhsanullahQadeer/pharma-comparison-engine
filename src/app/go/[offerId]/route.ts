@@ -4,6 +4,7 @@ import { after, type NextRequest, NextResponse } from "next/server";
 
 import { recordOutboundClick, resolveOutboundDestination } from "@/actions/referrals/outbound-clicks";
 import { buildTrackedUrl, linkTemplateError } from "@/lib/affiliate-links";
+import { clickDetails } from "@/lib/click-details";
 import { clientIp, isLikelyBotRequest, parseOutboundParams, visitorHash } from "@/lib/referrals";
 
 // Outbound "view at pharmacy" redirect (M7). A user-facing redirect, not internal data access —
@@ -41,6 +42,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     rankPosition,
     visitorHash: visitorHash(clientIp(request.headers), userAgent, process.env.AUTH_SECRET, now),
     isLikelyBot: isLikelyBotRequest(request.headers),
+    details: clickDetails(request.headers),
     now,
   };
   // Logged after the response so counting never slows the visitor down, and a logging failure

@@ -1,4 +1,5 @@
 import { getClickReport } from "@/actions/analytics/click-report";
+import { ClickBreakdownTable } from "@/components/admin/click-breakdown-table";
 import { ClickReportTable } from "@/components/admin/click-report-table";
 import { Button, buttonVariants } from "@/components/common/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/common/card";
@@ -24,16 +25,20 @@ export default async function ClickReportPage(props: PageProps<"/admin/analytics
     { label: "Filtered as likely bots", value: report.botClicks, hint: "Not counted in any figure on this page" },
   ];
   const breakdowns = [
-    { title: "By pharmacy", description: "Every pharmacy visitors were sent to.", rows: report.byPharmacy, showPharmacy: true, showProduct: false },
-    { title: "By product", description: "Which product, strength and pack size visitors clicked on, across all pharmacies.", rows: report.byProduct, showPharmacy: false, showProduct: true },
-    { title: "By pharmacy and product", description: "Which product visitors clicked on at each pharmacy.", rows: report.byPharmacyProduct, showPharmacy: true, showProduct: true },
+    { title: "By pharmacy", description: "Every pharmacy visitors were sent to.", count: report.byPharmacy.length, table: <ClickReportTable rows={report.byPharmacy} showPharmacy /> },
+    { title: "By product", description: "Which product, strength and pack size visitors clicked on, across all pharmacies.", count: report.byProduct.length, table: <ClickReportTable rows={report.byProduct} showProduct /> },
+    { title: "By pharmacy and product", description: "Which product visitors clicked on at each pharmacy.", count: report.byPharmacyProduct.length, table: <ClickReportTable rows={report.byPharmacyProduct} showPharmacy showProduct /> },
+    { title: "By area", description: "Roughly where visitors were when they clicked. We keep the town or city, never an address or IP address.", count: report.byLocation.length, table: <ClickBreakdownTable rows={report.byLocation} heading="Area" /> },
+    { title: "By device", description: "Whether visitors clicked from a phone, tablet or computer, and its system.", count: report.byDevice.length, table: <ClickBreakdownTable rows={report.byDevice} heading="Device" /> },
+    { title: "By browser", description: "The browser visitors were using.", count: report.byBrowser.length, table: <ClickBreakdownTable rows={report.byBrowser} heading="Browser" /> },
+    { title: "By page", description: "The page of ours the visitor clicked from, including any filters they had chosen.", count: report.byPage.length, table: <ClickBreakdownTable rows={report.byPage} heading="Page" /> },
   ];
 
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-semibold">Clicks to pharmacies</h1>
-        <p className="mt-1 text-sm text-muted-foreground">How many visitors we sent to pharmacy websites, and which pharmacies and products they chose. Showing: {range.label}.</p>
+        <p className="mt-1 text-sm text-muted-foreground">How many visitors we sent to pharmacy websites, which pharmacies and products they chose, and where and how they clicked. Showing: {range.label}.</p>
       </div>
 
       <Card>
@@ -83,11 +88,7 @@ export default async function ClickReportPage(props: PageProps<"/admin/analytics
             <CardDescription>{breakdown.description}</CardDescription>
           </CardHeader>
           <CardContent>
-            {breakdown.rows.length === 0 ? (
-              <EmptyState title="No clicks to pharmacy sites in this period." />
-            ) : (
-              <ClickReportTable rows={breakdown.rows} showPharmacy={breakdown.showPharmacy} showProduct={breakdown.showProduct} />
-            )}
+            {breakdown.count === 0 ? <EmptyState title="No clicks to pharmacy sites in this period." /> : breakdown.table}
           </CardContent>
         </Card>
       ))}

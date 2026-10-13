@@ -5,6 +5,7 @@ import { type ReactNode, useState } from "react";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
+import { BulkScrapeStatus } from "@/components/admin/bulk-scrape-status";
 import {
   Sheet,
   SheetContent,
@@ -50,6 +51,7 @@ export function AdminShell({
           pendingWork={pendingWork}
           onOpenMobileNav={() => setMobileNavOpen(true)}
         />
+        <BulkScrapeStatus />
         <main
           id="main-content"
           tabIndex={-1}

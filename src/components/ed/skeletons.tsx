@@ -13,10 +13,19 @@ function HeroSkeleton() {
           <Skeleton className="mt-5 h-6 w-full max-w-3xl" />
           <Skeleton className="mt-2 h-6 w-2/3 max-w-xl" />
         </div>
-        <Skeleton className="h-40 w-full rounded-3xl lg:w-72" />
+        <SummarySkeleton />
       </div>
     </>
   );
+}
+
+// The summary card beside a page heading.
+export function SummarySkeleton() {
+  return <Skeleton className="h-40 w-full rounded-3xl lg:w-72" />;
+}
+
+export function ComparisonFiltersSkeleton() {
+  return <Skeleton className="mt-10 h-44 w-full rounded-3xl" />;
 }
 
 function PageFrame({ label, children }: { label: string; children: React.ReactNode }) {
@@ -74,7 +83,7 @@ export function ComparisonResultsSkeleton() {
 export function ComparisonPageSkeleton() {
   return (
     <PageFrame label="Loading prices">
-      <Skeleton className="mt-10 h-44 w-full rounded-3xl" />
+      <ComparisonFiltersSkeleton />
       <ComparisonResultsSkeleton />
     </PageFrame>
   );

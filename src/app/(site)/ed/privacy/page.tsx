@@ -11,7 +11,8 @@ export const metadata: Metadata = {
 };
 
 // Describes what the public site actually does today: no accounts, third-party analytics, advertising or
-// tracking cookies. "View" clicks are counted server-side without storing IP, browser or search details
+// tracking cookies. "View" clicks are counted server-side with coarse, non-identifying detail (area,
+// device, browser, page clicked from, price shown) and never the IP or raw user agent
 // (/go/[offerId], M7); the only personal data kept is what someone types into the site's forms.
 export default function PrivacyPage() {
   return (
@@ -22,7 +23,8 @@ export default function PrivacyPage() {
           "We don't set cookies for visitors. The only thing saved in your browser is your light or dark theme choice, and it never leaves your device.",
           "Fonts and images are served from our own site, not from third parties.",
           "When you choose “View”, we count the click (which pharmacy and product, and which of our pages and price positions it came from), then send you straight to the pharmacy's own website. This shows us which prices people find useful.",
-          "We don't store your IP address, browser details or anything you searched or filtered for with that count. To filter out automated traffic, we keep a scrambled code made from your connection details that changes every day, and delete it within 24 hours.",
+          "With that count we keep a few general details that don't identify you: the approximate area you were in (country, region and town or city), whether you used a phone, tablet or computer, the name of your browser and system, the page of ours you clicked from with any filters you had chosen, and the price you were shown.",
+          "We don't store your IP address. It's used for a moment to work out the approximate area and is then discarded. To filter out automated traffic, we keep a scrambled code made from your connection details that changes every day, and delete it within 24 hours.",
         ]} />
       </ContentSection>
       <ContentSection id="forms" title="When you use one of our forms">

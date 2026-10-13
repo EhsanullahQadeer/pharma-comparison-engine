@@ -8,8 +8,8 @@ export type PharmacyStep = { title: string; body: string };
 // say exactly the same (true) things and differ only in arrangement and styling.
 export type PharmacyPageModel = {
   provider: PublicProviderProfile;
-  // Partner pharmacies get an outbound link; everyone else is listed without one.
-  linked: boolean;
+  // An affiliate partner: its outbound link is labelled as one we may earn from. Every pharmacy is linked.
+  partner: boolean;
   now: Date;
   discounts: PublicDiscount[];
   // Cheapest in-stock price per tablet — the offer the "best offer" card points at.

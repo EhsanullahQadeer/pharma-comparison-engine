@@ -2,36 +2,67 @@
 
 import { displayName, variantLabel, variantMedicineNote } from "@/lib/comparison";
 import { prisma } from "@/lib/prisma";
+import { CLICK_DETAIL_NOT_RECORDED, clickDeviceLabels, ukRegionLabels } from "@/lib/referral-labels";
 import { requireStaffRole } from "@/lib/staff-auth";
-import type { ClickReportRow } from "@/types/click-report";
+import type { ClickBreakdownRow, ClickReportRow } from "@/types/click-report";
 
-type Tally = { clicks: number; lastClickAt: Date };
+// priceSum/pricedClicks cover only the clicks that recorded the price shown.
+type Tally = { clicks: number; lastClickAt: Date; priceSum: number; pricedClicks: number };
+type Group = { clicks: number; lastClickAt: Date; priceSum?: number; pricedClicks?: number };
 
-function addTo(tallies: Map<string, Tally>, key: string, clicks: number, lastClickAt: Date) {
+function addTo(tallies: Map<string, Tally>, key: string, { clicks, lastClickAt, priceSum = 0, pricedClicks = 0 }: Group) {
   const tally = tallies.get(key);
   if (!tally) {
-    tallies.set(key, { clicks, lastClickAt });
+    tallies.set(key, { clicks, lastClickAt, priceSum, pricedClicks });
     return;
   }
   tally.clicks += clicks;
+  tally.priceSum += priceSum;
+  tally.pricedClicks += pricedClicks;
   if (lastClickAt > tally.lastClickAt) tally.lastClickAt = lastClickAt;
 }
 
-// Outbound "view at pharmacy" clicks in a period, broken down by pharmacy, by product and by both.
-// `from` is inclusive, `to` exclusive, null is unbounded. Likely bots are counted separately and
-// left out of every breakdown, the same as on the analytics page.
+function averagePricePence({ priceSum = 0, pricedClicks = 0 }: Group) {
+  return pricedClicks > 0 ? Math.round(priceSum / pricedClicks) : null;
+}
+
+const countryNames = new Intl.DisplayNames("en-GB", { type: "region" });
+
+function countryName(code: string) {
+  try {
+    return countryNames.of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
+function locationLabel({ country, region, city }: { country: string | null; region: string | null; city: string | null }) {
+  const parts = [city, region ? (country === "GB" ? ukRegionLabels[region] : undefined) ?? region : null, country ? countryName(country) : null];
+  return parts.filter(Boolean).join(", ") || CLICK_DETAIL_NOT_RECORDED;
+}
+
+// Outbound "view at pharmacy" clicks in a period, broken down by pharmacy, by product and by both,
+// then by where and how visitors clicked (area, device, browser, page). `from` is inclusive, `to`
+// exclusive, null is unbounded. Likely bots are counted separately and left out of every
+// breakdown, the same as on the analytics page.
 export async function getClickReport({ from, to }: { from: Date | null; to: Date | null }) {
   await requireStaffRole(["CATALOGUE_EDITOR", "CONTENT_REVIEWER", "ADMINISTRATOR", "COMMERCIAL_MANAGER"]);
 
   const createdAt = { ...(from ? { gte: from } : {}), ...(to ? { lt: to } : {}) };
-  const [grouped, botClicks] = await Promise.all([
+  const where = { createdAt, isLikelyBot: false };
+  const counted = { where, _count: { _all: true }, _max: { createdAt: true } } as const;
+  const [grouped, botClicks, locationGroups, deviceGroups, pageGroups] = await Promise.all([
     prisma.referralClick.groupBy({
       by: ["providerId", "productVariantId"],
-      where: { createdAt, isLikelyBot: false },
-      _count: { _all: true },
+      where,
+      _count: { _all: true, totalPricePence: true },
+      _sum: { totalPricePence: true },
       _max: { createdAt: true },
     }),
     prisma.referralClick.count({ where: { createdAt, isLikelyBot: true } }),
+    prisma.referralClick.groupBy({ by: ["country", "region", "city"], ...counted }),
+    prisma.referralClick.groupBy({ by: ["deviceType", "os", "browser"], ...counted }),
+    prisma.referralClick.groupBy({ by: ["sourcePath"], ...counted }),
   ]);
 
   const variantIds = [...new Set(grouped.flatMap((group) => (group.productVariantId ? [group.productVariantId] : [])))];
@@ -57,16 +88,17 @@ export async function getClickReport({ from, to }: { from: Date | null; to: Date
     const pharmacy = pharmacies.get(group.providerId);
     const lastClickAt = group._max.createdAt;
     if (!pharmacy || !lastClickAt) continue;
-    const clicks = group._count._all;
+    const counts: Group = { clicks: group._count._all, lastClickAt, priceSum: group._sum.totalPricePence ?? 0, pricedClicks: group._count.totalPricePence };
     const productKey = group.productVariantId ?? "";
-    addTo(pharmacyTallies, pharmacy.id, clicks, lastClickAt);
-    addTo(productTallies, productKey, clicks, lastClickAt);
+    addTo(pharmacyTallies, pharmacy.id, counts);
+    addTo(productTallies, productKey, counts);
     byPharmacyProduct.push({
       key: `${pharmacy.id}:${productKey}`,
       pharmacy,
       product: products.get(productKey) ?? removedProduct,
-      clicks,
-      share: share(clicks),
+      clicks: counts.clicks,
+      share: share(counts.clicks),
+      averagePricePence: averagePricePence(counts),
       lastClickAt,
     });
   }
@@ -77,6 +109,8 @@ export async function getClickReport({ from, to }: { from: Date | null; to: Date
     product: null,
     clicks: tally.clicks,
     share: share(tally.clicks),
+    // A pharmacy's clicks span different products, so an average price across them means nothing.
+    averagePricePence: null,
     lastClickAt: tally.lastClickAt,
   }));
   const byProduct: ClickReportRow[] = [...productTallies].map(([id, tally]) => ({
@@ -85,15 +119,43 @@ export async function getClickReport({ from, to }: { from: Date | null; to: Date
     product: products.get(id) ?? removedProduct,
     clicks: tally.clicks,
     share: share(tally.clicks),
+    averagePricePence: averagePricePence(tally),
     lastClickAt: tally.lastClickAt,
   }));
 
-  const mostClickedFirst = (a: ClickReportRow, b: ClickReportRow) => b.clicks - a.clicks;
+  const locationTallies = new Map<string, Tally>();
+  const deviceTallies = new Map<string, Tally>();
+  const browserTallies = new Map<string, Tally>();
+  const pageTallies = new Map<string, Tally>();
+  for (const group of locationGroups) {
+    if (group._max.createdAt) addTo(locationTallies, locationLabel(group), { clicks: group._count._all, lastClickAt: group._max.createdAt });
+  }
+  for (const group of deviceGroups) {
+    if (!group._max.createdAt) continue;
+    const counts = { clicks: group._count._all, lastClickAt: group._max.createdAt };
+    const device = group.deviceType ? [clickDeviceLabels[group.deviceType], group.os].filter(Boolean).join(" · ") : CLICK_DETAIL_NOT_RECORDED;
+    addTo(deviceTallies, device, counts);
+    addTo(browserTallies, group.browser ?? CLICK_DETAIL_NOT_RECORDED, counts);
+  }
+  for (const group of pageGroups) {
+    if (group._max.createdAt) addTo(pageTallies, group.sourcePath ?? CLICK_DETAIL_NOT_RECORDED, { clicks: group._count._all, lastClickAt: group._max.createdAt });
+  }
+
+  const mostClickedFirst = (a: { clicks: number }, b: { clicks: number }) => b.clicks - a.clicks;
+  const breakdown = (tallies: Map<string, Tally>): ClickBreakdownRow[] =>
+    [...tallies]
+      .map(([label, tally]) => ({ key: label, label, clicks: tally.clicks, share: share(tally.clicks), lastClickAt: tally.lastClickAt }))
+      .sort(mostClickedFirst);
+
   return {
     peopleClicks,
     botClicks,
     byPharmacy: byPharmacy.sort(mostClickedFirst),
     byProduct: byProduct.sort(mostClickedFirst),
     byPharmacyProduct: byPharmacyProduct.sort(mostClickedFirst),
+    byLocation: breakdown(locationTallies),
+    byDevice: breakdown(deviceTallies),
+    byBrowser: breakdown(browserTallies),
+    byPage: breakdown(pageTallies),
   };
 }

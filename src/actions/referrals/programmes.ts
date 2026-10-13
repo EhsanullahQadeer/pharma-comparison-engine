@@ -76,9 +76,9 @@ export async function saveAffiliateProgramme(providerId: string, values: Affilia
   return {};
 }
 
-// Activating also marks the pharmacy as an affiliate partner (so it gets a link), in the same
-// transaction. Pausing/ending leaves that tick alone: staff decide separately whether a former
-// partner stays linked, and its clicks then use the plain product link.
+// Activating also marks the pharmacy as an affiliate partner (so its tracked link is used), in the
+// same transaction. Pausing/ending leaves that tick alone: staff decide separately whether a former
+// partner stays labelled as one, and its clicks then use the plain product link.
 export async function setAffiliateProgrammeStatus(providerId: string, status: AffiliateProgrammeStatus): Promise<AffiliateProgrammeActionState> {
   const staffUser = await requireWriter();
   if (!staffUser) return { error: NO_ACCESS };

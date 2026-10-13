@@ -3,24 +3,29 @@
 // forged clicks. Only the route handler imports these.
 
 import type { ReferralPlacement } from "@/generated/prisma/client";
+import { deliveredTotalPence } from "@/lib/comparison";
 import { prisma } from "@/lib/prisma";
 import { BOT_CLICKS_PER_HOUR, isAllowedDestination, VISITOR_HASH_TTL_MS } from "@/lib/referrals";
-import type { OutboundDestination } from "@/types/referrals";
+import type { ClickDetails, OutboundDestination } from "@/types/referrals";
 
 const HOUR_MS = 60 * 60 * 1000;
 
 // The same gate as the public comparison (published offer from a PUBLISHED provider) plus a
-// destination check, so /go can only ever send a visitor to a reviewed pharmacy's own site. Only
-// linked (affiliate-approved) pharmacies get a link, so /go refuses the rest too.
+// destination check, so /go can only ever send a visitor to a reviewed pharmacy's own site. Every
+// published pharmacy is linked and counted; only an affiliate-approved one uses its tracked link.
 export async function resolveOutboundDestination(offerId: string): Promise<OutboundDestination | null> {
   const offer = await prisma.offer.findFirst({
-    where: { id: offerId, publishedAt: { not: null }, provider: { status: "PUBLISHED", affiliateApproved: true } },
+    where: { id: offerId, publishedAt: { not: null }, provider: { status: "PUBLISHED" } },
     select: {
       id: true,
       sourceUrl: true,
       providerId: true,
       productVariantId: true,
-      provider: { select: { websiteDomain: true, affiliateProgramme: { where: { status: "ACTIVE" }, select: { id: true, linkTemplate: true } } } },
+      itemPricePence: true,
+      deliveryFeePence: true,
+      consultationFeePence: true,
+      otherMandatoryFeesPence: true,
+      provider: { select: { websiteDomain: true, affiliateApproved: true, affiliateProgramme: { where: { status: "ACTIVE" }, select: { id: true, linkTemplate: true } } } },
     },
   });
   if (!offer || !isAllowedDestination(offer.sourceUrl, offer.provider.websiteDomain)) return null;
@@ -29,11 +34,12 @@ export async function resolveOutboundDestination(offerId: string): Promise<Outbo
     providerId: offer.providerId,
     productVariantId: offer.productVariantId,
     destination: offer.sourceUrl,
-    programme: offer.provider.affiliateProgramme,
+    totalPricePence: deliveredTotalPence(offer),
+    programme: offer.provider.affiliateApproved ? offer.provider.affiliateProgramme : null,
   };
 }
 
-export async function recordOutboundClick({ clickId, programmeId, target, placement, rankPosition, visitorHash, isLikelyBot, now }: {
+export async function recordOutboundClick({ clickId, programmeId, target, placement, rankPosition, visitorHash, isLikelyBot, details, now }: {
   // Generated before the redirect so it can be sent to the affiliate network as the clickRef.
   clickId: string;
   programmeId: string | null;
@@ -42,6 +48,7 @@ export async function recordOutboundClick({ clickId, programmeId, target, placem
   rankPosition: number | null;
   visitorHash: string | null;
   isLikelyBot: boolean;
+  details: ClickDetails;
   now: Date;
 }) {
   const recentFromVisitor = visitorHash
@@ -59,6 +66,8 @@ export async function recordOutboundClick({ clickId, programmeId, target, placem
       rankPosition,
       visitorHash,
       isLikelyBot: isLikelyBot || recentFromVisitor >= BOT_CLICKS_PER_HOUR,
+      ...details,
+      totalPricePence: target.totalPricePence,
       createdAt: now,
     },
   });

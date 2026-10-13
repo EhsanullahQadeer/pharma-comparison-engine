@@ -15,12 +15,12 @@ import { revealClass, revealStyle } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import type { ComparisonSort, PublicOffer } from "@/types/comparison";
 
-export function OfferCard({ offer, now, placement, linked, rank, best, max, sort, index, context = "comparison" }: {
+export function OfferCard({ offer, now, placement, partner, rank, best, max, sort, index, context = "comparison" }: {
   offer: PublicOffer;
   now: Date;
   placement: ReferralPlacement;
-  // Only linked pharmacies get a "View at pharmacy" button; the rest are listed without a URL.
-  linked: boolean;
+  // Every pharmacy gets a "View at pharmacy" button; a partner's is labelled as one we may earn from.
+  partner: boolean;
   rank?: number;
   best?: boolean;
   max: number;
@@ -84,24 +84,22 @@ export function OfferCard({ offer, now, placement, linked, rank, best, max, sort
             <p className="text-3xl font-semibold tracking-tight tabular-nums">{formatPence(offer.deliveredTotalPence)}</p>
             <p className="text-sm text-muted-foreground tabular-nums">{formatPence(offer.perTabletPence)} per tablet</p>
           </div>
-          {linked ? (
-            <div className="space-y-1.5 md:text-right">
-              <Button
-                size="lg"
-                variant={best ? "default" : "outline"}
-                className="rounded-full px-4 transition-transform active:scale-95"
-                nativeButton={false}
-                render={
-                  <OutboundLink offerId={offer.id} placement={placement} rank={rank}>
-                    View at pharmacy
-                    <ArrowUpRight aria-hidden="true" className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                    <span className="sr-only"> (opens {offer.providerDomain} in a new tab)</span>
-                  </OutboundLink>
-                }
-              />
-              <LinkNote linked />
-            </div>
-          ) : <LinkNote linked={false} className="md:text-right" />}
+          <div className="space-y-1.5 md:text-right">
+            <Button
+              size="lg"
+              variant={best ? "default" : "outline"}
+              className="rounded-full px-4 transition-transform active:scale-95"
+              nativeButton={false}
+              render={
+                <OutboundLink offerId={offer.id} placement={placement} partner={partner} rank={rank}>
+                  View at pharmacy
+                  <ArrowUpRight aria-hidden="true" className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  <span className="sr-only"> (opens {offer.providerDomain} in a new tab)</span>
+                </OutboundLink>
+              }
+            />
+            {partner ? <LinkNote /> : null}
+          </div>
         </div>
       </div>
       <div className="mt-5">

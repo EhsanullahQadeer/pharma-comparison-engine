@@ -505,8 +505,14 @@ enum ReferralPlacement {
   REPEAT_COSTS
 }
 
-// One row per outbound click through /go/[offerId] (M7). Deliberately non-sensitive (roadmap
-// §2.10): no IP, user agent, cookie or search terms. visitorHash is a salted daily hash used only
+enum ClickDevice {
+  DESKTOP
+  MOBILE
+  TABLET
+}
+
+// One row per outbound click through /go/[offerId] (M7). Deliberately non-identifying (roadmap
+// §2.10): no IP, raw user agent or cookie. visitorHash is a salted daily hash used only
 // to spot repeat-click bots, and is cleared after 24h. The destination isn't stored — it's always
 // the offer's own validated sourceUrl at click time. Never read by ranking code.
 model ReferralClick {
@@ -524,6 +530,19 @@ model ReferralClick {
   rankPosition     Int?
   isLikelyBot      Boolean             @default(false)
   visitorHash      String?
+  // Marketing detail, all derived at click time and null when unknown. The area comes from the
+  // host's lookup of the IP (which is then discarded); device, browser and system are the three
+  // coarse labels read from the user agent, never the string itself.
+  country          String?
+  region           String?
+  city             String?
+  deviceType       ClickDevice?
+  browser          String?
+  os               String?
+  // The page of ours the visitor clicked from, with its filters (path and query, no origin).
+  sourcePath       String?
+  // What the visitor was shown: the offer's total to pay at the moment of the click.
+  totalPricePence  Int?
   createdAt        DateTime            @default(now())
 
   @@index([createdAt])

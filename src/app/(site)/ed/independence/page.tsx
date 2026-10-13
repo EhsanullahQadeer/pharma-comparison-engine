@@ -1,6 +1,6 @@
 import { Ban, Scale, Eye, HandCoins } from "lucide-react";
 
-import { getLinkedProviders } from "@/actions/referrals/outbound-links";
+import { getPartnerProviders } from "@/actions/referrals/outbound-links";
 import { CallToAction, ContentSection, InfoCardGrid, PointList } from "@/components/ed/content-blocks";
 import { GradientText } from "@/components/ed/gradient-text";
 import { PageShell } from "@/components/ed/page-shell";
@@ -21,7 +21,7 @@ const INCLUSION = { icon: Ban, title: "Inclusion isn't for sale", body: "Pharmac
 const DISCLOSED = { icon: Eye, title: "Always disclosed", body: "This page lists every pharmacy we earn from, and every link that could earn us money is labelled." };
 
 export default async function IndependencePage() {
-  const partners = await getLinkedProviders();
+  const partners = await getPartnerProviders();
 
   return (
     <PageShell
@@ -35,7 +35,7 @@ export default async function IndependencePage() {
       <ContentSection id="commitments" title="Our commitments">
         <PointList points={[
           "A pharmacy's commercial relationship with us never changes its prices or its position in the rankings.",
-          "The one difference is the link: we link only to partner pharmacies. Every other pharmacy is still listed, priced and ranked in full.",
+          "We link to every pharmacy we list, partner or not. A link to a pharmacy that isn't a partner earns us nothing.",
           "Offers with verified fees rank ahead of indicative ones, so an unknown fee can never make a price look cheaper than it is.",
           "Every link that could earn us money is labelled “Partner · we may earn commission” next to it.",
           "We never accept payment to remove accurate information or to hide a competitor.",

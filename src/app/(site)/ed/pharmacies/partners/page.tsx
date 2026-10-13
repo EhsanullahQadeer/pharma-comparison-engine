@@ -1,6 +1,6 @@
 import { Ban, Handshake, Scale } from "lucide-react";
 
-import { getLinkedProviders } from "@/actions/referrals/outbound-links";
+import { getPartnerProviders } from "@/actions/referrals/outbound-links";
 import { CallToAction, ContentSection, InfoCardGrid, PointList } from "@/components/ed/content-blocks";
 import { GradientText } from "@/components/ed/gradient-text";
 import { PageShell } from "@/components/ed/page-shell";
@@ -17,10 +17,10 @@ export const metadata: Metadata = {
 };
 
 const LISTING = { icon: Ban, title: "Listing is free", body: "Pharmacies are listed after our checks, at no cost, and can't pay to be included." };
-const RANKING = { icon: Scale, title: "Ranking can't be bought", body: "Prices are ranked by price alone. Partners get a labelled link to their website; their position never changes." };
+const RANKING = { icon: Scale, title: "Ranking can't be bought", body: "Prices are ranked by price alone. Every listed pharmacy gets a link to its website; a partner's link is labelled, and its position never changes." };
 
 export default async function PartnersPage() {
-  const partners = await getLinkedProviders();
+  const partners = await getPartnerProviders();
 
   return (
     <PageShell

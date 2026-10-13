@@ -220,14 +220,14 @@ export async function transitionProviderStatus(
 
 export type SetProviderLinkedState = { error?: string };
 
-// Affiliate approval decides only whether public pages link to the pharmacy's website; it never
-// changes whether or where the pharmacy is listed. A commercial decision, so commercial roles only.
+// Affiliate approval decides only whether the pharmacy's links are labelled as a partner's and use
+// its tracked link; it never changes whether or where the pharmacy is listed or linked. A commercial decision, so commercial roles only.
 export async function setProviderAffiliateApproved(providerId: string, approved: boolean): Promise<SetProviderLinkedState> {
   let staffUser;
   try {
     staffUser = await requireStaffRole(["COMMERCIAL_MANAGER", "ADMINISTRATOR"]);
   } catch {
-    return { error: "Only commercial managers and administrators can change website links." };
+    return { error: "Only commercial managers and administrators can change a pharmacy's partner status." };
   }
 
   const provider = await prisma.provider.findUnique({ where: { id: providerId }, select: { affiliateApproved: true } });

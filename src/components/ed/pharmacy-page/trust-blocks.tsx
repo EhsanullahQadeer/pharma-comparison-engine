@@ -17,18 +17,11 @@ function hostname(url: string) {
   }
 }
 
-// A page on the pharmacy's own website (or a subdomain), as opposed to a regulator or other source.
-function isOwnSite(url: string, websiteDomain: string) {
-  const host = hostname(url);
-  const domain = websiteDomain.replace(/^www\./, "");
-  return host === domain || host.endsWith(`.${domain}`);
-}
-
 export function QuickAnswer({ model, className }: { model: PharmacyPageModel; className?: string }) {
-  const { provider, discounts, linked } = model;
+  const { provider, discounts } = model;
   const answer = discounts.length > 0
     ? `We have ${discounts.length} checked discount${discounts.length === 1 ? "" : "s"} on record for ${provider.name}, shown below with any code to copy.`
-    : `There's no checked discount code on record for ${provider.name}. ${linked ? "The link below opens the pharmacy's own page so you can see its latest price and terms." : "Any current offer will show on the pharmacy's own website."}`;
+    : `There's no checked discount code on record for ${provider.name}. The link below opens the pharmacy's own page so you can see its latest price and terms.`;
   return (
     <div className={cn("flex gap-4 rounded-3xl border border-border bg-card p-6 shadow-(--shadow)", className)}>
       <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground"><Check className="size-5" /></span>
@@ -86,7 +79,7 @@ export function HowItWorks({ model, style = "numbered", className }: { model: Ph
 }
 
 export function RegistrationChecks({ model, className }: { model: PharmacyPageModel; className?: string }) {
-  const { provider, linked } = model;
+  const { provider } = model;
   return (
     <section aria-labelledby="checks" className={cn("scroll-mt-24 rounded-3xl border border-border bg-card p-6 sm:p-8", className)}>
       <h2 id="checks" className="flex items-center gap-2 text-2xl font-semibold tracking-tight"><ShieldCheck aria-hidden="true" className="size-6 text-primary" />{provider.name} checks</h2>
@@ -113,9 +106,7 @@ export function RegistrationChecks({ model, className }: { model: PharmacyPageMo
           <ul className="mt-3 space-y-2 text-sm">
             {provider.evidence.map((item) => (
               <li key={item.id} className="flex items-start justify-between gap-3">
-                {linked || !isOwnSite(item.sourceUrl, provider.websiteDomain) ? (
-                  <a href={item.sourceUrl} target="_blank" rel="nofollow noopener noreferrer" className="min-w-0 truncate underline underline-offset-4 hover:text-muted-foreground">{hostname(item.sourceUrl)}</a>
-                ) : <span className="min-w-0 truncate">{hostname(item.sourceUrl)}</span>}
+                <a href={item.sourceUrl} target="_blank" rel="nofollow noopener noreferrer" className="min-w-0 truncate underline underline-offset-4 hover:text-muted-foreground">{hostname(item.sourceUrl)}</a>
                 {item.checkedAt ? <time dateTime={item.checkedAt.toISOString()} className="shrink-0 text-xs text-muted-foreground">{formatShortDate(item.checkedAt)}</time> : null}
               </li>
             ))}
@@ -165,13 +156,13 @@ export function FaqList({ model, className, title }: { model: PharmacyPageModel;
 }
 
 export function IndependenceNote({ model, className }: { model: PharmacyPageModel; className?: string }) {
-  const { provider, linked } = model;
+  const { provider, partner } = model;
   return (
     <aside aria-label="About this page" className={cn("flex gap-3 rounded-3xl bg-muted/60 p-5 text-sm leading-relaxed text-muted-foreground", className)}>
       <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
       <p>
         Independent information: we don&apos;t prescribe or sell medicine. {provider.name} sets its own prices and makes all clinical decisions.{" "}
-        {linked ? "We may earn commission if you order through our link; it never changes the order prices are shown in." : "We have no commercial relationship with this pharmacy."}{" "}
+        {partner ? "We may earn commission if you order through our link; it never changes the order prices are shown in." : "We have no commercial relationship with this pharmacy."}{" "}
         <Link href="/ed/independence" className="underline underline-offset-4 hover:text-foreground">How we&apos;re funded</Link>
       </p>
     </aside>

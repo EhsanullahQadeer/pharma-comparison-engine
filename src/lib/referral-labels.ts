@@ -1,4 +1,4 @@
-import type { AffiliateNetwork, AffiliateProgrammeStatus, CommissionBasis, ReferralPlacement } from "@/generated/prisma/client";
+import type { AffiliateNetwork, AffiliateProgrammeStatus, ClickDevice, CommissionBasis, ReferralPlacement } from "@/generated/prisma/client";
 
 export const referralPlacementLabels: Record<ReferralPlacement, string> = {
   COMPARE: "Compare",
@@ -6,6 +6,23 @@ export const referralPlacementLabels: Record<ReferralPlacement, string> = {
   PHARMACY_PROFILE: "Pharmacy profile",
   REPEAT_COSTS: "Repeat costs",
 };
+
+export const clickDeviceLabels: Record<ClickDevice, string> = {
+  DESKTOP: "Computer",
+  MOBILE: "Phone",
+  TABLET: "Tablet",
+};
+
+// The UK's nations, as the region code stored with a click; other regions show their code.
+export const ukRegionLabels: Record<string, string> = {
+  ENG: "England",
+  SCT: "Scotland",
+  WLS: "Wales",
+  NIR: "Northern Ireland",
+};
+
+// Shown where a click has no value for a breakdown (older clicks, or the browser didn't say).
+export const CLICK_DETAIL_NOT_RECORDED = "Not recorded";
 
 export const affiliateNetworkLabels: Record<AffiliateNetwork, string> = {
   AWIN: "Awin",

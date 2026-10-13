@@ -42,7 +42,7 @@ const Pagination = ({
               value={String(pageSize)}
               onValueChange={(v) => onPageSizeChange(Number(v ?? ""))}
             >
-              <SelectTrigger className="h-8 w-18 px-2 py-1">
+              <SelectTrigger aria-label="Rows per page" className="h-8 w-18 px-2 py-1">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -61,6 +61,7 @@ const Pagination = ({
           <Button
             variant="outline"
             size="sm"
+            aria-label="Previous page"
             onClick={() => setPage(page - 1)}
             disabled={page <= 1}
           >
@@ -71,6 +72,7 @@ const Pagination = ({
           <Button
             variant="outline"
             size="sm"
+            aria-label="Next page"
             onClick={() => setPage(page + 1)}
             disabled={page >= pages}
             className="ml-2"

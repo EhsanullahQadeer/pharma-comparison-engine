@@ -16,9 +16,9 @@ import { formatPence } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import type { ComparisonSort, PublicOffer } from "@/types/comparison";
 
-type RowProps = { offer: PublicOffer; now: Date; sort: ComparisonSort; placement: ReferralPlacement; linked: boolean; showLinkColumn: boolean; showOffers: boolean; showRank: boolean; rank?: number; best: boolean };
+type RowProps = { offer: PublicOffer; now: Date; sort: ComparisonSort; placement: ReferralPlacement; partner: boolean; showOffers: boolean; showRank: boolean; rank?: number; best: boolean };
 
-function OfferRow({ offer, now, sort, placement, linked, showLinkColumn, showOffers, showRank, rank, best }: RowProps) {
+function OfferRow({ offer, now, sort, placement, partner, showOffers, showRank, rank, best }: RowProps) {
   return (
     <TableRow className={cn(best && "bg-primary/5 hover:bg-primary/10")}>
       {showRank ? (
@@ -67,28 +67,24 @@ function OfferRow({ offer, now, sort, placement, linked, showLinkColumn, showOff
         <FreshnessPill freshness={offer.freshness} checkedAt={offer.checkedAt} now={now} compact />
         {offer.freshness === "stale" && <p className="mt-1 text-xs text-muted-foreground">May have changed</p>}
       </TableCell>
-      {showLinkColumn ? (
-        <TableCell className="text-right">
-          {linked ? (
-            <div className="flex flex-col items-end gap-1">
-              <Button
-                size="sm"
-                variant={best ? "default" : "outline"}
-                className="rounded-full"
-                nativeButton={false}
-                render={
-                  <OutboundLink offerId={offer.id} placement={placement} rank={rank}>
-                    View
-                    <ArrowUpRight aria-hidden="true" className="size-4" />
-                    <span className="sr-only"> {offer.providerName} (opens {offer.providerDomain} in a new tab)</span>
-                  </OutboundLink>
-                }
-              />
-              <LinkNote linked className="whitespace-nowrap" />
-            </div>
-          ) : null}
-        </TableCell>
-      ) : null}
+      <TableCell className="text-right">
+        <div className="flex flex-col items-end gap-1">
+          <Button
+            size="sm"
+            variant={best ? "default" : "outline"}
+            className="rounded-full"
+            nativeButton={false}
+            render={
+              <OutboundLink offerId={offer.id} placement={placement} partner={partner} rank={rank}>
+                View
+                <ArrowUpRight aria-hidden="true" className="size-4" />
+                <span className="sr-only"> {offer.providerName} (opens {offer.providerDomain} in a new tab)</span>
+              </OutboundLink>
+            }
+          />
+          {partner ? <LinkNote className="whitespace-nowrap" /> : null}
+        </div>
+      </TableCell>
     </TableRow>
   );
 }
@@ -120,9 +116,11 @@ function OfferDiscountCell({ offer }: { offer: PublicOffer }) {
 // Every comparison row in one scannable table; scrolls horizontally on narrow screens. Ranked rows
 // (in stock, by price) come first; `other` rows (out of stock) follow under an "Also listed"
 // divider, unranked. The column the list is ranked by (`sort`) is emphasised.
-export function OfferTable({ ranked, other, now, sort, placement, showRank, showOffers, bestId, label, linkedProviderIds }: {
+export function OfferTable({ ranked, other, now, sort, placement, showRank, showOffers, bestId, label, partnerProviderIds, rankOffset = 0 }: {
   ranked: PublicOffer[];
   other: PublicOffer[];
+  // Ranked rows on earlier pages, so a later page carries on the numbering instead of restarting at 1.
+  rankOffset?: number;
   now: Date;
   sort: ComparisonSort;
   placement: ReferralPlacement;
@@ -131,12 +129,10 @@ export function OfferTable({ ranked, other, now, sort, placement, showRank, show
   showOffers: boolean;
   bestId?: string;
   label: string;
-  // Pharmacies that get a "View" link; the rest are listed without one.
-  linkedProviderIds: ReadonlySet<string>;
+  // Pharmacies whose "View" link is labelled as one we may earn from; every row gets a link.
+  partnerProviderIds: ReadonlySet<string>;
 }) {
-  // Only partner pharmacies get a link, so the link column appears only when a row has one.
-  const showLinkColumn = [...ranked, ...other].some((offer) => linkedProviderIds.has(offer.providerId));
-  const columnCount = 6 + Number(showRank) + Number(showOffers) + Number(showLinkColumn);
+  const columnCount = 7 + Number(showRank) + Number(showOffers);
   return (
     <Table resizable={false} stickyHeader={false} aria-label={label} className="min-w-4xl">
       <TableHeader>
@@ -149,12 +145,12 @@ export function OfferTable({ ranked, other, now, sort, placement, showRank, show
           <TableHead className={cn("text-right", sort === "tablet" && "text-foreground")}>Per tablet</TableHead>
           {showOffers ? <TableHead>Offers</TableHead> : null}
           <TableHead>Last checked</TableHead>
-          {showLinkColumn ? <TableHead className="text-right"><span className="sr-only">Link</span></TableHead> : null}
+          <TableHead className="text-right"><span className="sr-only">Link</span></TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {ranked.map((offer, index) => (
-          <OfferRow key={offer.id} offer={offer} now={now} sort={sort} placement={placement} linked={linkedProviderIds.has(offer.providerId)} showLinkColumn={showLinkColumn} showOffers={showOffers} showRank={showRank} rank={index + 1} best={offer.id === bestId} />
+          <OfferRow key={offer.id} offer={offer} now={now} sort={sort} placement={placement} partner={partnerProviderIds.has(offer.providerId)}showOffers={showOffers} showRank={showRank} rank={rankOffset + index + 1} best={offer.id === bestId} />
         ))}
         {other.length > 0 && (
           <TableRow className="hover:bg-transparent">
@@ -165,7 +161,7 @@ export function OfferTable({ ranked, other, now, sort, placement, showRank, show
           </TableRow>
         )}
         {other.map((offer) => (
-          <OfferRow key={offer.id} offer={offer} now={now} sort={sort} placement={placement} linked={linkedProviderIds.has(offer.providerId)} showLinkColumn={showLinkColumn} showOffers={showOffers} showRank={showRank} best={false} />
+          <OfferRow key={offer.id} offer={offer} now={now} sort={sort} placement={placement} partner={partnerProviderIds.has(offer.providerId)}showOffers={showOffers} showRank={showRank} best={false} />
         ))}
       </TableBody>
     </Table>

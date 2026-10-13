@@ -33,9 +33,8 @@ export async function confirmRejectPages(pages: number, withPrice: number) {
 // applies to (publish/delete need a saved price, schedule/scrape need a tracked product page).
 // With `emptyHint` the toolbar stays visible (buttons disabled) while nothing is selected.
 export function PriceBulkActions({ rows, actions, onClear, emptyHint }: { rows: BulkPriceRow[]; actions: readonly PriceBulkAction[]; onClear: () => void; emptyHint?: string }) {
-  const bulk = useBulkRun(onClear);
+  const { bulk, startScrape, stop, scrapeRunning } = useBulkScrape(useBulkRun(onClear), onClear);
   const { state, run } = bulk;
-  const { scrapeMatches, stop } = useBulkScrape(bulk.setProgress);
 
   const offerIds = rows.flatMap((row) => row.offerId ?? []);
   const matchIds = rows.flatMap((row) => row.matchId ?? []);
@@ -65,7 +64,7 @@ export function PriceBulkActions({ rows, actions, onClear, emptyHint }: { rows: 
   }
 
   function handleScrape(humanAssist: boolean) {
-    void run(() => scrapeMatches(matchIds.map((matchId) => ({ matchId })), humanAssist ? "human" : "automatic"), `Scraping 1 of ${matchIds.length}…`);
+    void startScrape((scrapeMatches) => scrapeMatches(matchIds.map((matchId) => ({ matchId })), humanAssist ? "human" : "automatic"), `Scraping 1 of ${matchIds.length}…`);
   }
 
   async function handleReject() {
@@ -133,13 +132,13 @@ export function PriceBulkActions({ rows, actions, onClear, emptyHint }: { rows: 
         </DropdownMenu>
       ) : null}
       {has("scrape") ? (
-        <Button type="button" size="sm" variant="outline" disabled={disabled || matchIds.length === 0} onClick={() => handleScrape(false)}>
+        <Button type="button" size="sm" variant="outline" disabled={disabled || scrapeRunning || matchIds.length === 0} onClick={() => handleScrape(false)}>
           <RefreshCw aria-hidden="true" className={cn("size-4", state.busy && state.progress && "animate-spin")} />
           Scrape now
         </Button>
       ) : null}
       {has("humanScrape") ? (
-        <Button type="button" size="sm" variant="outline" disabled={disabled || matchIds.length === 0} onClick={() => handleScrape(true)}>
+        <Button type="button" size="sm" variant="outline" disabled={disabled || scrapeRunning || matchIds.length === 0} onClick={() => handleScrape(true)}>
           <UserCheck aria-hidden="true" className="size-4" />
           Human-assisted scrape
         </Button>

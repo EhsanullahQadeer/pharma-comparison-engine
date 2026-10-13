@@ -2,6 +2,20 @@
 
 ## 2026-10-13
 
+- A bulk price check now stays visible when you move to another admin page. A strip under the top bar shows its progress ("Scraping 7 of 20…") with a Stop button, and the final result when it finishes, wherever you are in the admin. It also has a link back to the page the check was started from.
+- Coming back to the page where you started a bulk price check shows it still running, with its progress and Stop button, instead of looking as if nothing was happening.
+- A second bulk price check cannot be started while one is running: the scrape buttons stay switched off until it finishes. This applies to the Pharmacies list, a pharmacy's prices and a product's prices.
+- Reloading or closing the browser tab during a bulk price check now asks you to confirm first, because that ends the check early.
+
+- Each click through to a pharmacy now records some general marketing detail: the approximate area the visitor was in (country, region and town or city), whether they used a phone, tablet or computer, their browser, the page of ours they clicked from with any filters chosen, and the price they were shown. No IP address is stored and no cookies are used, so no consent banner is needed.
+- The "Clicks to pharmacies" report has four new tables: By area, By device, By browser and By page. The product tables also show the average price visitors were shown when they clicked. Clicks made before this change show as "Not recorded" in the new tables.
+- The privacy policy has been updated to list these details and to say that the IP address is not kept.
+- Choosing a filter or a sort order on the price comparison page now shows a loading placeholder over the results straight away, while the heading and the filter box stay in place. Before, the old results sat on screen unchanged until the new ones arrived, and the loading bar at the top stayed up long after the page had finished.
+- The comparison table now shows 25 prices per page, with next/previous buttons and a choice of 25, 50, 100 or 200 rows. The ranking numbers carry on from page to page. The full list had grown to more than 1,600 rows on one page, which made it very slow to open.
+- Every listed pharmacy now has a button that opens its website, not just partner pharmacies. On a pharmacy's page this is "See [pharmacy]'s current offer" plus a "View" button beside each price, and on the comparison pages it is "View at pharmacy". Each press is counted and shows in the admin click reports.
+- Only partner pharmacies carry the "Partner · we may earn commission" label under the button. Buttons for all other pharmacies open the pharmacy's normal product page and earn nothing.
+- The wording on pharmacy pages, the Independence page and the Pharmacy partnerships page has been updated to say that we link to every listed pharmacy, and that only partner links can earn us money.
+- In the admin, the "Affiliate partner" tick box on a pharmacy now only controls the commission label and the tracked partner link. Unticked pharmacies are still linked and their clicks still counted.
 - The Pharmacies list in the admin has a new bulk button, "Scrape published prices". Tick one or more pharmacies and press it to re-check every published price of those pharmacies on the pharmacy's own website, one at a time. It shows progress as it goes, can be stopped part-way, and finishes with how many prices were checked and how many failed. Prices that were typed in by hand are skipped, because there is no product page to check them against.
 - When that bulk check cannot read a price automatically, it now tries once more in the visible Chrome window on the server computer, where a person can complete a security check. If nobody completes the check for a pharmacy, its remaining prices are not sent to the window again in that run. The result says how many prices came through the Chrome window.
 - The "Filter and sort" box on the price comparison page has been redesigned. The long rows of buttons are replaced by a single row of dropdowns: Product, Strength, Form, Pack size, Buying and Sort by. Product and medicine are now one dropdown, with each product listed under its medicine.

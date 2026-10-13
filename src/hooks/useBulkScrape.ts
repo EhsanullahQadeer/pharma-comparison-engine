@@ -1,51 +1,42 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 
-import { runPriceCollectionForMatch } from "@/actions/price-collection/price-collection";
-import type { BulkRunResult } from "@/hooks/useBulkRun";
-import { useRouter } from "@/hooks/useRouter";
-import { visibleBrowserGaveUp, worthVisibleBrowserRetry } from "@/lib/price-collection/scrape-escalation";
-import type { BulkScrapeMode, BulkScrapePage } from "@/types/pricing";
+import type { useBulkRun } from "@/hooks/useBulkRun";
+import { type BulkScrapeWork, dismissBulkScrape, getServerSnapshot, getSnapshot, mountBulkScrapeScope, startBulkScrape, stopBulkScrape, subscribe } from "@/lib/bulk-scrape-store";
 
-// Scrapes a list of tracked product pages one at a time, like the scheduled runner — pharmacy sites
-// are fetched politely, and staff can stop between pages. "human" opens each page in the visible
-// Chrome window, where a person completes any security check; "automaticThenHuman" only goes there
-// for a page the automatic check (plain request, then background browser) could not price. Pass the
-// result to useBulkRun's `run`; `setProgress` is that hook's.
-export function useBulkScrape(setProgress: (progress: string) => void) {
-  const router = useRouter();
-  const stopRequested = useRef(false);
+// Ties a bulk toolbar to the tab-wide scrape in `bulk-scrape-store.ts`. A scrape started here keeps
+// running when staff leave the page; on coming back, the returned `bulk` shows its progress or
+// result again in place of the toolbar's own state. `scrapeRunning` is true for a run started
+// anywhere, so every toolbar can keep its scrape buttons off until that run ends.
+export function useBulkScrape(bulk: ReturnType<typeof useBulkRun>, onClear: () => void) {
+  const scope = usePathname();
+  const scrape = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const { run, dismiss } = bulk;
 
-  const scrapeMatches = useCallback(async (pages: BulkScrapePage[], mode: BulkScrapeMode): Promise<BulkRunResult> => {
-    stopRequested.current = false;
-    let scraped = 0;
-    let viaVisibleBrowser = 0;
-    const failures: string[] = [];
-    // Pharmacies whose security check went unanswered in this run: their other pages skip the window.
-    const unansweredProviders = new Set<string>();
-    for (const [index, page] of pages.entries()) {
-      if (stopRequested.current) break;
-      const position = `${index + 1} of ${pages.length}`;
-      setProgress(`Scraping ${position}…`);
-      let result = await runPriceCollectionForMatch(page.matchId, mode === "human");
-      const retry = mode === "automaticThenHuman" && result.error && worthVisibleBrowserRetry(result.error) && !unansweredProviders.has(page.providerId ?? "") && !stopRequested.current;
-      if (retry) {
-        setProgress(`Scraping ${position} — the automatic check failed, trying the Chrome window. If it shows a security check, complete it there.`);
-        result = await runPriceCollectionForMatch(page.matchId, true);
-        if (result.error && page.providerId && visibleBrowserGaveUp(result.error)) unansweredProviders.add(page.providerId);
-        if (!result.error) viaVisibleBrowser += 1;
-      }
-      if (result.error) failures.push(result.error);
-      else scraped += 1;
-    }
-    router.refresh();
-    const stopped = stopRequested.current ? " Stopped early." : "";
-    const assisted = viaVisibleBrowser > 0 ? ` (${viaVisibleBrowser} through the Chrome window)` : "";
-    if (failures.length === 0) return { message: `Scraped ${scraped} price${scraped === 1 ? "" : "s"}${assisted}.${stopped}` };
-    return { error: `Scraped ${scraped}${assisted}, ${failures.length} failed (first error: ${failures[0]}).${stopped}` };
-  }, [router, setProgress]);
-  const stop = useCallback(() => { stopRequested.current = true; }, []);
+  useEffect(() => mountBulkScrapeScope(scope), [scope]);
 
-  return { scrapeMatches, stop };
+  const startScrape = useCallback(async (work: BulkScrapeWork, progress: string) => {
+    dismiss();
+    const result = await startBulkScrape(scope, work, progress);
+    if (result && !result.error) onClear();
+  }, [dismiss, onClear, scope]);
+  // A result left over from a scrape would hide the toolbar's next action, so that action clears it.
+  const runOther = useCallback<typeof run>((work, progress) => {
+    dismissBulkScrape();
+    return run(work, progress);
+  }, [run]);
+
+  const showsScrape = scrape.scope === scope && (scrape.running || scrape.result !== null);
+  const state = showsScrape
+    ? { busy: scrape.running, progress: scrape.progress, message: scrape.result?.message ?? null, error: scrape.result?.error ?? null }
+    : bulk.state;
+
+  return {
+    bulk: { ...bulk, state, run: runOther, dismiss: showsScrape ? dismissBulkScrape : dismiss },
+    startScrape,
+    stop: stopBulkScrape,
+    scrapeRunning: scrape.running,
+  };
 }

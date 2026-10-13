@@ -6,7 +6,7 @@ import { setProviderAffiliateApproved } from "@/actions/providers/providers";
 import { Checkbox } from "@/components/common/checkbox";
 import { Label } from "@/components/common/label";
 
-// Affiliated pharmacies get a website link on public pages; the rest stay listed without one.
+// Every published pharmacy is linked on public pages; affiliated ones are labelled as partners.
 export function ProviderLinkToggle({ providerId, affiliateApproved }: { providerId: string; affiliateApproved: boolean }) {
   const [checked, setChecked] = useState(affiliateApproved);
   const [error, setError] = useState<string>();
@@ -28,10 +28,10 @@ export function ProviderLinkToggle({ providerId, affiliateApproved }: { provider
     <div className="space-y-1">
       <div className="flex items-center gap-2">
         <Checkbox id="affiliateApproved" checked={checked} disabled={isPending} onCheckedChange={(value) => handleChange(value === true)} />
-        <Label htmlFor="affiliateApproved">Affiliate partner — link to this pharmacy&apos;s website</Label>
+        <Label htmlFor="affiliateApproved">Affiliate partner — label this pharmacy&apos;s links as earning commission</Label>
       </div>
       <p className="text-xs text-muted-foreground">
-        Off: listed and priced on the public site as normal, with no link to its website. Never changes ranking.
+        Off: still linked and its clicks counted, with no commission label and no tracked link. Never changes ranking.
       </p>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
     </div>

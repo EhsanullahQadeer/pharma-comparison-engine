@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 
 import { getPublicProvider } from "@/actions/providers/public-providers";
-import { getLinkedProviderIds } from "@/actions/referrals/outbound-links";
+import { getPartnerProviderIds } from "@/actions/referrals/outbound-links";
 import { PharmacyLayout } from "@/components/ed/pharmacy-page/pharmacy-layout";
 import { buildPharmacyPageModel } from "@/lib/pharmacy-page";
 import { pomPricingRobots, serializeJsonLd } from "@/lib/seo";
@@ -54,10 +54,9 @@ export async function generateMetadata(props: PageProps<"/ed/pharmacies/[slug]">
 
 export default async function PharmacyProfilePage(props: PageProps<"/ed/pharmacies/[slug]">) {
   const { slug } = await props.params;
-  const [provider, linkedProviderIds] = await Promise.all([loadProvider(slug), getLinkedProviderIds()]);
+  const [provider, partnerProviderIds] = await Promise.all([loadProvider(slug), getPartnerProviderIds()]);
   if (!provider) notFound();
-  // Only linked (affiliate-approved) pharmacies get a URL; everyone else is listed in full without one.
-  const model = buildPharmacyPageModel(provider, linkedProviderIds.has(provider.id), new Date());
+  const model = buildPharmacyPageModel(provider, partnerProviderIds.has(provider.id), new Date());
   const breadcrumbs = breadcrumbSchema(model);
 
   return (

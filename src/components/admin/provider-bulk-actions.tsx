@@ -28,9 +28,8 @@ type SelectedProvider = { id: string; status: ProviderStatus; draftCount: number
 // published price of the selection that is tracked from a product page, one page at a time: a plain
 // request, then a background browser, then the visible Chrome window for a page neither could price.
 export function ProviderBulkActions({ providers, role, onClear }: { providers: SelectedProvider[]; role: StaffRole; onClear: () => void }) {
-  const bulk = useBulkRun(onClear);
+  const { bulk, startScrape, stop, scrapeRunning } = useBulkScrape(useBulkRun(onClear), onClear);
   const { state, run } = bulk;
-  const { scrapeMatches, stop } = useBulkScrape(bulk.setProgress);
 
   const options = useMemo(
     () => statusOrder
@@ -69,7 +68,7 @@ export function ProviderBulkActions({ providers, role, onClear }: { providers: S
   }
 
   function handleScrapePrices() {
-    void run(async () => {
+    void startScrape(async (scrapeMatches) => {
       const lookup = await getPublishedPricePages(providers.map((provider) => provider.id));
       if (lookup.error) return { error: lookup.error };
       const untracked = lookup.untracked ? ` ${plural(lookup.untracked, "published price")} skipped — entered by hand, not tracked from a product page.` : "";
@@ -108,7 +107,7 @@ export function ProviderBulkActions({ providers, role, onClear }: { providers: S
         <Globe aria-hidden="true" className="size-4" />
         Publish draft prices{publishableDrafts > 0 ? ` (${publishableDrafts})` : ""}
       </Button>
-      <Button type="button" size="sm" variant="outline" disabled={state.busy || providers.length === 0} onClick={handleScrapePrices}>
+      <Button type="button" size="sm" variant="outline" disabled={state.busy || scrapeRunning || providers.length === 0} onClick={handleScrapePrices}>
         <RefreshCw aria-hidden="true" className={cn("size-4", state.busy && state.progress && "animate-spin")} />
         Scrape published prices
       </Button>

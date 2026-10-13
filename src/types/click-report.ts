@@ -20,5 +20,17 @@ export type ClickReportRow = {
   clicks: number;
   // Percentage of all counted clicks in the period, to one decimal place.
   share: number;
+  // Average total to pay shown to the visitors who clicked; null where no click recorded a price
+  // (clicks from before prices were recorded) or the table isn't about one product.
+  averagePricePence: number | null;
+  lastClickAt: Date;
+};
+
+// One line of a marketing breakdown of the same clicks: an area, a device, a browser or a page.
+export type ClickBreakdownRow = {
+  key: string;
+  label: string;
+  clicks: number;
+  share: number;
   lastClickAt: Date;
 };

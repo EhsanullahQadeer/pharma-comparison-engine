@@ -39,7 +39,7 @@ function deliveryText(offers: PublicOffer[]) {
   return `Delivery costs ${min === 0 ? "nothing" : formatPence(min)} to ${formatPence(max)}, depending on the order.`;
 }
 
-function buildFaqs(provider: PublicProviderProfile, linked: boolean, discounts: PublicDiscount[], bestOffer: PublicOffer | null, delivery: string, regulator: string): PharmacyFaq[] {
+function buildFaqs(provider: PublicProviderProfile, partner: boolean, discounts: PublicDiscount[], bestOffer: PublicOffer | null, delivery: string, regulator: string): PharmacyFaq[] {
   const name = provider.name;
   const discountAnswer = discounts.length > 0
     ? `We have ${discounts.length} discount${discounts.length === 1 ? "" : "s"} on record for ${name}: ${discounts.map(describeDiscount).join("; ")}. Check the terms on the pharmacy's own checkout before paying.`
@@ -47,9 +47,9 @@ function buildFaqs(provider: PublicProviderProfile, linked: boolean, discounts: 
   const priceAnswer = bestOffer
     ? `The lowest current price we've checked is ${formatPence(bestOffer.perTabletPence)} per tablet (${formatPence(bestOffer.deliveredTotalPence)} in total for ${variantLabel(bestOffer.variant)}), last checked ${formatShortDate(bestOffer.checkedAt)}. Every price we hold is listed on this page.`
     : `We haven't published a current price for ${name} yet. Compare other pharmacies in the meantime.`;
-  const linkAnswer = linked
-    ? `No. The link opens ${provider.websiteDomain}; it doesn't add a discount or skip the consultation. ${name} is a partner, so we may earn commission if you buy, but that never changes the order prices are shown in.`
-    : `We don't link to ${name}. Visit ${provider.websiteDomain} directly if you'd like to order; its prices are still listed and ranked in full here.`;
+  const linkAnswer = `No. The link opens ${provider.websiteDomain}; it doesn't add a discount or skip the consultation. ${partner
+    ? `${name} is a partner, so we may earn commission if you buy, but that never changes the order prices are shown in.`
+    : `We have no commercial relationship with ${name} and earn nothing if you buy.`}`;
 
   return [
     { id: "discount-code", question: `Does ${name} have a discount code?`, answer: discountAnswer },
@@ -68,7 +68,7 @@ const checklist: PharmacyStep[] = [
   { title: "Think about repeat orders", body: "The cheapest first order isn't always the cheapest over several months." },
 ];
 
-export function buildPharmacyPageModel(provider: PublicProviderProfile, linked: boolean, now: Date): PharmacyPageModel {
+export function buildPharmacyPageModel(provider: PublicProviderProfile, partner: boolean, now: Date): PharmacyPageModel {
   const offers = provider.offers;
   const bestOffer = [...offers].filter(isRankable).sort(compareOffers("tablet"))[0] ?? null;
   const discounts = providerDiscounts(offers);
@@ -91,13 +91,13 @@ export function buildPharmacyPageModel(provider: PublicProviderProfile, linked: 
 
   const steps: PharmacyStep[] = [
     { title: "Compare the price", body: `Check ${name}'s prices here against every other listed pharmacy.` },
-    { title: "Open the pharmacy's site", body: linked ? `The link opens ${provider.websiteDomain} in a new tab. No discount is added by the link.` : `Go to ${provider.websiteDomain} yourself; we don't link to this pharmacy.` },
+    { title: "Open the pharmacy's site", body: `The link opens ${provider.websiteDomain} in a new tab. No discount is added by the link.` },
     { title: "Complete the consultation", body: "Answer the pharmacy's health questions accurately. It decides whether treatment is suitable." },
   ];
 
   return {
     provider,
-    linked,
+    partner,
     now,
     discounts,
     bestOffer,
@@ -110,6 +110,6 @@ export function buildPharmacyPageModel(provider: PublicProviderProfile, linked: 
     keyFacts,
     steps,
     checklist,
-    faqs: buildFaqs(provider, linked, discounts, bestOffer, delivery, regulatorLabel),
+    faqs: buildFaqs(provider, partner, discounts, bestOffer, delivery, regulatorLabel),
   };
 }
