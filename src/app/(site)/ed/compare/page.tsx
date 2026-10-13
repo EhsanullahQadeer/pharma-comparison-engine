@@ -4,10 +4,12 @@ import { getPublicOffers } from "@/actions/offers/public-offers";
 import { ComparisonFiltersPanel } from "@/components/ed/comparison-filters";
 import { GradientText } from "@/components/ed/gradient-text";
 import { LiveSummary } from "@/components/ed/live-summary";
+import { NavigationPending } from "@/components/ed/navigation-pending";
 import { OfferResults } from "@/components/ed/offer-results";
 import { PageShell } from "@/components/ed/page-shell";
 import { PricingNotes } from "@/components/ed/pricing-notes";
 import { PublicEmptyState } from "@/components/ed/public-empty-state";
+import { ComparisonResultsSkeleton } from "@/components/ed/skeletons";
 import { StatTile } from "@/components/ed/stat-tile";
 import { comparisonHref, filterOffers, formatCheckedAgo, isRankable, parseComparisonFilters } from "@/lib/comparison";
 import { formatPence } from "@/lib/money";
@@ -52,19 +54,21 @@ export default async function ComparePage(props: PageProps<"/ed/compare">) {
       ) : (
         <>
           <ComparisonFiltersPanel offers={allOffers} filters={filters} />
-          {offers.length === 0 ? (
-            <PublicEmptyState icon={PackageSearch} title="No prices match these filters" description="Try another product, strength, form or pack size, or clear the filters to see every current price." action={{ href: comparisonHref({ sort: filters.sort }), label: "Clear filters" }} />
-          ) : (
-            <>
-              <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-                <StatTile index={0} icon={Tag} label="Lowest per tablet" value={formatPence(Math.min(...statsBase.map((offer) => offer.perTabletPence)))} />
-                <StatTile index={1} icon={Wallet} label="Lowest total" value={formatPence(Math.min(...statsBase.map((offer) => offer.deliveredTotalPence)))} />
-                <StatTile index={2} icon={Store} label="Pharmacies" value={String(new Set(offers.map((offer) => offer.providerId)).size)} hint={`${offers.length} price${offers.length === 1 ? "" : "s"} in view`} />
-                <StatTile index={3} icon={Clock3} label="Latest check" value={formatCheckedAgo(new Date(Math.max(...offers.map((offer) => offer.checkedAt.getTime()))), now)} />
-              </div>
-              <OfferResults offers={offers} sort={filters.sort} now={now} placement="COMPARE" layout="table" />
-            </>
-          )}
+          <NavigationPending fallback={<ComparisonResultsSkeleton />}>
+            {offers.length === 0 ? (
+              <PublicEmptyState icon={PackageSearch} title="No prices match these filters" description="Try another product, strength, form or pack size, or clear the filters to see every current price." action={{ href: comparisonHref({ sort: filters.sort }), label: "Clear filters" }} />
+            ) : (
+              <>
+                <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+                  <StatTile index={0} icon={Tag} label="Lowest per tablet" value={formatPence(Math.min(...statsBase.map((offer) => offer.perTabletPence)))} />
+                  <StatTile index={1} icon={Wallet} label="Lowest total" value={formatPence(Math.min(...statsBase.map((offer) => offer.deliveredTotalPence)))} />
+                  <StatTile index={2} icon={Store} label="Pharmacies" value={String(new Set(offers.map((offer) => offer.providerId)).size)} hint={`${offers.length} price${offers.length === 1 ? "" : "s"} in view`} />
+                  <StatTile index={3} icon={Clock3} label="Latest check" value={formatCheckedAgo(new Date(Math.max(...offers.map((offer) => offer.checkedAt.getTime()))), now)} />
+                </div>
+                <OfferResults offers={offers} sort={filters.sort} now={now} placement="COMPARE" layout="table" />
+              </>
+            )}
+          </NavigationPending>
         </>
       )}
       <PricingNotes />

@@ -58,14 +58,24 @@ function CardGridSkeleton({ cards, height }: { cards: number; height: string }) 
   );
 }
 
-export function ComparisonPageSkeleton() {
+// The part of the comparison page that changes with the filters: stat tiles, then the price table.
+export function ComparisonResultsSkeleton() {
   return (
-    <PageFrame label="Loading prices">
-      <Skeleton className="mt-10 h-56 w-full rounded-3xl" />
+    <div role="status">
+      <span className="sr-only">Loading prices</span>
       <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-28 rounded-2xl" />)}
       </div>
       <TableSkeleton rows={5} heading />
+    </div>
+  );
+}
+
+export function ComparisonPageSkeleton() {
+  return (
+    <PageFrame label="Loading prices">
+      <Skeleton className="mt-10 h-44 w-full rounded-3xl" />
+      <ComparisonResultsSkeleton />
     </PageFrame>
   );
 }
