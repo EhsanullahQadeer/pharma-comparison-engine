@@ -18,7 +18,7 @@ const BENEFITS = [
   "Adds known charges to show the total cost",
   "Separates one-off prices from repeat prices",
   "Links to registration evidence and checked dates",
-  "Labels older prices and removes them after 48 hours",
+  "Labels prices checked more than 24 hours ago",
 ];
 
 const COLUMNS = [

@@ -50,3 +50,27 @@ test("a heading that lists every strength doesn't clash with the option's own", 
   // A generic sildenafil page never prices branded Viagra.
   assert.equal(pickSelectOptionPrice(sildenafil, tokens, { strengthMg: 50, packQuantity: 4, generic: false }, cloudUrl), undefined);
 });
+
+// Trimmed from Online Pharmacy 4U (as drawn in a browser): pack buttons that each show their price.
+const packButtons = (heading: string, group: string, packs: [string, string][]) => `<h1 class="text-2xl">${heading}</h1><div><h3 class="text-xs">${group}<span class="ml-2">${packs[0][0]}</span></h3><div class="flex">${packs.map(([pack, price]) => `<button type="button" class="px-4">${pack}<span class="ml-1.5 text-xs">${price}</span></button>`).join("")}</div></div><button type="button" class="px-4">−</button><button type="button" class="flex-1">Add to Cart</button>`;
+const op4uUrl = "https://online-pharmacy4u.co.uk/product/cialis-together-10mg-tadalafil";
+
+test("reads pack buttons that show their own price (Online Pharmacy 4U)", () => {
+  const together = packButtons("Cialis Together 10mg (tadalafil) (4 Tablets)", "Pack Size", [["4 Tablets", "£18.28"], ["8 Tablets", "£36.57"]]);
+  const togetherTokens = ["cialis together", "tadalafil", "cialis"];
+  assert.equal(pickSelectOptionPrice(together, togetherTokens, { strengthMg: 10, packQuantity: 4, generic: false }, op4uUrl)?.itemPricePence, 1828);
+  // The heading's "(4 Tablets)" is only the pack currently chosen.
+  assert.equal(pickSelectOptionPrice(together, togetherTokens, { strengthMg: 10, packQuantity: 8, generic: false }, op4uUrl)?.itemPricePence, 3657);
+  assert.equal(pickSelectOptionPrice(together, togetherTokens, { strengthMg: 10, packQuantity: 12, generic: false }, op4uUrl), undefined);
+  assert.equal(pickSelectOptionPrice(together, ["cialis", "tadalafil"], { strengthMg: 10, packQuantity: 4, generic: false }, op4uUrl), undefined);
+});
+
+test("the group heading supplies a strength the product name leaves out", () => {
+  const connect = packButtons("Viagra Connect (4 Tablets)", "Pack Size - 50mg", [["4 Tablets", "£21.98"], ["8 Tablets", "£43.90"]]);
+  assert.equal(pickSelectOptionPrice(connect, ["viagra connect", "sildenafil", "viagra"], { strengthMg: 50, packQuantity: 8, generic: false }, op4uUrl)?.itemPricePence, 4390);
+  const generic = packButtons("Sildenafil Tablets (4 Tablets)", "Pack Size - 100mg", [["4 Tablets", "£12.50"], ["8 Tablets", "£14.98"]]);
+  assert.equal(pickSelectOptionPrice(generic, tokens, { strengthMg: 100, packQuantity: 8, generic: true }, op4uUrl)?.itemPricePence, 1498);
+  assert.equal(pickSelectOptionPrice(generic, tokens, { strengthMg: 50, packQuantity: 8, generic: true }, op4uUrl), undefined);
+  // A generic product's page never prices branded Viagra.
+  assert.equal(pickSelectOptionPrice(generic, tokens, { strengthMg: 100, packQuantity: 8, generic: false }, op4uUrl), undefined);
+});

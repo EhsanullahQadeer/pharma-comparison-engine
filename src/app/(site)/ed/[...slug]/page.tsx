@@ -10,8 +10,8 @@ import { SOURCES_CHECKED_ON, getSourcedArticle } from "@/lib/sourced-articles";
 
 import type { Metadata } from "next";
 
-// Article pages: a clinically reviewed Article once one is PUBLISHED (revalidation plus revalidatePath
-// on publish swaps it in without a rebuild), otherwise the page's source-checked content.
+// Article pages: the staff-edited Article once one is PUBLISHED (revalidation plus revalidatePath
+// on publish swaps it in without a rebuild), otherwise the page's built-in source-checked content.
 export const revalidate = 300;
 export const dynamicParams = false;
 
@@ -35,14 +35,13 @@ async function resolvePage(params: Promise<{ slug: string[] }>) {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string[] }> }): Promise<Metadata> {
   const { page, article, sourced } = await resolvePage(params);
   if (article) return { title: article.title, description: article.summary, alternates: { canonical: edHref(page.path) } };
-  // Readable, but kept out of search results until a named clinician has reviewed it.
+  // Readable, but kept out of search results until staff publish the article.
   return { title: sourced?.title, description: sourced?.summary, alternates: { canonical: edHref(page.path) }, robots: { index: false, follow: true } };
 }
 
 export default async function EdCatalogPage({ params }: { params: Promise<{ slug: string[] }> }) {
   const { page, article, sourced } = await resolvePage(params);
   if (article) {
-    const vetting = { kind: "reviewed", authorName: article.author.name, reviewerName: article.reviewer?.name ?? null, reviewedAt: article.reviewedAt, revision: article.revision } as const;
     const articleSchema = siteUrl ? {
       "@context": "https://schema.org",
       "@type": "Article",
@@ -51,10 +50,8 @@ export default async function EdCatalogPage({ params }: { params: Promise<{ slug
       mainEntityOfPage: new URL(edHref(page.path), siteUrl).href,
       datePublished: article.publishedAt?.toISOString(),
       dateModified: article.updatedAt.toISOString(),
-      author: { "@type": "Person", name: article.author.name },
-      ...(article.reviewer ? { reviewedBy: { "@type": "Person", name: article.reviewer.name } } : {}),
     } : null;
-    return <>{articleSchema ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(articleSchema) }} /> : null}<ArticleView page={page} article={article} vetting={vetting} /></>;
+    return <>{articleSchema ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(articleSchema) }} /> : null}<ArticleView page={page} article={article} checkedOn={article.updatedAt} /></>;
   }
-  return sourced ? <ArticleView page={page} article={sourced} vetting={{ kind: "sourced", checkedOn: SOURCES_CHECKED_ON }} /> : null;
+  return sourced ? <ArticleView page={page} article={sourced} checkedOn={SOURCES_CHECKED_ON} /> : null;
 }

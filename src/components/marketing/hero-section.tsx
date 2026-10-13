@@ -77,10 +77,10 @@ export function HeroSection({ stats }: { stats: HeroStats }) {
                   <span aria-hidden="true" className="absolute inline-flex size-full rounded-full bg-primary opacity-60 motion-safe:animate-ping" />
                   <span className="relative inline-flex size-2 rounded-full bg-primary" />
                 </span>
-                Live prices
+                Published prices
               </p>
               <p className="mt-1 text-2xl font-semibold tabular-nums">{stats.livePrices}</p>
-              <p className="text-xs text-muted-foreground">checked in the last 48 hours</p>
+              <p className="text-xs text-muted-foreground">each with its last-checked date</p>
             </div>
           ) : null}
 

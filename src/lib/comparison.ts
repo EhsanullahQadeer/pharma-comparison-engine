@@ -4,11 +4,10 @@ import { formatPence } from "@/lib/money";
 import type { ComparisonFilters, ComparisonSort, FreshnessTier, PublicOffer, PublicVariant, VariantPriceSummary } from "@/types/comparison";
 
 const HOUR_MS = 60 * 60 * 1000;
-// Prices checked within 24h are "fresh"; 24–48h are "stale" (still ranked by price, but labelled
-// "may have changed"); beyond 48h the number is suppressed from public view entirely. Evaluated at read time,
+// Prices checked within 24h are "fresh"; anything older is "stale" (still shown and ranked by
+// price, but labelled "may have changed"). No price is hidden for its age. Evaluated at read time,
 // never by mutating rows, so "just verified" and "about to display" can't race.
 export const FRESH_WINDOW_MS = 24 * HOUR_MS;
-export const STALE_WINDOW_MS = 48 * HOUR_MS;
 
 type FeeParts = { itemPricePence: number; deliveryFeePence: number; consultationFeePence: number; otherMandatoryFeesPence: number };
 
@@ -23,9 +22,7 @@ export function perTabletPence(totalPence: number, packQuantity: number) {
 
 export function freshnessTier(checkedAt: Date, now: Date): FreshnessTier {
   const age = now.getTime() - checkedAt.getTime();
-  if (age <= FRESH_WINDOW_MS) return "fresh";
-  if (age <= STALE_WINDOW_MS) return "stale";
-  return "expired";
+  return age <= FRESH_WINDOW_MS ? "fresh" : "stale";
 }
 
 // Every in-stock offer is ranked by price, whenever it was checked (stale ones are labelled, not

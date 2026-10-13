@@ -10,7 +10,7 @@ type ProviderGroup = { providerId: string | null; _count: { _all: number } };
 
 const CATALOGUE_ROLES: StaffRole[] = ["CATALOGUE_EDITOR", "ADMINISTRATOR"];
 const REVIEW_ROLES: StaffRole[] = ["CATALOGUE_EDITOR", "CONTENT_REVIEWER", "ADMINISTRATOR"];
-const ARTICLE_REVIEW_ROLES: StaffRole[] = ["CONTENT_REVIEWER", "ADMINISTRATOR"];
+const ARTICLE_ROLES: StaffRole[] = ["CONTENT_REVIEWER", "ADMINISTRATOR"];
 const ALL_ROLES: StaffRole[] = ["CATALOGUE_EDITOR", "CONTENT_REVIEWER", "ADMINISTRATOR", "COMMERCIAL_MANAGER"];
 
 // Where the full per-pharmacy breakdown is shown.
@@ -66,9 +66,9 @@ const sources: { kind: PendingWorkKind; roles: StaffRole[]; href: string; load: 
   },
   {
     kind: "articles",
-    roles: ARTICLE_REVIEW_ROLES,
+    roles: ARTICLE_ROLES,
     href: "/admin/articles",
-    load: () => count(prisma.article.count({ where: { status: "IN_REVIEW" } })),
+    load: () => count(prisma.article.count({ where: { status: { not: "PUBLISHED" } } })),
   },
   {
     kind: "siteOffers",

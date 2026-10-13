@@ -1,8 +1,8 @@
 import type { Availability, DiscountValueType, Ingredient, PurchaseModel, RegulatorType } from "@/generated/prisma/client";
 
-// Roadmap §4.5 freshness: "fresh" is ranked, "stale" is shown outside the ranking with a
-// may-have-changed label, "expired" is never shown publicly (history is kept internally).
-export type FreshnessTier = "fresh" | "stale" | "expired";
+// Freshness: "fresh" was checked in the last 24 hours; "stale" is older and carries a
+// may-have-changed label. Both are shown and ranked.
+export type FreshnessTier = "fresh" | "stale";
 
 export type ComparisonSort = "tablet" | "total";
 
@@ -17,6 +17,10 @@ export type ComparisonFilters = {
   purchaseModel?: PurchaseModel;
   sort: ComparisonSort;
 };
+
+// One choice in a comparison filter dropdown: a link to the page with that choice applied.
+export type FilterOption = { label: string; href: string; active: boolean };
+export type FilterOptionGroup = { label?: string; options: FilterOption[] };
 
 export type PublicVariant = {
   id: string;
@@ -62,7 +66,7 @@ export type PublicOffer = {
   purchaseModel: PurchaseModel;
   sourceUrl: string;
   checkedAt: Date;
-  freshness: Exclude<FreshnessTier, "expired">;
+  freshness: FreshnessTier;
   discounts: PublicDiscount[];
 };
 

@@ -419,6 +419,8 @@ model Article {
   reviewNotes String?
   revision    Int           @default(1)
   status      ArticleStatus @default(DRAFT)
+  // Staff on/off switch, separate from status: an inactive article is never shown publicly.
+  active      Boolean       @default(true)
   authorId    String
   author      StaffUser     @relation("ArticleAuthor", fields: [authorId], references: [id], onDelete: Restrict)
   reviewerId  String?

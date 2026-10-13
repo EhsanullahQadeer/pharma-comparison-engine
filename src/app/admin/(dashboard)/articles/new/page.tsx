@@ -22,7 +22,7 @@ export default async function NewArticlePage() {
       </Link>
       <div>
         <h1 className="text-2xl font-semibold">New article</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Drafts are never public. Send it for clinical review when it&apos;s ready.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Drafts are never public. Publish it from the article&apos;s page when it&apos;s ready.</p>
       </div>
       <Card>
         <CardContent className="pt-6">

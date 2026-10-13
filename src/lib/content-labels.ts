@@ -2,13 +2,13 @@ import type { ArticleStatus, PublicSubmissionKind, PublicSubmissionStatus } from
 
 export const articleStatusLabels: Record<ArticleStatus, string> = {
   DRAFT: "Draft",
-  IN_REVIEW: "Awaiting clinical review",
+  IN_REVIEW: "Draft",
   PUBLISHED: "Published",
 };
 
 export const articleStatusBadgeVariant: Record<ArticleStatus, "secondary" | "outline" | "default"> = {
   DRAFT: "secondary",
-  IN_REVIEW: "outline",
+  IN_REVIEW: "secondary",
   PUBLISHED: "default",
 };
 

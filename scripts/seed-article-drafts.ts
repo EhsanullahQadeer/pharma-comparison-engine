@@ -8,7 +8,7 @@ import { sourcedArticles } from "../src/lib/sourced-articles";
 // Inserts the source-checked ED articles (the content public pages show until review) as DRAFTs
 // authored by the seeded admin account. Safe to re-run:
 // a page that already has an article (in any status) is left untouched, so staff edits are never
-// overwritten. Nothing here is public; a different staff member must review and approve each one.
+// overwritten. Nothing here is public until staff publish it.
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 

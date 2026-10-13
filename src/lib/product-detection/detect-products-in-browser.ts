@@ -18,6 +18,8 @@ const MAX_CATEGORY_PAGES = 3;
 const MAX_CARDS_PER_LISTING = 20;
 // Product pages whose strength/pack options are read in the browser per run.
 const MAX_OPTION_PAGES = 15;
+// How long a script-drawn product page gets to show its heading before it is read as it stands.
+const RENDER_WAIT_MS = 8_000;
 
 type DetectionOptions = { postcode?: string };
 
@@ -96,6 +98,8 @@ export async function readOfferedOptionsInBrowser(pages: { url: string; ingredie
     for (const { url, ingredient } of pages.slice(0, MAX_OPTION_PAGES)) {
       try {
         if (!await reader.open(url)) continue;
+        // A page drawn by its own scripts has no product on it yet; its heading arrives with it.
+        await browser.page.locator("h1").first().waitFor({ timeout: RENDER_WAIT_MS }).catch(() => undefined);
         options.set(url, offeredOptionsInHtml(await browser.page.content(), browser.page.url(), ingredient));
       } catch {
         // This page didn't load; the others may.

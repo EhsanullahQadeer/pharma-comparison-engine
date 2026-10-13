@@ -10,7 +10,7 @@ export const pendingWorkLabels: Record<PendingWorkKind, string> = {
   evidence: "Evidence to approve",
   corrections: "Corrections to resolve",
   inbox: "New inbox messages",
-  articles: "Articles waiting for review",
+  articles: "Draft articles to publish",
   siteOffers: "Delivery charges and discounts to approve",
   priceChecks: "Price checks that need attention",
   draftPrices: "Draft prices to publish",

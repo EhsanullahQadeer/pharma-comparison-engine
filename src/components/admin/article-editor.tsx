@@ -12,13 +12,14 @@ import FORM, { FormFeilds } from "@/components/common/form";
 import InputField from "@/components/common/input";
 import { ArticleMarkdown } from "@/components/ed/article-markdown";
 import { useRouter } from "@/hooks/useRouter";
+import { TRUSTED_SOURCES_HINT } from "@/lib/trusted-sources";
 import { cn } from "@/lib/utils";
 
 import type { FieldValues } from "react-hook-form";
 
 const BODY_HINT = "Markdown: ## for section headings, - for bullet lists, | tables |, [link text](https://…). Raw HTML is ignored.";
 
-// Live preview of the body using the exact public renderer, so authors and reviewers see what readers will.
+// Live preview of the body using the exact public renderer, so authors see what readers will.
 function BodyPreview() {
   const body = useWatch({ name: "body" }) as string | undefined;
   return (
@@ -28,12 +29,12 @@ function BodyPreview() {
   );
 }
 
-export function ArticleEditor({ id, defaultValues, slugOptions, locked }: {
+export function ArticleEditor({ id, defaultValues, slugOptions, published }: {
   id: string | null;
   defaultValues: ArticleFormValues;
   slugOptions: { value: string; label: string }[];
-  // Published articles can still be edited, but saving creates a new revision that needs review again.
-  locked?: boolean;
+  // A published article stays live while it is edited; saving replaces the public page.
+  published?: boolean;
 }) {
   const router = useRouter();
   const [preview, setPreview] = useState(false);
@@ -49,7 +50,7 @@ export function ArticleEditor({ id, defaultValues, slugOptions, locked }: {
 
   return (
     <FORM schema={articleFormSchema} defaultValues={defaultValues} onSubmit={handleSubmit} className="gap-5">
-      {locked ? <p className="rounded-lg border border-border bg-muted/50 p-3 text-sm">This article is published. Saving changes creates a new revision, takes it off the public site and sends it back for clinical review.</p> : null}
+      {published ? <p className="rounded-lg border border-border bg-muted/50 p-3 text-sm">This article is published. Saving changes updates the public page straight away.</p> : null}
       <div className="grid gap-5 lg:grid-cols-2">
         <FormFeilds fieldProps={{ name: "slug" }} label={{ text: "Public page" }} required>
           {(field) => <InputField type="select" bare id={field.id} name={field.name} value={field.value ?? ""} onChange={field.onChange} options={slugOptions} placeholder="Choose the page this article is for" />}
@@ -85,6 +86,7 @@ export function ArticleEditor({ id, defaultValues, slugOptions, locked }: {
       <FormFeilds fieldProps={{ name: "sources" }} label={{ text: "Sources (one per line: Title — https://…)" }} required>
         {(field) => <InputField type="textarea" bare {...field} value={field.value ?? ""} rows={5} inputClassName="font-mono text-sm" />}
       </FormFeilds>
+      <p className="-mt-3 text-xs text-muted-foreground">{TRUSTED_SOURCES_HINT}</p>
       <div className="flex flex-wrap items-center justify-end gap-3">
         {state.error ? <p role="alert" className="text-sm text-destructive">{state.error}</p> : null}
         {state.saved ? <p role="status" className="text-sm text-muted-foreground">Saved.</p> : null}

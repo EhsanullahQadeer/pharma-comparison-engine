@@ -1,4 +1,4 @@
-import { BadgeCheck, BookOpen, CircleAlert, FileSearch, Lightbulb } from "lucide-react";
+import { BookOpen, CircleAlert, FileSearch, Lightbulb } from "lucide-react";
 
 import { ArticleMarkdown } from "@/components/ed/article-markdown";
 import { PageShell } from "@/components/ed/page-shell";
@@ -7,14 +7,8 @@ import { formatShortDate } from "@/lib/comparison";
 import { edHref, edPages, groupLabels } from "@/lib/ed-pages";
 import type { EdPage } from "@/lib/ed-pages";
 import { revealClass, revealStyle } from "@/lib/motion";
-import type { ArticleContent, ArticleVetting } from "@/types/article";
-
-// Sources are stored one per line as "Title — https://…" (or a bare URL).
-function parseSource(source: string) {
-  const match = source.match(/^(.*?)\s*[—–-]\s*(https?:\/\/\S+)$/);
-  if (match) return { label: match[1], url: match[2] };
-  return source.startsWith("http") ? { label: source, url: source } : { label: source, url: null };
-}
+import { parseSource } from "@/lib/trusted-sources";
+import type { ArticleContent } from "@/types/article";
 
 const hubByGroup: Partial<Record<EdPage["group"], { href: string; label: string }>> = {
   guides: { href: "/ed/guides", label: "Guides" },
@@ -22,35 +16,8 @@ const hubByGroup: Partial<Record<EdPage["group"], { href: string; label: string 
   tools: { href: "/ed/tools", label: "Tools" },
 };
 
-function ReviewedByline({ vetting }: { vetting: Extract<ArticleVetting, { kind: "reviewed" }> }) {
-  return (
-    <>
-      <span>Written by <span className="font-medium text-foreground">{vetting.authorName}</span></span>
-      {vetting.reviewerName && vetting.reviewedAt ? (
-        <span className="inline-flex items-center gap-1.5">
-          <BadgeCheck aria-hidden="true" className="size-4 text-primary" />
-          Clinically reviewed by <span className="font-medium text-foreground">{vetting.reviewerName}</span> on <time dateTime={vetting.reviewedAt.toISOString()}>{formatShortDate(vetting.reviewedAt)}</time>
-        </span>
-      ) : null}
-      <span>Revision {vetting.revision}</span>
-    </>
-  );
-}
-
-// Source-checked content that no named clinician has reviewed yet — said plainly, never implied.
-function SourcedByline({ vetting }: { vetting: Extract<ArticleVetting, { kind: "sourced" }> }) {
-  return (
-    <>
-      <span className="inline-flex items-center gap-1.5">
-        <FileSearch aria-hidden="true" className="size-4 text-primary" />
-        Every statement checked against the numbered sources below on <time dateTime={vetting.checkedOn.toISOString()}>{formatShortDate(vetting.checkedOn)}</time>
-      </span>
-      <span>Awaiting review by a named clinician</span>
-    </>
-  );
-}
-
-export function ArticleView({ page, article, vetting }: { page: EdPage; article: Omit<ArticleContent, "slug">; vetting: ArticleVetting }) {
+// `checkedOn` is the date the article was last checked against the sources it lists.
+export function ArticleView({ page, article, checkedOn }: { page: EdPage; article: Omit<ArticleContent, "slug">; checkedOn: Date }) {
   const hub = hubByGroup[page.group];
   const related = edPages.filter((entry) => entry.group === page.group && entry.path !== page.path && entry.kind === "article").slice(0, 3);
 
@@ -62,7 +29,10 @@ export function ArticleView({ page, article, vetting }: { page: EdPage; article:
       crumbs={[{ label: "Home", href: "/" }, ...(hub ? [hub] : [])]}
     >
       <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 border-y border-border py-4 text-sm text-muted-foreground">
-        {vetting.kind === "reviewed" ? <ReviewedByline vetting={vetting} /> : <SourcedByline vetting={vetting} />}
+        <span className="inline-flex items-center gap-1.5">
+          <FileSearch aria-hidden="true" className="size-4 text-primary" />
+          Every statement checked against the numbered sources below on <time dateTime={checkedOn.toISOString()}>{formatShortDate(checkedOn)}</time>
+        </span>
       </div>
 
       <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_18rem]">

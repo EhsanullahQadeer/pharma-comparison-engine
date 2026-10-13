@@ -6,8 +6,8 @@ import { prisma } from "@/lib/prisma";
 import type { PublicOffer } from "@/types/comparison";
 
 // Public, unauthenticated read. Only offers a staff member explicitly published, from a provider
-// whose status is PUBLISHED, and only while the price is inside the 48h freshness window — the
-// public site never sees a draft, a withheld pharmacy or an expired price.
+// whose status is PUBLISHED — the public site never sees a draft or a withheld pharmacy. A price
+// is shown however long ago it was checked, labelled with that date.
 export async function getPublicOffers(where: { providerId?: string } = {}): Promise<PublicOffer[]> {
   const now = new Date();
   // Only discounts staff entered or approved; a scraped one still awaiting review is never shown.
@@ -36,12 +36,10 @@ export async function getPublicOffers(where: { providerId?: string } = {}): Prom
     },
   });
 
-  return offers.flatMap((offer) => {
+  return offers.map((offer) => {
     const checkedAt = offer.priceVerifiedAt ?? offer.retrievedAt;
-    const freshness = freshnessTier(checkedAt, now);
-    if (freshness === "expired") return [];
     const total = deliveredTotalPence(offer);
-    return [{
+    return {
       id: offer.id,
       providerId: offer.provider.id,
       providerName: displayName(offer.provider.tradingName),
@@ -60,9 +58,9 @@ export async function getPublicOffers(where: { providerId?: string } = {}): Prom
       purchaseModel: offer.purchaseModel,
       sourceUrl: offer.sourceUrl,
       checkedAt,
-      freshness,
+      freshness: freshnessTier(checkedAt, now),
       // The pharmacy's site-wide discounts apply to every one of its offers.
       discounts: [...offer.discounts, ...offer.provider.discounts],
-    }];
+    };
   });
 }

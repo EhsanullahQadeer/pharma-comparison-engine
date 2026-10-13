@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { articlePages } from "@/lib/ed-pages";
+import { untrustedSources } from "@/lib/trusted-sources";
 
 // Plain module (not "use server") so the admin editor validates with the exact same rules the
 // server re-applies. Multi-value fields are edited as one-per-line text.
@@ -14,7 +15,12 @@ export const articleFormSchema = z.object({
   summary: z.string().trim().min(20, "Write a one- or two-sentence summary.").max(400, "Keep the summary under 400 characters."),
   keyFacts: z.string().refine((value) => lines(value).length <= 6, "Up to 6 key facts, one per line."),
   body: z.string().trim().min(200, "The article body needs at least a few paragraphs."),
-  sources: z.string().refine((value) => lines(value).length > 0, "Add at least one source, one per line."),
+  sources: z.string()
+    .refine((value) => lines(value).length > 0, "Add at least one source, one per line.")
+    .superRefine((value, ctx) => {
+      const [refused] = untrustedSources(lines(value));
+      if (refused) ctx.addIssue({ code: "custom", message: `Every source needs a link to a trusted medical source. Not accepted: ${refused}` });
+    }),
 });
 
 export type ArticleFormValues = z.infer<typeof articleFormSchema>;

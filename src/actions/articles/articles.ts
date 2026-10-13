@@ -11,6 +11,7 @@ import { edHref } from "@/lib/ed-pages";
 import { prisma } from "@/lib/prisma";
 import { revalidatePublicSite } from "@/lib/revalidate-public-site";
 import { requireStaffRole } from "@/lib/staff-auth";
+import { untrustedSources } from "@/lib/trusted-sources";
 
 export type ArticleActionState = { error?: string; id?: string };
 
@@ -36,19 +37,19 @@ export async function getArticles() {
   await requireStaffRole(READ_ROLES);
   return prisma.article.findMany({
     orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
-    select: { id: true, slug: true, title: true, status: true, revision: true, updatedAt: true, publishedAt: true, reviewedAt: true, author: { select: { name: true } }, reviewer: { select: { name: true } } },
+    select: { id: true, slug: true, title: true, status: true, active: true, revision: true, updatedAt: true, publishedAt: true, author: { select: { name: true } } },
   });
 }
 
 export async function getArticle(id: string) {
   await requireStaffRole(READ_ROLES);
-  const article = await prisma.article.findUnique({ where: { id }, include: { author: { select: { id: true, name: true } }, reviewer: { select: { name: true } } } });
+  const article = await prisma.article.findUnique({ where: { id }, include: { author: { select: { name: true } } } });
   if (!article) notFound();
   return article;
 }
 
-// Create or edit. Editing a PUBLISHED article is a new revision: it leaves the public site and goes
-// back to IN_REVIEW, because changed medical content needs a fresh clinical review.
+// Create or edit. Editing a PUBLISHED article keeps it live: the saved text replaces the public page
+// straight away as a new revision.
 export async function saveArticle(id: string | null, values: ArticleFormValues): Promise<ArticleActionState> {
   const staffUser = await requireRole(AUTHOR_ROLES);
   if (!staffUser) return { error: "Only content reviewers and administrators can write articles." };
@@ -69,43 +70,30 @@ export async function saveArticle(id: string | null, values: ArticleFormValues):
 
   const existing = await prisma.article.findUnique({ where: { id }, select: { status: true, slug: true } });
   if (!existing) return { error: "Article not found." };
-  const wasPublished = existing.status === "PUBLISHED";
+  const isPublished = existing.status === "PUBLISHED";
   await prisma.article.update({
     where: { id },
-    data: { ...data, topic: data.slug.split("/")[0], ...(wasPublished ? { status: "IN_REVIEW", revision: { increment: 1 }, publishedAt: null } : {}) },
+    data: { ...data, topic: data.slug.split("/")[0], ...(isPublished ? { revision: { increment: 1 } } : {}) },
   });
-  await recordAuditLog({ actorId: staffUser.id, action: "UPDATE", entityType: "Article", entityId: id, changes: { slug: data.slug, backToReview: wasPublished } });
+  await recordAuditLog({ actorId: staffUser.id, action: "UPDATE", entityType: "Article", entityId: id, changes: { slug: data.slug, newRevision: isPublished } });
   revalidateArticle(existing.slug, id);
   if (existing.slug !== data.slug) revalidateArticle(data.slug, id);
   return { id };
 }
 
-export async function submitArticleForReview(id: string): Promise<ArticleActionState> {
+// Puts an article on the public site. Its sources are re-checked here because a draft may have been
+// written before the trusted-sources rule existed.
+export async function publishArticle(id: string): Promise<ArticleActionState> {
   const staffUser = await requireRole(AUTHOR_ROLES);
-  if (!staffUser) return { error: "You are not authorized to submit articles." };
-  const article = await prisma.article.findUnique({ where: { id }, select: { status: true, slug: true } });
-  if (article?.status !== "DRAFT") return { error: "Only drafts can be sent for review." };
-  await prisma.article.update({ where: { id }, data: { status: "IN_REVIEW", reviewNotes: null } });
-  await recordAuditLog({ actorId: staffUser.id, action: "UPDATE", entityType: "Article", entityId: id, changes: { status: "IN_REVIEW" } });
-  revalidateArticle(article.slug, id);
-  return { id };
-}
+  if (!staffUser) return { error: "Only content reviewers and administrators can publish articles." };
+  const article = await prisma.article.findUnique({ where: { id }, select: { status: true, slug: true, sources: true } });
+  if (!article) return { error: "Article not found." };
+  if (article.status === "PUBLISHED") return { error: "This article is already published." };
+  const [refused] = untrustedSources(article.sources);
+  if (article.sources.length === 0 || refused) return { error: `Every source needs a link to a trusted medical source before publishing.${refused ? ` Not accepted: ${refused}` : ""}` };
 
-// The clinical-review gate: a named reviewer who is not the author approves (publishes) or returns
-// the article with notes. Self-approval is refused so every public article has two sets of eyes.
-export async function reviewArticle(id: string, decision: "approve" | "return", notes?: string): Promise<ArticleActionState> {
-  const staffUser = await requireRole(AUTHOR_ROLES);
-  if (!staffUser) return { error: "Only content reviewers and administrators can review articles." };
-  const article = await prisma.article.findUnique({ where: { id }, select: { status: true, slug: true, authorId: true } });
-  if (article?.status !== "IN_REVIEW") return { error: "This article isn't waiting for review." };
-  if (article.authorId === staffUser.id) return { error: "You wrote this article, so a different reviewer has to approve it." };
-
-  const now = new Date();
-  const data = decision === "approve"
-    ? { status: "PUBLISHED" as const, reviewerId: staffUser.id, reviewedAt: now, publishedAt: now, reviewNotes: null }
-    : { status: "DRAFT" as const, reviewNotes: notes?.trim() || "Returned without notes." };
-  await prisma.article.update({ where: { id }, data });
-  await recordAuditLog({ actorId: staffUser.id, action: "UPDATE", entityType: "Article", entityId: id, changes: { review: decision } });
+  await prisma.article.update({ where: { id }, data: { status: "PUBLISHED", publishedAt: new Date() } });
+  await recordAuditLog({ actorId: staffUser.id, action: "UPDATE", entityType: "Article", entityId: id, changes: { status: "PUBLISHED" } });
   revalidateArticle(article.slug, id);
   return { id };
 }
@@ -119,24 +107,37 @@ export async function unpublishArticle(id: string): Promise<ArticleActionState> 
   return { id };
 }
 
-// Public reads — PUBLISHED only, never drafts or articles awaiting review.
+// The on/off switch, separate from publishing: an inactive article keeps its status and publish date
+// but is left off the public site until it is switched back on.
+export async function setArticleActive(id: string, active: boolean): Promise<ArticleActionState> {
+  const staffUser = await requireRole(AUTHOR_ROLES);
+  if (!staffUser) return { error: "Only content reviewers and administrators can activate or deactivate articles." };
+  const existing = await prisma.article.findUnique({ where: { id }, select: { slug: true } });
+  if (!existing) return { error: "Article not found." };
+  await prisma.article.update({ where: { id }, data: { active } });
+  await recordAuditLog({ actorId: staffUser.id, action: "UPDATE", entityType: "Article", entityId: id, changes: { active } });
+  revalidateArticle(existing.slug, id);
+  return { id };
+}
+
+// Public reads — PUBLISHED and active only, never drafts or articles staff have switched off.
 export async function getPublishedArticle(slug: string) {
   return prisma.article.findFirst({
-    where: { slug, status: "PUBLISHED" },
-    select: { title: true, summary: true, keyFacts: true, body: true, sources: true, revision: true, publishedAt: true, reviewedAt: true, updatedAt: true, author: { select: { name: true } }, reviewer: { select: { name: true } } },
+    where: { slug, status: "PUBLISHED", active: true },
+    select: { title: true, summary: true, keyFacts: true, body: true, sources: true, publishedAt: true, updatedAt: true },
   });
 }
 
 // Hub pages list which article pages are readable now, with their summaries.
 export async function getPublishedArticleSummaries() {
-  return prisma.article.findMany({ where: { status: "PUBLISHED" }, select: { slug: true, summary: true } });
+  return prisma.article.findMany({ where: { status: "PUBLISHED", active: true }, select: { slug: true, summary: true } });
 }
 
 // Used only by the sitemap. Keep it separate from article bodies so generating the sitemap stays
 // lightweight as the editorial library grows.
 export async function getPublishedArticleSitemapEntries() {
   return prisma.article.findMany({
-    where: { status: "PUBLISHED" },
+    where: { status: "PUBLISHED", active: true },
     select: { slug: true, updatedAt: true },
     orderBy: { updatedAt: "desc" },
   });

@@ -1,15 +1,13 @@
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal, X } from "lucide-react";
 
-import { FilterChip, FilterGroup } from "@/components/ed/filter-chip";
+import { FilterDropdown } from "@/components/ed/filter-dropdown";
 import Link from "@/components/Link";
 import { ingredientLabels, ingredientValues, purchaseModelValues } from "@/lib/catalogue-labels";
 import { baseFormulation, comparisonHref, filterOffers, publicPurchaseModelLabels, slugify, variantProductName, variantTypeSlug } from "@/lib/comparison";
-import type { ComparisonFilters, ComparisonSort, PublicOffer } from "@/types/comparison";
+import type { ComparisonFilters, ComparisonSort, FilterOption, FilterOptionGroup, PublicOffer } from "@/types/comparison";
 
-const sortOptions: { value: ComparisonSort; label: string }[] = [
-  { value: "tablet", label: "Price per tablet" },
-  { value: "total", label: "Total price" },
-];
+const sortLabels: Record<ComparisonSort, string> = { tablet: "Price per tablet", total: "Total price" };
+const sortValues = Object.keys(sortLabels) as ComparisonSort[];
 
 function uniqueSorted(values: number[]) {
   return [...new Set(values)].sort((a, b) => a - b);
@@ -31,11 +29,15 @@ function productOptions(offers: PublicOffer[]) {
   return [...products.values()].sort((a, b) => a.label.localeCompare(b.label));
 }
 
-// Product comes first: it is how shoppers look for a price. The medicine filter under it is the
-// broader choice (every product of one medicine). From Strength down, groups run top to bottom:
-// each group's options come from the offers left by the groups above it, and choosing an option
-// keeps those earlier choices but clears the later ones (which may no longer exist). Options are
-// derived from the offers actually on show, so a chip never leads to an empty page.
+function selectedLabel(groups: FilterOptionGroup[]) {
+  return groups.flatMap((group) => group.options).find((option) => option.active)?.label ?? "Any";
+}
+
+// Product comes first: it is how shoppers look for a price, grouped under its medicine (whose
+// "All …" entry is the broader choice). From Strength on, dropdowns run left to right: each one's
+// options come from the offers left by the ones before it, and choosing an option keeps those
+// earlier choices but clears the later ones (which may no longer exist). Options are derived from
+// the offers actually on show, so a choice never leads to an empty page.
 export function ComparisonFiltersPanel({ offers, filters }: { offers: PublicOffer[]; filters: ComparisonFilters }) {
   const { ingredient, productType, strengthMg, formulation, packQuantity, purchaseModel, sort } = filters;
   const products = productOptions(offers);
@@ -44,62 +46,86 @@ export function ComparisonFiltersPanel({ offers, filters }: { offers: PublicOffe
   const packs = uniqueSorted(filterOffers(offers, { ingredient, productType, strengthMg, formulation, sort }).map((offer) => offer.variant.packQuantity));
   const planModels = new Set(filterOffers(offers, { ingredient, productType, strengthMg, formulation, packQuantity, sort }).map((offer) => offer.purchaseModel));
   const plans = purchaseModelValues.filter((value) => planModels.has(value));
-  const filtered = Boolean(ingredient || productType || strengthMg || formulation || packQuantity || purchaseModel);
+  const resultCount = filterOffers(offers, filters).length;
+
+  const productGroups: FilterOptionGroup[] = [
+    { options: [{ label: "All products", href: comparisonHref({ sort }), active: !ingredient && !productType }] },
+    ...ingredientValues.map((value) => ({
+      label: ingredientLabels[value],
+      options: [
+        { label: `All ${ingredientLabels[value].toLowerCase()}`, href: comparisonHref({ ingredient: value, sort }), active: ingredient === value && !productType },
+        ...products
+          .filter((product) => product.ingredient === value)
+          .map((product) => ({ label: product.label, href: comparisonHref({ ingredient: value, productType: product.productType, sort }), active: ingredient === value && productType === product.productType })),
+      ],
+    })),
+  ];
+  const strengthGroups: FilterOptionGroup[] = [{
+    options: [
+      { label: "Any strength", href: comparisonHref({ ingredient, productType, sort }), active: !strengthMg },
+      ...strengths.map((value) => ({ label: `${value}mg`, href: comparisonHref({ ingredient, productType, strengthMg: value, sort }), active: strengthMg === value })),
+    ],
+  }];
+  const formGroups: FilterOptionGroup[] = [{
+    options: [
+      { label: "Any form", href: comparisonHref({ ingredient, productType, strengthMg, sort }), active: !formulation },
+      ...forms.map(([slug, label]) => ({ label, href: comparisonHref({ ingredient, productType, strengthMg, formulation: slug, sort }), active: formulation === slug })),
+    ],
+  }];
+  const packGroups: FilterOptionGroup[] = [{
+    options: [
+      { label: "Any pack size", href: comparisonHref({ ingredient, productType, strengthMg, formulation, sort }), active: !packQuantity },
+      ...packs.map((value) => ({ label: `${value} tablet${value === 1 ? "" : "s"}`, href: comparisonHref({ ingredient, productType, strengthMg, formulation, packQuantity: value, sort }), active: packQuantity === value })),
+    ],
+  }];
+  const planGroups: FilterOptionGroup[] = [{
+    options: [
+      { label: "Any", href: comparisonHref({ ingredient, productType, strengthMg, formulation, packQuantity, sort }), active: !purchaseModel },
+      ...plans.map((value) => ({ label: publicPurchaseModelLabels[value], href: comparisonHref({ ingredient, productType, strengthMg, formulation, packQuantity, purchaseModel: value, sort }), active: purchaseModel === value })),
+    ],
+  }];
+  const sortGroups: FilterOptionGroup[] = [{ options: sortValues.map((value) => ({ label: sortLabels[value], href: comparisonHref({ ...filters, sort: value }), active: sort === value })) }];
+
+  // What is applied now, each with a link that removes just that choice (removing only widens the
+  // results, so the other choices stay valid).
+  const applied: Omit<FilterOption, "active">[] = [
+    ...(ingredient || productType ? [{ label: selectedLabel(productGroups), href: comparisonHref({ ...filters, ingredient: undefined, productType: undefined }) }] : []),
+    ...(strengthMg ? [{ label: `${strengthMg}mg`, href: comparisonHref({ ...filters, strengthMg: undefined }) }] : []),
+    ...(formulation ? [{ label: selectedLabel(formGroups), href: comparisonHref({ ...filters, formulation: undefined }) }] : []),
+    ...(packQuantity ? [{ label: selectedLabel(packGroups), href: comparisonHref({ ...filters, packQuantity: undefined }) }] : []),
+    ...(purchaseModel ? [{ label: publicPurchaseModelLabels[purchaseModel], href: comparisonHref({ ...filters, purchaseModel: undefined }) }] : []),
+  ];
 
   return (
     <section aria-label="Filter prices" className="mt-10 rounded-3xl border border-border bg-card/80 p-5 shadow-(--shadow) backdrop-blur sm:p-6 motion-safe:animate-fade-up">
-      <div className="mb-5 flex items-center justify-between gap-3">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
         <p className="flex items-center gap-2 font-medium"><SlidersHorizontal aria-hidden="true" className="size-4" />Filter and sort</p>
-        {filtered ? <Link href={comparisonHref({ sort })} scroll={false} className="text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline">Clear filters</Link> : null}
+        <p className="text-sm text-muted-foreground tabular-nums">{resultCount.toLocaleString("en-GB")} price{resultCount === 1 ? "" : "s"} shown</p>
       </div>
-      <div className="space-y-4">
-        <FilterGroup label="Product">
-          <FilterChip href={comparisonHref({ ingredient, sort })} active={!productType}>All</FilterChip>
-          {products.map((product) => (
-            <FilterChip key={`${product.ingredient}-${product.productType}`} href={comparisonHref({ ingredient: product.ingredient, productType: product.productType, sort })} active={ingredient === product.ingredient && productType === product.productType}>{product.label}</FilterChip>
-          ))}
-        </FilterGroup>
-        <FilterGroup label="Medicine">
-          <FilterChip href={comparisonHref({ sort })} active={!ingredient}>Any</FilterChip>
-          {ingredientValues.map((value) => (
-            <FilterChip key={value} href={comparisonHref({ ingredient: value, sort })} active={ingredient === value}>{ingredientLabels[value]}</FilterChip>
-          ))}
-        </FilterGroup>
-        <FilterGroup label="Strength">
-          <FilterChip href={comparisonHref({ ingredient, productType, sort })} active={!strengthMg}>Any</FilterChip>
-          {strengths.map((value) => (
-            <FilterChip key={value} href={comparisonHref({ ingredient, productType, strengthMg: value, sort })} active={strengthMg === value}>{value}mg</FilterChip>
-          ))}
-        </FilterGroup>
-        {forms.length > 1 || formulation ? (
-          <FilterGroup label="Form">
-            <FilterChip href={comparisonHref({ ingredient, productType, strengthMg, sort })} active={!formulation}>Any</FilterChip>
-            {forms.map(([slug, label]) => (
-              <FilterChip key={slug} href={comparisonHref({ ingredient, productType, strengthMg, formulation: slug, sort })} active={formulation === slug}>{label}</FilterChip>
-            ))}
-          </FilterGroup>
-        ) : null}
-        <FilterGroup label="Pack size">
-          <FilterChip href={comparisonHref({ ingredient, productType, strengthMg, formulation, sort })} active={!packQuantity}>Any</FilterChip>
-          {packs.map((value) => (
-            <FilterChip key={value} href={comparisonHref({ ingredient, productType, strengthMg, formulation, packQuantity: value, sort })} active={packQuantity === value}>{value} tablets</FilterChip>
-          ))}
-        </FilterGroup>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-flow-col xl:auto-cols-fr xl:grid-cols-none">
+        <FilterDropdown label="Product" value={selectedLabel(productGroups)} selected={Boolean(ingredient || productType)} groups={productGroups} />
+        <FilterDropdown label="Strength" value={selectedLabel(strengthGroups)} selected={Boolean(strengthMg)} groups={strengthGroups} />
+        {forms.length > 1 || formulation ? <FilterDropdown label="Form" value={selectedLabel(formGroups)} selected={Boolean(formulation)} groups={formGroups} /> : null}
+        <FilterDropdown label="Pack size" value={selectedLabel(packGroups)} selected={Boolean(packQuantity)} groups={packGroups} />
         {/* Nearly every price is one-off today, so the choice only appears once there is one to make. */}
-        {plans.length > 1 || purchaseModel ? (
-          <FilterGroup label="Buying">
-            <FilterChip href={comparisonHref({ ingredient, productType, strengthMg, formulation, packQuantity, sort })} active={!purchaseModel}>Any</FilterChip>
-            {plans.map((value) => (
-              <FilterChip key={value} href={comparisonHref({ ingredient, productType, strengthMg, formulation, packQuantity, purchaseModel: value, sort })} active={purchaseModel === value}>{publicPurchaseModelLabels[value]}</FilterChip>
-            ))}
-          </FilterGroup>
-        ) : null}
-        <FilterGroup label="Sort by">
-          {sortOptions.map((option) => (
-            <FilterChip key={option.value} href={comparisonHref({ ...filters, sort: option.value })} active={sort === option.value}>{option.label}</FilterChip>
-          ))}
-        </FilterGroup>
+        {plans.length > 1 || purchaseModel ? <FilterDropdown label="Buying" value={selectedLabel(planGroups)} selected={Boolean(purchaseModel)} groups={planGroups} /> : null}
+        <FilterDropdown label="Sort by" value={sortLabels[sort]} selected={false} groups={sortGroups} />
       </div>
+      {applied.length > 0 ? (
+        <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-border pt-4">
+          <ul aria-label="Applied filters" className="flex flex-wrap gap-2">
+            {applied.map((item) => (
+              <li key={item.href}>
+                <Link href={item.href} scroll={false} aria-label={`Remove filter: ${item.label}`} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background py-1 pr-2 pl-3 text-sm transition-colors hover:border-primary/50 hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring">
+                  {item.label}
+                  <X aria-hidden="true" className="size-3.5 text-muted-foreground" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <Link href={comparisonHref({ sort })} scroll={false} className="ml-auto text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline">Clear all</Link>
+        </div>
+      ) : null}
     </section>
   );
 }

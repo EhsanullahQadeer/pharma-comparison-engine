@@ -11,7 +11,7 @@ export function StatsBand({ found, published }: { found: number; published: numb
   const stats: Stat[] = [
     ...(found > 0 ? [{ icon: SearchCheck, value: found.toLocaleString("en-GB"), label: "pharmacies checked against UK registers" }] : []),
     ...(published > 0 ? [{ icon: Store, value: published.toLocaleString("en-GB"), label: "pharmacies listed after staff review" }] : []),
-    { icon: Clock3, value: "48h", label: "maximum age of any price we show" },
+    { icon: Clock3, value: "24h", label: "before a price is marked “may have changed”" },
     { icon: PoundSterling, value: "£0", label: "to use, with no sign-up needed" },
   ];
 

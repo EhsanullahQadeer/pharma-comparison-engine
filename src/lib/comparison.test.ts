@@ -51,12 +51,13 @@ test("roadmap worked example: £16 + £3 delivery vs £18 inclusive, 8 tablets",
   assert.equal(perTabletPence(inclusive, 8), 225);
 });
 
-test("freshness tiers follow the 24h / 48h boundaries", () => {
+test("freshness tiers follow the 24h boundary and never hide an old price", () => {
   const now = new Date("2026-09-26T12:00:00Z");
   assert.equal(freshnessTier(new Date(now.getTime() - 23 * HOUR), now), "fresh");
   assert.equal(freshnessTier(new Date(now.getTime() - 24 * HOUR), now), "fresh");
   assert.equal(freshnessTier(new Date(now.getTime() - 30 * HOUR), now), "stale");
-  assert.equal(freshnessTier(new Date(now.getTime() - 49 * HOUR), now), "expired");
+  assert.equal(freshnessTier(new Date(now.getTime() - 49 * HOUR), now), "stale");
+  assert.equal(freshnessTier(new Date(now.getTime() - 500 * HOUR), now), "stale");
 });
 
 test("ranking is cheapest first with a stable id tie-break, ranks stale offers by price and gates out-of-stock ones", () => {

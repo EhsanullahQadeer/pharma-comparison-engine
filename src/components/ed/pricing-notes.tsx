@@ -9,7 +9,7 @@ const NOTES = [
   {
     icon: Clock3,
     title: "How fresh the prices are",
-    body: "Each price is read from the pharmacy’s own website and shows when it was last checked. Prices checked 24–48 hours ago are still ranked by price but marked “may have changed”, and older prices are hidden until they’re checked again.",
+    body: "Each price is read from the pharmacy’s own website and shows when it was last checked. Prices checked more than 24 hours ago are still ranked by price but marked “may have changed”.",
   },
   {
     icon: Scale,

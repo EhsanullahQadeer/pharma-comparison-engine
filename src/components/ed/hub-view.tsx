@@ -11,25 +11,15 @@ import { getSourcedArticle } from "@/lib/sourced-articles";
 
 const hubPaths = new Set(["guides", "guides/safety", "tools"]);
 
-type CardStatus = "tool" | "reviewed" | "sourced";
-
-function cardStatus(entry: EdPage, published: Map<string, string>): CardStatus {
-  if (entry.live) return "tool";
-  return published.has(entry.path) ? "reviewed" : "sourced";
-}
-
 function cardText(entry: EdPage, published: Map<string, string>) {
   return published.get(entry.path) ?? getSourcedArticle(entry.path)?.summary ?? entry.description;
 }
 
-const statusBadges: Record<CardStatus, { label: string; icon: typeof BadgeCheck }> = {
-  tool: { label: "Interactive", icon: BadgeCheck },
-  reviewed: { label: "Clinically reviewed", icon: BadgeCheck },
-  sourced: { label: "Sourced · clinical review pending", icon: FileSearch },
-};
+const toolBadge = { label: "Interactive", icon: BadgeCheck };
+const sourcedBadge = { label: "Checked against its sources", icon: FileSearch };
 
-// Topic hub (Guides, Safety, Tools): every page in its group, grouped by section, each marked as
-// clinically reviewed or checked against its sources while that review is pending.
+// Topic hub (Guides, Safety, Tools): every page in its group, grouped by section. Article pages are
+// marked as checked against their sources.
 export async function HubView({ group, title, accent, eyebrow, description }: {
   group: EdPage["group"];
   title: string;
@@ -52,7 +42,7 @@ export async function HubView({ group, title, accent, eyebrow, description }: {
         <div className="w-full rounded-3xl border border-border bg-card/80 p-5 shadow-(--shadow) backdrop-blur lg:w-72">
           <p className="text-3xl font-semibold tracking-tight tabular-nums">{pages.length}</p>
           <p className="text-sm text-muted-foreground">pages in this section</p>
-          <p className="mt-3 border-t border-border pt-3 text-xs text-muted-foreground">Every page cites its sources. A page marked as pending clinical review has been checked against those sources but not yet reviewed by a named clinician.</p>
+          <p className="mt-3 border-t border-border pt-3 text-xs text-muted-foreground">Every page lists its sources and is checked against them. We only cite trusted medical sources such as the NHS, NICE, the MHRA and each medicine&apos;s official product information.</p>
         </div>
       )}
     >
@@ -61,8 +51,7 @@ export async function HubView({ group, title, accent, eyebrow, description }: {
           <h2 id={`hub-${section}`} className="text-xl font-semibold">{section}</h2>
           <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {sectionPages.map((entry) => {
-              const status = cardStatus(entry, published);
-              const badge = statusBadges[status];
+              const badge = entry.live ? toolBadge : sourcedBadge;
               const Icon = badge.icon;
               return (
                 <li key={entry.path} className={revealClass} style={revealStyle(pages.indexOf(entry))}>

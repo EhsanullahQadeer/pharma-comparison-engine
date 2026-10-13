@@ -6,8 +6,8 @@ export const groupLabels = { pharmacies: "Pharmacies", prices: "Prices", guides:
 
 // Every catalogue page is one of two kinds:
 // - "live": has its own route folder under src/app/(site)/ed and real content or data;
-// - "article": medical/educational content served by /ed/[...slug] — a clinically reviewed Article
-//   once one is PUBLISHED, otherwise the source-checked content in src/lib/sourced-articles.ts.
+// - "article": medical/educational content served by /ed/[...slug] — the staff-edited Article
+//   once one is PUBLISHED, otherwise the built-in source-checked content in src/lib/sourced-articles.ts.
 export type EdPageKind = "live" | "article";
 
 const livePaths = new Set([
@@ -80,7 +80,7 @@ export const edPages = [
   page("how-it-works", "How ED comparison works", "trust", "Our approach", "How we find pharmacies, check prices and send you to the pharmacy for its consultation."),
   page("independence", "Independence and referral income", "trust", "Our approach", "Who pays us, how ranking is decided, and how any commercial relationship would be disclosed."),
   page("trust/pharmacy-evidence", "Pharmacy evidence and checks", "trust", "Our approach", "The registration evidence behind each listing and the dates it was checked."),
-  page("trust/editorial-policy", "Editorial and clinical review", "trust", "Our approach", "How our guides are written, sourced, reviewed and corrected."),
+  page("trust/editorial-policy", "Editorial and sources policy", "trust", "Our approach", "How our guides are written, sourced, checked and corrected."),
   page("trust/about", "About PharmaCompare ED", "trust", "About and support", "What we do and don't do, and the principles behind this comparison."),
   page("contact", "Contact the ED comparison team", "trust", "About and support", "Send us a question, a correction or a pharmacy enquiry."),
   page("privacy", "ED platform privacy policy", "trust", "Policies", "What we collect (only what you type into a form), why, and your rights."),

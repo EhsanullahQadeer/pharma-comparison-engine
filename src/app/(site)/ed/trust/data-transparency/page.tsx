@@ -16,7 +16,7 @@ const SOURCES = [
   { icon: Building2, title: "Regulator registers", body: "Pharmacy registration details come from the public GPhC register (and PSNI for Northern Ireland). We show the registration number and link to the register so you can check it yourself." },
   { icon: Database, title: "NHS and company data", body: "Candidate pharmacies are found using NHS organisation data (NHS ODS and NHSBSA), CQC data and Companies House. Most of this is published under the Open Government Licence." },
   { icon: Globe, title: "Pharmacies' own websites", body: "Prices, delivery charges and stock come from each pharmacy's public product pages. We follow each site's published crawling rules, and some sites are checked by hand." },
-  { icon: Clock3, title: "Dated checks", body: "Every price shows when it was last checked. Prices over 24 hours old are marked “may have changed”, and prices over 48 hours old aren't shown." },
+  { icon: Clock3, title: "Dated checks", body: "Every price shows when it was last checked. Prices over 24 hours old are marked “may have changed”." },
 ];
 
 export default function DataTransparencyPage() {

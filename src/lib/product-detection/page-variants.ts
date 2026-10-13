@@ -29,13 +29,18 @@ const productsByIngredient: Record<Ingredient, { brandName: string; generic: boo
 
 const PACK_SIZES = [1, 2, 3, 4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 30, 32, 36, 40, 48, 56, 60, 64, 72, 84, 90, 96];
 
-// `blocked` when the plain request couldn't reach the page for a reason a browser can get past (a
-// security check, a 403) — the caller then reads it in the Chrome window. A robots refusal or a
-// non-public address is final and never blocked.
+// A page that is only an empty shell until its scripts run (Online Pharmacy 4U: `<div id="root"></div>`
+// and nothing else) — its product and prices exist only once a browser has rendered it.
+const EMPTY_APP_SHELL = /<div\b[^>]*\bid\s*=\s*"(?:root|app|__next|__nuxt)"[^>]*>\s*<\/div>/i;
+
+// `blocked` when the plain request couldn't read the page for a reason a browser can get past (a
+// security check, a 403, or a page that is empty until its scripts run) — the caller then reads it
+// in the Chrome window. A robots refusal or a non-public address is final and never blocked.
 export async function findOfferedOptionsOnPage(url: string, ingredient: Ingredient): Promise<{ options: OfferedOption[]; blocked: boolean }> {
   try {
     const page = await collectPublicWebsite(url);
-    return { options: offeredOptionsInHtml(page.html, page.finalUrl, ingredient), blocked: false };
+    const options = offeredOptionsInHtml(page.html, page.finalUrl, ingredient);
+    return { options, blocked: options.length === 0 && EMPTY_APP_SHELL.test(page.html) };
   } catch (error) {
     return { options: [], blocked: !(error instanceof Error && FINAL_REFUSAL.test(error.message)) };
   }

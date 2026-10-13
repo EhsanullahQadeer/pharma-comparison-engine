@@ -1,4 +1,4 @@
-import { BookOpenCheck, FileClock, PenLine, UserCheck } from "lucide-react";
+import { BookOpenCheck, FileClock, PenLine, ShieldCheck } from "lucide-react";
 
 import { CallToAction, ContentSection, InfoCardGrid, PointList, StepList } from "@/components/ed/content-blocks";
 import { GradientText } from "@/components/ed/gradient-text";
@@ -7,36 +7,35 @@ import { PageShell } from "@/components/ed/page-shell";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Editorial and clinical review policy",
-  description: "How our ED guides are written, source-checked and clinically reviewed, how each guide shows which stage it has reached, and how to report a mistake.",
+  title: "Editorial and sources policy",
+  description: "How our ED guides are written from trusted medical sources, how each statement is checked against the source it cites, and how to report a mistake.",
   alternates: { canonical: "/ed/trust/editorial-policy" },
 };
 
 const PRINCIPLES = [
   { icon: PenLine, title: "Every statement cited", body: "Each fact links to a numbered source, so you can check it yourself." },
-  { icon: UserCheck, title: "A different, named reviewer", body: "A clinical reviewer who didn't write the guide approves it. Nobody can approve their own work." },
-  { icon: BookOpenCheck, title: "Sources you can check", body: "We use the NHS, the MHRA, regulators and each medicine's official product information (SmPC)." },
-  { icon: FileClock, title: "Dated and versioned", body: "Guides show the date their sources were checked, or their review date and revision number once reviewed." },
+  { icon: ShieldCheck, title: "Trusted sources only", body: "A guide can only cite the health service, regulators, international health bodies, official product information and peer-reviewed research." },
+  { icon: BookOpenCheck, title: "Sources you can check", body: "We use the NHS, NICE, the MHRA, the WHO, UK regulators and each medicine's official product information (SmPC)." },
+  { icon: FileClock, title: "Dated and versioned", body: "Every guide shows the date it was last checked against its sources." },
 ];
 
 const STEPS = [
   { title: "Source check", body: "The guide is written only from official sources. Each statement is checked against the source it cites, and the guide shows the date of that check." },
-  { title: "Published as source-checked", body: "The guide appears marked “Sourced · clinical review pending”. It never claims a review it hasn't had, and it's kept out of search results until reviewed." },
-  { title: "Clinical review", body: "A named reviewer checks accuracy, safety wording and signposting. They approve it or return it with notes." },
-  { title: "Reviewed and revised", body: "An approved guide shows its author, reviewer and review date. Any later edit goes back for review." },
+  { title: "Published with its sources", body: "The guide appears with its numbered list of sources. It doesn't claim a review by a clinician, because our guides are checked against their sources rather than clinically reviewed." },
+  { title: "Kept up to date", body: "When a guide is edited, its sources are checked again and the date shown on the guide changes." },
 ];
 
 export default function EditorialPolicyPage() {
   return (
     <PageShell
-      title="Editorial and clinical review policy"
-      heading={<>How our guides are written <GradientText>and reviewed.</GradientText></>}
+      title="Editorial and sources policy"
+      heading={<>How our guides are written <GradientText>and checked.</GradientText></>}
       eyebrow="Trust / Our approach"
-      description="Health information has to be accurate, sourced and checked. This is the process every ED guide goes through, and each guide shows which stage it has reached."
+      description="Health information has to be accurate, sourced and checked. This is the process every ED guide goes through."
       crumbs={[{ label: "Home", href: "/" }]}
     >
       <InfoCardGrid items={PRINCIPLES} columns={4} />
-      <ContentSection id="process" title="From sources to clinical review">
+      <ContentSection id="process" title="From sources to publication">
         <StepList steps={STEPS} />
       </ContentSection>
       <ContentSection id="boundaries" title="What our guides will and won't do">
@@ -49,7 +48,7 @@ export default function EditorialPolicyPage() {
           "Keep commercial relationships out of editorial decisions (see our independence policy).",
         ]} />
       </ContentSection>
-      <CallToAction title="Found an error in a guide?" body="Tell us what's wrong and where. The guide's author and reviewer will look at it." href="/ed/contact" label="Report a mistake" />
+      <CallToAction title="Found an error in a guide?" body="Tell us what's wrong and where. Our team will check it against the sources." href="/ed/contact" label="Report a mistake" />
     </PageShell>
   );
 }

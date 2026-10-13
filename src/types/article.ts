@@ -9,9 +9,3 @@ export type ArticleContent = {
   body: string;
   sources: string[];
 };
-
-// How a public article page was vetted: a named clinical reviewer, or checked against its cited
-// sources only (while it waits for that review).
-export type ArticleVetting =
-  | { kind: "reviewed"; authorName: string; reviewerName: string | null; reviewedAt: Date | null; revision: number }
-  | { kind: "sourced"; checkedOn: Date };

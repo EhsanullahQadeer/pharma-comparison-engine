@@ -1,7 +1,25 @@
 # Product updates
 
+## 2026-10-13
+
+- The "Filter and sort" box on the price comparison page has been redesigned. The long rows of buttons are replaced by a single row of dropdowns: Product, Strength, Form, Pack size, Buying and Sort by. Product and medicine are now one dropdown, with each product listed under its medicine.
+- The box now shows how many prices match, and lists the filters in use underneath. Each one can be removed on its own, or all at once with "Clear all".
+- Prices are no longer hidden when they were last checked more than 48 hours ago. Every published price now stays on the comparison, price and pharmacy pages; one checked more than 24 hours ago is marked "may have changed" and shows the date it was last checked. The pages that explain how prices are handled have been updated to say this.
+- Articles can now be published in one step. An administrator or content reviewer opens a draft and presses "Publish"; a second person no longer has to approve it.
+- Editing an article that is already published now updates the public page straight away, instead of taking it off the site.
+- Articles only accept trusted medical sources: the NHS, NICE, GOV.UK and the MHRA, the WHO, the EMA, official product information (emc), UK health regulators and professional bodies, and peer-reviewed research. A source from any other website, or one with no link, is refused when you save or publish.
+- Public guide pages no longer show who wrote or reviewed them. Each one shows its numbered sources and the date it was checked against them.
+- The guide cards on the Guides, Safety and Tools pages now read "Checked against its sources".
+- The editorial policy page has been rewritten to describe this: guides are written from trusted sources and checked against them, and it no longer mentions a clinical reviewer.
+- The Articles list in the admin now has an Actions column. Everyone can open an article's public page from it. Administrators and content reviewers also get Edit, Publish / Unpublish and Activate / Deactivate buttons, so they can manage an article without opening it.
+- Articles now have a separate on/off switch. Deactivating an article hides it from the public site without changing its status or publish date; activating it brings it back. Inactive articles are marked "Inactive" in the list. The same buttons are on each article's own page.
+- The Articles list in the admin shows the date each article was published, and the notification bell now counts draft articles waiting to be published.
+
 ## 2026-10-03
 
+- Price collection can now read Online Pharmacy 4U’s product pages, where each pack size is a button showing its own price. For example Cialis Together 4 tablets £18.28 and 8 tablets £36.57, Viagra Connect 4 tablets £21.98, and generic sildenafil 50mg × 8 £14.98.
+- Price collection now waits for product pages that only appear once the website has finished loading them, instead of reading the page while it is still empty.
+- "Detect products" now opens such pages in the Chrome window to read their options, so it can suggest every pack they sell: two for Cialis Together, seven for Viagra Connect and two for generic sildenafil on Online Pharmacy 4U.
 - Fixed prices on Pharmica’s product pages, where the price changes as you pick generic or branded, a strength and a quantity. We were only reading a few of the packs, and none at all for Cialis Together. Every option in its dropdowns is now read at the price the page shows, for example Cialis Together 4 tablets £21.99 and 8 tablets £37.99, branded Viagra 50mg × 4 £34.99, and daily Cialis 5mg × 28 £69.99. This covers its Viagra, sildenafil, Viagra Connect, Cialis, tadalafil and Cialis Together pages.
 - "Detect products" no longer suggests a single-tablet pack for Pharmica that it does not sell.
 - Price collection can now read treatment pages that list each option as labelled details under the medicine’s name, such as Phlo Clinic’s erectile dysfunction page ("Strength: 50mg, Quantity: 8, £16.99" under "Sildenafil"). Its generic sildenafil 100mg × 8 price of £19.99 can be collected again.

@@ -309,6 +309,10 @@ async function collectRenderedProductCard(url: string, matchedTokens: string[], 
     const deadline = Date.now() + 15_000;
     while (Date.now() < deadline) {
       await waitForHumanVerification(page, humanAssist, onWaiting);
+      // A page drawn by its own scripts (Online Pharmacy 4U) only carries its options once they
+      // have run, which is after the first read above.
+      const drawn = variant ? pickEmbeddedVariantPrice(await page.content(), matchedTokens, variant, page.url()) : undefined;
+      if (drawn) return drawn;
       // Product sections whose rows don't name the product (Rx Live Clinic) — read by section first,
       // since the row-by-row reader below can't tell which section a row belongs to.
       const sectioned = variant ? readSectionedTextPrice(await page.locator("body").innerText(), matchedTokens, variant) : undefined;
