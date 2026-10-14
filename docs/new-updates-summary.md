@@ -1,5 +1,11 @@
 # Product updates
 
+## 2026-10-14
+
+- Price collection can now read Medy’s erectile dysfunction page, where each treatment has its own price list with dose, usage, quantity and price columns. For example Viagra 50mg × 4 £22.50, generic sildenafil 100mg × 8 £12.00, Cialis 10mg × 4 £34.40 and daily generic tadalafil 5mg × 28 £16.99. Medy labels every list "generic", even Viagra and Cialis, so we go by the treatment’s name instead.
+- "Detect products" now checks a pharmacy’s erectile dysfunction page for both sildenafil and tadalafil products, not just the one it was first matched on. For Medy it now suggests all 32 options on that page instead of none.
+- "Detect products" now opens product pages in the Chrome window when the website only adds its prices after the page has loaded, as on Medy.
+
 ## 2026-10-13
 
 - A bulk price check now stays visible when you move to another admin page. A strip under the top bar shows its progress ("Scraping 7 of 20…") with a Stop button, and the final result when it finishes, wherever you are in the admin. It also has a link back to the page the check was started from.

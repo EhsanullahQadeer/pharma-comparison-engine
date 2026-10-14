@@ -8,7 +8,7 @@ import { recordAuditLog } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 import { ensureCatalogueVariant, type CatalogueVariant } from "@/lib/product-detection/catalogue-variants";
 import { detectEdProductMatchesWithBrowserFallback, readOfferedOptionsInBrowser } from "@/lib/product-detection/detect-products-in-browser";
-import { findOfferedOptionsOnPage, pageAffinity } from "@/lib/product-detection/page-variants";
+import { findOfferedOptionsOnPage, ingredientWords, pageAffinity, pageIngredients } from "@/lib/product-detection/page-variants";
 import { revalidatePublicSite } from "@/lib/revalidate-public-site";
 import { requireStaffRole } from "@/lib/staff-auth";
 import type { OfferedOption, ProductDetectionMethod } from "@/types/product-detection";
@@ -57,31 +57,38 @@ export async function runProductDetectionForProvider(providerId: string): Promis
   // First pass: every strength/pack option each page has a price for — each option's catalogue
   // variant is added first if the catalogue lacks it. Several pages can list the same option (its
   // own page, plus comparison tables on sibling pages), so each variant goes to the one page whose
-  // address fits its product best.
-  const optionsByUrl = new Map<string, OfferedOption[]>();
-  const blockedPages: { url: string; ingredient: Ingredient }[] = [];
+  // address fits its product best. Each page is read once, for every medicine it was matched on —
+  // both on an ED condition page that sells everything itself (see pageIngredients).
+  const detectedPages = new Map<string, { match: (typeof detected)[number]; ingredients: Ingredient[] }>();
   for (const match of detected) {
-    const { options, blocked } = await findOfferedOptionsOnPage(match.candidateUrl, match.ingredient);
-    optionsByUrl.set(match.candidateUrl, options);
-    if (blocked) blockedPages.push({ url: match.candidateUrl, ingredient: match.ingredient });
+    const ingredients = [...new Set([...detectedPages.get(match.candidateUrl)?.ingredients ?? [], ...pageIngredients(match.candidateUrl, match.ingredient)])];
+    detectedPages.set(match.candidateUrl, { match: detectedPages.get(match.candidateUrl)?.match ?? match, ingredients });
   }
-  // Pages a plain request couldn't reach (a security check in front of the site) are read in the
-  // Chrome window instead. If that fails, they simply keep no options and get an undecided match.
+  const optionsByUrl = new Map<string, OfferedOption[]>();
+  const blockedPages: { url: string; ingredients: Ingredient[] }[] = [];
+  for (const [url, { ingredients }] of detectedPages) {
+    const { options, blocked } = await findOfferedOptionsOnPage(url, ingredients);
+    optionsByUrl.set(url, options);
+    if (blocked) blockedPages.push({ url, ingredients });
+  }
+  // Pages a plain request couldn't read (a security check in front of the site, or prices the
+  // page's scripts add) are read in the Chrome window instead. If that fails, they simply keep no
+  // options and get an undecided match.
   const browserOptions = await readOfferedOptionsInBrowser(blockedPages, provider.websiteDomain, { postcode }).catch(() => new Map<string, OfferedOption[]>());
   for (const [url, options] of browserOptions) optionsByUrl.set(url, options);
 
-  const pages: { match: (typeof detected)[number]; variantIds: string[] }[] = [];
+  const pages: { match: (typeof detected)[number]; priced: { variantId: string; ingredient: Ingredient }[] }[] = [];
   const bestPage = new Map<string, { url: string; affinity: number }>();
-  for (const match of detected) {
-    const variantIds: string[] = [];
+  for (const { match } of detectedPages.values()) {
+    const priced: { variantId: string; ingredient: Ingredient }[] = [];
     for (const option of optionsByUrl.get(match.candidateUrl) ?? []) {
       const { variant, created } = await ensureCatalogueVariant(option, catalogue, staffUser.id);
       if (created) newVariants += 1;
-      variantIds.push(variant.id);
+      priced.push({ variantId: variant.id, ingredient: option.ingredient });
       const affinity = pageAffinity(match.candidateUrl, option);
       if (affinity > (bestPage.get(variant.id)?.affinity ?? -1)) bestPage.set(variant.id, { url: match.candidateUrl, affinity });
     }
-    pages.push({ match, variantIds });
+    pages.push({ match, priced });
   }
 
   const providerMatches = await prisma.productMatch.findMany({
@@ -93,16 +100,20 @@ export async function runProductDetectionForProvider(providerId: string): Promis
 
   // Second pass: a suggested (still NEW) match per option on its page; staff confirm or reject each.
   // Variants already matched on a page, in any status, are left alone there.
-  for (const { match, variantIds: priced } of pages) {
+  for (const { match, priced } of pages) {
     const existing = providerMatches.filter((row) => row.candidateUrl === match.candidateUrl);
     const known = new Set(existing.map((row) => row.productVariantId));
-    const suggestions = priced
-      .filter((variantId) => bestPage.get(variantId)?.url === match.candidateUrl && !known.has(variantId) && !placed.has(variantId))
-      .map((variantId) => ({ variantId }));
+    const suggestions = priced.filter(({ variantId }) => bestPage.get(variantId)?.url === match.candidateUrl && !known.has(variantId) && !placed.has(variantId));
     if (suggestions.length > 0) {
       await prisma.productMatch.createMany({
-        data: suggestions.map(({ variantId }) => ({
-          providerId, candidateUrl: match.candidateUrl, matchedIngredient: match.ingredient, matchedTokens: match.matchedTokens, confidence: match.confidence, productVariantId: variantId,
+        // An option for the other medicine on a combined ED page is credited to that medicine.
+        data: suggestions.map(({ variantId, ingredient }) => ({
+          providerId,
+          candidateUrl: match.candidateUrl,
+          matchedIngredient: ingredient,
+          matchedTokens: ingredient === match.ingredient ? match.matchedTokens : [ingredientWords[ingredient]],
+          confidence: match.confidence,
+          productVariantId: variantId,
         })),
         skipDuplicates: true,
       });

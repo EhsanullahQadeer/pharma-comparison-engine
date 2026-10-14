@@ -5,7 +5,7 @@ import { openHumanBrowser, waitForHumanVerification } from "@/lib/price-collecti
 import { readRobotsInBrowser } from "@/lib/price-collection/robots-in-browser";
 import { clickThroughEdProductCards, isEdCategoryLink, isShopLink, openEdCategoryByClick, passPostcodePrompt, readRenderedLinks } from "@/lib/product-detection/browser-shop-pages";
 import { detectEdProductMatches, findEdCategoryUrls, matchEdProductLinks, type DetectedProductMatch } from "@/lib/product-detection/detect-products";
-import { offeredOptionsInHtml } from "@/lib/product-detection/page-variants";
+import { ingredientWords, offeredOptionsInHtml } from "@/lib/product-detection/page-variants";
 import { collectFeedCandidates, type FeedCandidate } from "@/lib/product-detection/site-feeds";
 import type { OfferedOption, PageLink, ProductDetectionMethod } from "@/types/product-detection";
 
@@ -18,8 +18,10 @@ const MAX_CATEGORY_PAGES = 3;
 const MAX_CARDS_PER_LISTING = 20;
 // Product pages whose strength/pack options are read in the browser per run.
 const MAX_OPTION_PAGES = 15;
-// How long a script-drawn product page gets to show its heading before it is read as it stands.
+// How long a script-drawn page gets to show its options before it is read as it stands, and how
+// often it is re-read meanwhile.
 const RENDER_WAIT_MS = 8_000;
+const RENDER_POLL_MS = 750;
 
 type DetectionOptions = { postcode?: string };
 
@@ -85,22 +87,32 @@ async function detectEdProductMatchesInBrowser(websiteDomain: string, feedCandid
   }
 }
 
-// The strength/pack options on product pages a plain request couldn't reach (a security check in
-// front of every page, e.g. Oxford Online Pharmacy), read from each page as loaded in the Chrome
+// A page drawn or filled in by its own scripts (Online Pharmacy 4U's product pages, Medy's price
+// list) has no options on it right after loading, so it is re-read until some appear or time is up.
+async function readOnceDrawn(page: Page, ingredients: Ingredient[]): Promise<OfferedOption[]> {
+  const deadline = Date.now() + RENDER_WAIT_MS;
+  for (;;) {
+    const options = offeredOptionsInHtml(await page.content(), page.url(), ingredients);
+    if (options.length > 0 || Date.now() >= deadline) return options;
+    await page.waitForTimeout(RENDER_POLL_MS);
+  }
+}
+
+// The strength/pack options on product pages a plain request couldn't read (a security check in
+// front of every page, e.g. Oxford Online Pharmacy, or prices added by the page's scripts), read
+// from each page as loaded in the Chrome
 // window. Same rules as the rest of this file: robots.txt is honoured and a person clears any
 // check. A page that fails to load is skipped; the caller leaves it for staff to assign by hand.
-export async function readOfferedOptionsInBrowser(pages: { url: string; ingredient: Ingredient }[], websiteDomain: string, { postcode }: DetectionOptions = {}): Promise<Map<string, OfferedOption[]>> {
+export async function readOfferedOptionsInBrowser(pages: { url: string; ingredients: Ingredient[] }[], websiteDomain: string, { postcode }: DetectionOptions = {}): Promise<Map<string, OfferedOption[]>> {
   const options = new Map<string, OfferedOption[]>();
   if (pages.length === 0) return options;
   const browser = await openHumanBrowser();
   try {
     const reader = siteReader(browser.page, normalizePublicUrl(`https://${websiteDomain}`).hostname, postcode);
-    for (const { url, ingredient } of pages.slice(0, MAX_OPTION_PAGES)) {
+    for (const { url, ingredients } of pages.slice(0, MAX_OPTION_PAGES)) {
       try {
         if (!await reader.open(url)) continue;
-        // A page drawn by its own scripts has no product on it yet; its heading arrives with it.
-        await browser.page.locator("h1").first().waitFor({ timeout: RENDER_WAIT_MS }).catch(() => undefined);
-        options.set(url, offeredOptionsInHtml(await browser.page.content(), browser.page.url(), ingredient));
+        options.set(url, await readOnceDrawn(browser.page, ingredients));
       } catch {
         // This page didn't load; the others may.
       }
@@ -111,8 +123,6 @@ export async function readOfferedOptionsInBrowser(pages: { url: string; ingredie
   return options;
 }
 
-const ingredientTokens: Record<Ingredient, string> = { SILDENAFIL: "sildenafil", TADALAFIL: "tadalafil" };
-
 // A pharmacy with no product pages of its own may sell everything from its one ED page (Phlo
 // Clinic's /male-health/erectile-dysfunction lists each treatment's strengths, packs and prices).
 // Such a page counts as a product page for an ingredient only when it really shows priced options
@@ -122,9 +132,9 @@ async function detectCombinedEdPages(websiteDomain: string, feedCandidates: Feed
   for (const url of await findEdCategoryUrls(websiteDomain, feedCandidates)) {
     try {
       const page = await collectPublicWebsite(url);
-      for (const ingredient of Object.keys(ingredientTokens) as Ingredient[]) {
-        if (offeredOptionsInHtml(page.html, page.finalUrl, ingredient).length === 0) continue;
-        matches.push({ candidateUrl: page.finalUrl, ingredient, matchedTokens: [ingredientTokens[ingredient]], confidence: "MEDIUM" });
+      for (const ingredient of Object.keys(ingredientWords) as Ingredient[]) {
+        if (offeredOptionsInHtml(page.html, page.finalUrl, [ingredient]).length === 0) continue;
+        matches.push({ candidateUrl: page.finalUrl, ingredient, matchedTokens: [ingredientWords[ingredient]], confidence: "MEDIUM" });
       }
     } catch {
       // An unreadable page isn't evidence either way; the browser pass may still find products.

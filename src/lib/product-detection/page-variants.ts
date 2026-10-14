@@ -3,6 +3,7 @@ import { collectPublicWebsite } from "@/lib/discovery/public-web";
 import { FINAL_REFUSAL } from "@/lib/discovery/public-web-policy";
 import { pickPageVariantPrice } from "@/lib/price-collection/scrape-price";
 import { variantTokens } from "@/lib/price-collection/variant-label";
+import { isEdCategoryPagePath } from "@/lib/product-detection/ed-tokens";
 import type { OfferedOption } from "@/types/product-detection";
 
 // Every strength/pack option a detected product page offers — its strength and pack-size buttons,
@@ -29,18 +30,28 @@ const productsByIngredient: Record<Ingredient, { brandName: string; generic: boo
 
 const PACK_SIZES = [1, 2, 3, 4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 30, 32, 36, 40, 48, 56, 60, 64, 72, 84, 90, 96];
 
-// A page that is only an empty shell until its scripts run (Online Pharmacy 4U: `<div id="root"></div>`
-// and nothing else) — its product and prices exist only once a browser has rendered it.
-const EMPTY_APP_SHELL = /<div\b[^>]*\bid\s*=\s*"(?:root|app|__next|__nuxt)"[^>]*>\s*<\/div>/i;
+// A page whose content its scripts build or fill in after loading: an empty shell (Online Pharmacy
+// 4U: `<div id="root"></div>` and nothing else) or a Next.js page that fetches its prices once open
+// (Medy's ED page) — those prices exist only once a browser has rendered it.
+const SCRIPT_BUILT_PAGE = /<div\b[^>]*\bid\s*=\s*"(?:root|app|__next|__nuxt)"[^>]*>\s*<\/div>|\/_next\/static\//i;
+
+export const ingredientWords: Record<Ingredient, string> = { SILDENAFIL: "sildenafil", TADALAFIL: "tadalafil" };
+
+// The medicines a detected page is checked for: the one it was matched on, or both on an ED
+// condition page, which may sell every treatment itself (Medy's /erectile-dysfunction lists Viagra,
+// sildenafil, Cialis and tadalafil but was matched on its sildenafil title alone).
+export function pageIngredients(url: string, ingredient: Ingredient): Ingredient[] {
+  return isEdCategoryPagePath(new URL(url).pathname) ? (Object.keys(ingredientWords) as Ingredient[]) : [ingredient];
+}
 
 // `blocked` when the plain request couldn't read the page for a reason a browser can get past (a
-// security check, a 403, or a page that is empty until its scripts run) — the caller then reads it
+// security check, a 403, or prices its scripts only add once it is open) — the caller then reads it
 // in the Chrome window. A robots refusal or a non-public address is final and never blocked.
-export async function findOfferedOptionsOnPage(url: string, ingredient: Ingredient): Promise<{ options: OfferedOption[]; blocked: boolean }> {
+export async function findOfferedOptionsOnPage(url: string, ingredients: Ingredient[]): Promise<{ options: OfferedOption[]; blocked: boolean }> {
   try {
     const page = await collectPublicWebsite(url);
-    const options = offeredOptionsInHtml(page.html, page.finalUrl, ingredient);
-    return { options, blocked: options.length === 0 && EMPTY_APP_SHELL.test(page.html) };
+    const options = offeredOptionsInHtml(page.html, page.finalUrl, ingredients);
+    return { options, blocked: options.length === 0 && SCRIPT_BUILT_PAGE.test(page.html) };
   } catch (error) {
     return { options: [], blocked: !(error instanceof Error && FINAL_REFUSAL.test(error.message)) };
   }
@@ -48,9 +59,9 @@ export async function findOfferedOptionsOnPage(url: string, ingredient: Ingredie
 
 // The same read on a page already in hand — its HTML as loaded in the Chrome window, for sites a
 // plain request can't reach (a security check in front of every page, e.g. Oxford Online Pharmacy).
-export function offeredOptionsInHtml(html: string, finalUrl: string, ingredient: Ingredient): OfferedOption[] {
+export function offeredOptionsInHtml(html: string, finalUrl: string, ingredients: Ingredient[]): OfferedOption[] {
   const options: OfferedOption[] = [];
-  for (const product of productsByIngredient[ingredient]) {
+  for (const [ingredient, product] of ingredients.flatMap((ingredient) => productsByIngredient[ingredient].map((item) => [ingredient, item] as const))) {
     const tokens = variantTokens({ ingredient, brandName: product.brandName });
     for (const strengthMg of product.strengths) {
       for (const packQuantity of PACK_SIZES) {
@@ -72,7 +83,6 @@ export function offeredOptionsInHtml(html: string, finalUrl: string, ingredient:
   return options;
 }
 
-const ingredientWords: Record<Ingredient, string> = { SILDENAFIL: "sildenafil", TADALAFIL: "tadalafil" };
 const otcProductSlugs = ["viagra-connect", "cialis-together"];
 
 // How well a page's address fits an option's product, for choosing one page when several list the
