@@ -29,6 +29,11 @@ function productOptions(offers: PublicOffer[]) {
   return [...products.values()].sort((a, b) => a.label.localeCompare(b.label));
 }
 
+// This panel belongs to the "All prices" list, so each of its links stays on that view.
+function listHref(filters: Partial<ComparisonFilters>) {
+  return comparisonHref({ ...filters, view: "list" });
+}
+
 function selectedLabel(groups: FilterOptionGroup[]) {
   return groups.flatMap((group) => group.options).find((option) => option.active)?.label ?? "Any";
 }
@@ -49,51 +54,51 @@ export function ComparisonFiltersPanel({ offers, filters }: { offers: PublicOffe
   const resultCount = filterOffers(offers, filters).length;
 
   const productGroups: FilterOptionGroup[] = [
-    { options: [{ label: "All products", href: comparisonHref({ sort }), active: !ingredient && !productType }] },
+    { options: [{ label: "All products", href: listHref({ sort }), active: !ingredient && !productType }] },
     ...ingredientValues.map((value) => ({
       label: ingredientLabels[value],
       options: [
-        { label: `All ${ingredientLabels[value].toLowerCase()}`, href: comparisonHref({ ingredient: value, sort }), active: ingredient === value && !productType },
+        { label: `All ${ingredientLabels[value].toLowerCase()}`, href: listHref({ ingredient: value, sort }), active: ingredient === value && !productType },
         ...products
           .filter((product) => product.ingredient === value)
-          .map((product) => ({ label: product.label, href: comparisonHref({ ingredient: value, productType: product.productType, sort }), active: ingredient === value && productType === product.productType })),
+          .map((product) => ({ label: product.label, href: listHref({ ingredient: value, productType: product.productType, sort }), active: ingredient === value && productType === product.productType })),
       ],
     })),
   ];
   const strengthGroups: FilterOptionGroup[] = [{
     options: [
-      { label: "Any strength", href: comparisonHref({ ingredient, productType, sort }), active: !strengthMg },
-      ...strengths.map((value) => ({ label: `${value}mg`, href: comparisonHref({ ingredient, productType, strengthMg: value, sort }), active: strengthMg === value })),
+      { label: "Any strength", href: listHref({ ingredient, productType, sort }), active: !strengthMg },
+      ...strengths.map((value) => ({ label: `${value}mg`, href: listHref({ ingredient, productType, strengthMg: value, sort }), active: strengthMg === value })),
     ],
   }];
   const formGroups: FilterOptionGroup[] = [{
     options: [
-      { label: "Any form", href: comparisonHref({ ingredient, productType, strengthMg, sort }), active: !formulation },
-      ...forms.map(([slug, label]) => ({ label, href: comparisonHref({ ingredient, productType, strengthMg, formulation: slug, sort }), active: formulation === slug })),
+      { label: "Any form", href: listHref({ ingredient, productType, strengthMg, sort }), active: !formulation },
+      ...forms.map(([slug, label]) => ({ label, href: listHref({ ingredient, productType, strengthMg, formulation: slug, sort }), active: formulation === slug })),
     ],
   }];
   const packGroups: FilterOptionGroup[] = [{
     options: [
-      { label: "Any pack size", href: comparisonHref({ ingredient, productType, strengthMg, formulation, sort }), active: !packQuantity },
-      ...packs.map((value) => ({ label: `${value} tablet${value === 1 ? "" : "s"}`, href: comparisonHref({ ingredient, productType, strengthMg, formulation, packQuantity: value, sort }), active: packQuantity === value })),
+      { label: "Any pack size", href: listHref({ ingredient, productType, strengthMg, formulation, sort }), active: !packQuantity },
+      ...packs.map((value) => ({ label: `${value} tablet${value === 1 ? "" : "s"}`, href: listHref({ ingredient, productType, strengthMg, formulation, packQuantity: value, sort }), active: packQuantity === value })),
     ],
   }];
   const planGroups: FilterOptionGroup[] = [{
     options: [
-      { label: "Any", href: comparisonHref({ ingredient, productType, strengthMg, formulation, packQuantity, sort }), active: !purchaseModel },
-      ...plans.map((value) => ({ label: publicPurchaseModelLabels[value], href: comparisonHref({ ingredient, productType, strengthMg, formulation, packQuantity, purchaseModel: value, sort }), active: purchaseModel === value })),
+      { label: "Any", href: listHref({ ingredient, productType, strengthMg, formulation, packQuantity, sort }), active: !purchaseModel },
+      ...plans.map((value) => ({ label: publicPurchaseModelLabels[value], href: listHref({ ingredient, productType, strengthMg, formulation, packQuantity, purchaseModel: value, sort }), active: purchaseModel === value })),
     ],
   }];
-  const sortGroups: FilterOptionGroup[] = [{ options: sortValues.map((value) => ({ label: sortLabels[value], href: comparisonHref({ ...filters, sort: value }), active: sort === value })) }];
+  const sortGroups: FilterOptionGroup[] = [{ options: sortValues.map((value) => ({ label: sortLabels[value], href: listHref({ ...filters, sort: value }), active: sort === value })) }];
 
   // What is applied now, each with a link that removes just that choice (removing only widens the
   // results, so the other choices stay valid).
   const applied: Omit<FilterOption, "active">[] = [
-    ...(ingredient || productType ? [{ label: selectedLabel(productGroups), href: comparisonHref({ ...filters, ingredient: undefined, productType: undefined }) }] : []),
-    ...(strengthMg ? [{ label: `${strengthMg}mg`, href: comparisonHref({ ...filters, strengthMg: undefined }) }] : []),
-    ...(formulation ? [{ label: selectedLabel(formGroups), href: comparisonHref({ ...filters, formulation: undefined }) }] : []),
-    ...(packQuantity ? [{ label: selectedLabel(packGroups), href: comparisonHref({ ...filters, packQuantity: undefined }) }] : []),
-    ...(purchaseModel ? [{ label: publicPurchaseModelLabels[purchaseModel], href: comparisonHref({ ...filters, purchaseModel: undefined }) }] : []),
+    ...(ingredient || productType ? [{ label: selectedLabel(productGroups), href: listHref({ ...filters, ingredient: undefined, productType: undefined }) }] : []),
+    ...(strengthMg ? [{ label: `${strengthMg}mg`, href: listHref({ ...filters, strengthMg: undefined }) }] : []),
+    ...(formulation ? [{ label: selectedLabel(formGroups), href: listHref({ ...filters, formulation: undefined }) }] : []),
+    ...(packQuantity ? [{ label: selectedLabel(packGroups), href: listHref({ ...filters, packQuantity: undefined }) }] : []),
+    ...(purchaseModel ? [{ label: publicPurchaseModelLabels[purchaseModel], href: listHref({ ...filters, purchaseModel: undefined }) }] : []),
   ];
 
   return (
@@ -123,7 +128,7 @@ export function ComparisonFiltersPanel({ offers, filters }: { offers: PublicOffe
               </li>
             ))}
           </ul>
-          <Link href={comparisonHref({ sort })} scroll={false} className="ml-auto text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline">Clear all</Link>
+          <Link href={listHref({ sort })} scroll={false} className="ml-auto text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline">Clear all</Link>
         </div>
       ) : null}
     </section>

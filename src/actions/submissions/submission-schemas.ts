@@ -3,7 +3,7 @@ import { z } from "zod";
 // Plain module (not "use server"): the public forms validate client-side with these, and the
 // actions re-validate with the same schemas. `nickname` is a hidden honeypot; `startedAt` is when
 // the form was rendered, both checked by src/lib/spam-guard.ts.
-const antiSpam = {
+export const antiSpam = {
   nickname: z.string().optional(),
   startedAt: z.number(),
 };

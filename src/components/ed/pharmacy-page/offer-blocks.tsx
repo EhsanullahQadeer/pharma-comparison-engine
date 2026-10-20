@@ -1,11 +1,14 @@
 import { ArrowUpRight, CalendarClock, Layers, PackageSearch, TicketPercent } from "lucide-react";
+import { Suspense } from "react";
 
 import { Button } from "@/components/common/button";
 import { CopyCodeButton } from "@/components/ed/copy-code-button";
 import { LinkNote } from "@/components/ed/link-note";
 import { OfferResults } from "@/components/ed/offer-results";
 import { OutboundLink } from "@/components/ed/outbound-link";
+import { PriceHistoryBlock } from "@/components/ed/price-history-block";
 import { PublicEmptyState } from "@/components/ed/public-empty-state";
+import { PriceHistorySkeleton } from "@/components/ed/skeletons";
 import { formatShortDate, variantLabel } from "@/lib/comparison";
 import { discountHeadline } from "@/lib/discounts";
 import { formatPence } from "@/lib/money";
@@ -132,7 +135,8 @@ export function DiscountList({ model, style = "rows", title = "Offers and discou
   );
 }
 
-// Every current price for this pharmacy. Wraps OfferResults (which brings its own heading).
+// Every current price for this pharmacy, then how they've moved. Wraps OfferResults (which brings
+// its own heading); the history streams in after it.
 export function PricesBlock({ model, layout = "cards", className }: { model: PharmacyPageModel; layout?: "cards" | "table"; className?: string }) {
   const { provider, now } = model;
   return (
@@ -140,7 +144,12 @@ export function PricesBlock({ model, layout = "cards", className }: { model: Pha
       {provider.offers.length === 0 ? (
         <PublicEmptyState icon={PackageSearch} title="Prices are being checked" description={`We haven't published a current price for ${provider.name} yet. Compare other pharmacies in the meantime.`} action={{ href: "/ed/compare", label: "Compare prices" }} />
       ) : (
-        <OfferResults offers={provider.offers} sort="tablet" now={now} placement="PHARMACY_PROFILE" context="profile" layout={layout} />
+        <>
+          <OfferResults offers={provider.offers} sort="tablet" now={now} placement="PHARMACY_PROFILE" context="profile" layout={layout} />
+          <Suspense fallback={<PriceHistorySkeleton />}>
+            <PriceHistoryBlock offers={provider.offers} pharmacyName={provider.name} />
+          </Suspense>
+        </>
       )}
     </div>
   );

@@ -25,6 +25,10 @@ function offer(overrides: Partial<PublicOffer> & Pick<PublicOffer, "id" | "provi
     providerSlug: overrides.providerId,
     providerDomain: `${overrides.providerId}.co.uk`,
     providerLogoUrl: null,
+    providerRegulatorType: "GPHC",
+    providerRegulatorReference: "9010001",
+    providerDispensingPartnerName: null,
+    providerFacts: { serviceRegions: [], nextDayDelivery: null, discreetPackaging: null, paymentMethods: [], inspectionOutcome: null, inspectionDate: null, trustpilotUrl: null, trustpilotScoreTenths: null, trustpilotReviewCount: null },
     variant: { id: "v", ingredient: "SILDENAFIL", brandName: null, strengthMg: 50, formulation: "Film-coated tablet", packQuantity: 8 },
     itemPricePence: overrides.deliveredTotalPence,
     deliveryFeePence: 0,
@@ -38,6 +42,10 @@ function offer(overrides: Partial<PublicOffer> & Pick<PublicOffer, "id" | "provi
     checkedAt: new Date(),
     freshness: "fresh",
     discounts: [],
+    discountedTotalPence: null,
+    codeDiscountId: null,
+    priceChangePence: null,
+    thirtyDayLow: false,
     ...overrides,
   };
 }
@@ -83,12 +91,29 @@ test("an indicative total never outranks a verified one, even when cheaper", () 
 
 test("filters round-trip through the URL and ignore junk", () => {
   const filters = parseComparisonFilters({ medicine: "tadalafil", type: "cialis", strength: "20", form: "film-coated-tablet", pack: "4", plan: "subscription", sort: "total" });
-  assert.deepEqual(filters, { ingredient: "TADALAFIL", productType: "cialis", strengthMg: 20, formulation: "film-coated-tablet", packQuantity: 4, purchaseModel: "RECURRING", sort: "total" });
+  const gridDefaults = { view: "grid", anyPack: false, mode: "total", medicineOnly: false, column: undefined, query: undefined, codes: false, inStock: false, freeDelivery: false, noConsultation: false, verifiedOnly: false, hasDiscount: false, nextDay: false, discreet: false, inspectionPassed: false, layout: undefined, region: undefined, payment: undefined, minTrustpilot: undefined };
+  assert.deepEqual(filters, { ...gridDefaults, ingredient: "TADALAFIL", productType: "cialis", strengthMg: 20, formulation: "film-coated-tablet", packQuantity: 4, purchaseModel: "RECURRING", sort: "total" });
   assert.equal(comparisonHref(filters), "/ed/compare?medicine=tadalafil&type=cialis&strength=20&form=film-coated-tablet&pack=4&plan=subscription&sort=total");
-  assert.deepEqual(parseComparisonFilters({ medicine: "aspirin", type: "<script>", strength: "-5", form: "Film Coated", pack: "x", plan: "RECURRING" }), {
-    ingredient: undefined, productType: undefined, strengthMg: undefined, formulation: undefined, packQuantity: undefined, purchaseModel: undefined, sort: "tablet",
+  assert.deepEqual(parseComparisonFilters({ medicine: "aspirin", type: "<script>", strength: "-5", form: "Film Coated", pack: "x", plan: "RECURRING", view: "cards", mode: "x", col: "0", q: "   " }), {
+    ...gridDefaults, ingredient: undefined, productType: undefined, strengthMg: undefined, formulation: undefined, packQuantity: undefined, purchaseModel: undefined, sort: "tablet",
   });
   assert.equal(comparisonHref({ sort: "tablet" }), "/ed/compare");
+});
+
+test("grid view state round-trips through the URL", () => {
+  const filters = parseComparisonFilters({ medicine: "sildenafil", type: "generic", pack: "any", mode: "tablet", fees: "medicine", col: "50", q: " Boots " });
+  assert.equal(comparisonHref(filters), "/ed/compare?medicine=sildenafil&type=generic&pack=any&mode=tablet&fees=medicine&col=50&q=Boots");
+  assert.equal(comparisonHref({ view: "list", ingredient: "SILDENAFIL" }), "/ed/compare?view=list&medicine=sildenafil");
+  assert.equal(comparisonHref({ packQuantity: 8, mode: "total" }, "/ed/prices/viagra"), "/ed/prices/viagra?pack=8");
+  const flags = parseComparisonFilters({ codes: "on", stock: "in", delivery: "free", consultation: "none", "fees-checked": "yes", discount: "yes" });
+  assert.equal(comparisonHref(flags), "/ed/compare?codes=on&stock=in&delivery=free&consultation=none&fees-checked=yes&discount=yes");
+  assert.equal(parseComparisonFilters({ stock: "yes", codes: "1" }).inStock, false);
+  assert.equal(comparisonHref(parseComparisonFilters({ layout: "swipe" })), "/ed/compare?layout=swipe");
+  assert.equal(parseComparisonFilters({ layout: "cards" }).layout, undefined);
+  const facts = parseComparisonFilters({ "next-day": "yes", discreet: "yes", inspection: "passed", region: "northern-ireland", payment: "apple-pay", trustpilot: "4.5" });
+  assert.deepEqual([facts.region, facts.payment, facts.minTrustpilot], ["Northern Ireland", "APPLE_PAY", 45]);
+  assert.equal(comparisonHref(facts), "/ed/compare?region=northern-ireland&payment=apple-pay&trustpilot=4.5&next-day=yes&discreet=yes&inspection=passed");
+  assert.deepEqual([parseComparisonFilters({ region: "mars", payment: "cash", trustpilot: "4.2" }).region, parseComparisonFilters({ payment: "cash" }).payment, parseComparisonFilters({ trustpilot: "4.2" }).minTrustpilot], [undefined, undefined, undefined]);
 });
 
 test("brand/generic, form and purchase-model filters use the real catalogue wording", () => {

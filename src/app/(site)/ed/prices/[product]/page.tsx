@@ -1,13 +1,13 @@
 import { notFound } from "next/navigation";
 
 import { ProductPricesView } from "@/components/ed/ingredient-prices-view";
+import { parseComparisonFilters } from "@/lib/comparison";
 import { edHref } from "@/lib/ed-pages";
 import { edProducts, productPath } from "@/lib/ed-products";
 import { pomPricingRobots } from "@/lib/seo";
 
 import type { Metadata } from "next";
 
-export const revalidate = 300;
 export const dynamicParams = false;
 
 export function generateStaticParams() {
@@ -33,5 +33,7 @@ export async function generateMetadata(props: PageProps<"/ed/prices/[product]">)
 }
 
 export default async function ProductPricesPage(props: PageProps<"/ed/prices/[product]">) {
-  return <ProductPricesView product={await resolveProduct(props.params)} />;
+  // The grid's pack, price mode, sort and search live in the URL, like the compare page's.
+  const [product, searchParams] = await Promise.all([resolveProduct(props.params), props.searchParams]);
+  return <ProductPricesView product={product} filters={parseComparisonFilters(searchParams)} />;
 }

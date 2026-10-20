@@ -1,5 +1,5 @@
 import { filterOffers } from "@/lib/comparison";
-import type { EdProduct, PublicOffer } from "@/types/comparison";
+import type { ComparisonFilters, EdProduct, PublicOffer } from "@/types/comparison";
 
 const PRICE_SCOPE = "from registered UK pharmacies, by strength and pack size, with delivery and consultation costs added in.";
 const PRESCRIBER_DECIDES = "The pharmacy's own prescriber decides whether it is suitable for you.";
@@ -69,4 +69,13 @@ export const productPath = (product: EdProduct) => `prices/${product.slug}`;
 
 export function productOffers(offers: PublicOffer[], product: EdProduct) {
   return filterOffers(offers, { ingredient: product.ingredient, productType: product.typeSlug, sort: "tablet" });
+}
+
+// The product the compare page's grid shows: the one the URL names, else — within the URL's
+// medicine, if any — the product with the most prices.
+export function gridProduct(offers: PublicOffer[], { ingredient, productType }: Pick<ComparisonFilters, "ingredient" | "productType">) {
+  const named = edProducts.find((product) => product.ingredient === ingredient && product.typeSlug === productType);
+  if (named) return named;
+  const candidates = edProducts.filter((product) => !ingredient || product.ingredient === ingredient);
+  return [...candidates].sort((a, b) => productOffers(offers, b).length - productOffers(offers, a).length)[0] ?? edProducts[0];
 }

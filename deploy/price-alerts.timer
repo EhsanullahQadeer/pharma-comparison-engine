@@ -1,0 +1,12 @@
+# Runs the price-alert sender every hour. Each alert emails at most once a day, so running it more
+# often only makes alerts arrive sooner after a price check.
+[Unit]
+Description=Hourly price-alert emails
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=300
+Persistent=true
+
+[Install]
+WantedBy=timers.target

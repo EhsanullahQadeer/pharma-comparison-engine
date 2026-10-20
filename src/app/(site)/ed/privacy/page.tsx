@@ -37,6 +37,16 @@ export default function PrivacyPage() {
           "Please don't include health details in a form. We can't give medical advice, and we don't need them.",
         ]} />
       </ContentSection>
+      <ContentSection id="price-alerts" title="Price alerts">
+        <PointList points={[
+          "If you set up a price alert we keep your email address, the product, strength and pack you chose, and your target price. Nothing else.",
+          "We first email you a link to confirm. Until you confirm we send nothing else, and if you don't confirm within 48 hours we delete your address.",
+          "Once confirmed, we email you when the cheapest listed price reaches your target, at most once a day. We use your address for nothing else.",
+          "Every alert email has a link to stop the alert. Stopping it deletes your address and the alert straight away. Alerts end automatically after a year.",
+          "Our lawful basis for alerts is your consent, which you give by confirming and can withdraw at any time by stopping the alert.",
+          "Alert emails are sent through our email provider, which handles your address only to deliver them.",
+        ]} />
+      </ContentSection>
       <ContentSection id="retention" title="Who sees it and how long we keep it">
         <PointList points={[
           "Only our staff, who sign in to a separate, restricted admin area, can see form messages.",

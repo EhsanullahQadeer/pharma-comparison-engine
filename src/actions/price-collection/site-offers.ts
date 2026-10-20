@@ -47,7 +47,7 @@ export async function checkProviderSiteOffers(providerId: string): Promise<SiteO
 }
 
 // Approving a delivery policy replaces any earlier approved one and sets the delivery fee on every
-// offer the pharmacy has, recording a price-history entry for each offer whose fee changed.
+// offer the pharmacy has (marking those fees verified), recording a price-history entry for each offer whose fee changed.
 export async function reviewDeliveryPolicy(policyId: string, decision: SiteOfferDecision): Promise<SiteOffersState> {
   const staffUser = await requireReviewer();
   if (!staffUser) return { error: NOT_AUTHORIZED };
@@ -59,8 +59,8 @@ export async function reviewDeliveryPolicy(policyId: string, decision: SiteOffer
     if (decision === "APPROVED") await tx.deliveryPolicy.deleteMany({ where: { providerId: policy.providerId, status: "APPROVED", id: { not: policy.id } } });
     await tx.deliveryPolicy.update({ where: { id: policy.id }, data: { status: decision } });
     if (decision !== "APPROVED") return 0;
-    const changed = await applyDeliveryPolicyToOffers(tx, policy.providerId, policy);
     const now = new Date();
+    const changed = await applyDeliveryPolicyToOffers(tx, policy.providerId, policy, now);
     for (const offerId of changed) await recordPriceHistorySnapshot(tx, offerId, now);
     return changed.length;
   });

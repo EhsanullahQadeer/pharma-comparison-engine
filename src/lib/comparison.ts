@@ -1,7 +1,8 @@
-import type { Ingredient, PurchaseModel } from "@/generated/prisma/client";
+import type { Ingredient, PaymentMethod, PurchaseModel } from "@/generated/prisma/client";
 import { ingredientLabels, ingredientSlugs, ingredientValues } from "@/lib/catalogue-labels";
 import { formatPence } from "@/lib/money";
-import type { ComparisonFilters, ComparisonSort, FreshnessTier, PublicOffer, PublicVariant, VariantPriceSummary } from "@/types/comparison";
+import { paymentMethodLabels, paymentMethodValues, serviceRegionOptions } from "@/lib/provider-labels";
+import type { ComparisonFilters, ComparisonSort, FreshnessTier, GridFilterFlags, PhoneGridLayout, PublicOffer, PublicVariant, VariantPriceSummary } from "@/types/comparison";
 
 const HOUR_MS = 60 * 60 * 1000;
 // Prices checked within 24h are "fresh"; anything older is "stale" (still shown and ranked by
@@ -101,8 +102,47 @@ function slugParam(value: string | string[] | undefined) {
   return typeof value === "string" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) ? value : undefined;
 }
 
+// The grid's on/off filters and the URL parameter (and value) that switches each one on.
+export const gridFlagParams: Record<keyof GridFilterFlags, [param: string, value: string]> = {
+  inStock: ["stock", "in"],
+  freeDelivery: ["delivery", "free"],
+  noConsultation: ["consultation", "none"],
+  verifiedOnly: ["fees-checked", "yes"],
+  hasDiscount: ["discount", "yes"],
+  nextDay: ["next-day", "yes"],
+  discreet: ["discreet", "yes"],
+  inspectionPassed: ["inspection", "passed"],
+};
+
+// "Delivers to my area", payment method and minimum Trustpilot score, as readable URL slugs.
+const regionBySlug = Object.fromEntries(serviceRegionOptions.map((region) => [slugify(region), region])) as Record<string, string>;
+export const paymentMethodSlugs = Object.fromEntries(paymentMethodValues.map((method) => [method, slugify(paymentMethodLabels[method])])) as Record<PaymentMethod, string>;
+const paymentBySlug = Object.fromEntries(paymentMethodValues.map((method) => [paymentMethodSlugs[method], method])) as Record<string, PaymentMethod>;
+export const trustpilotMinimums = [30, 40, 45];
+const gridFlagKeys = Object.keys(gridFlagParams) as (keyof GridFilterFlags)[];
+
+const phoneLayouts: PhoneGridLayout[] = ["compact", "swipe"];
+
+// Pharmacy search: trimmed and capped, so the URL can't carry an essay into the page.
+function queryParam(value: string | string[] | undefined) {
+  const query = typeof value === "string" ? value.trim().slice(0, 60) : "";
+  return query || undefined;
+}
+
 export function parseComparisonFilters(params: Record<string, string | string[] | undefined>): ComparisonFilters {
   return {
+    view: params.view === "list" ? "list" : "grid",
+    anyPack: params.pack === "any",
+    mode: params.mode === "tablet" ? "tablet" : "total",
+    medicineOnly: params.fees === "medicine",
+    column: positiveInt(params.col),
+    query: queryParam(params.q),
+    codes: params.codes === "on",
+    layout: phoneLayouts.includes(params.layout as PhoneGridLayout) ? (params.layout as PhoneGridLayout) : undefined,
+    region: typeof params.region === "string" ? regionBySlug[params.region] : undefined,
+    payment: typeof params.payment === "string" ? paymentBySlug[params.payment] : undefined,
+    minTrustpilot: trustpilotMinimums.find((tenths) => params.trustpilot === String(tenths / 10)),
+    ...Object.fromEntries(gridFlagKeys.map((key) => [key, params[gridFlagParams[key][0]] === gridFlagParams[key][1]])),
     ingredient: typeof params.medicine === "string" ? ingredientBySlug[params.medicine] : undefined,
     productType: slugParam(params.type),
     strengthMg: positiveInt(params.strength),
@@ -113,17 +153,32 @@ export function parseComparisonFilters(params: Record<string, string | string[] 
   };
 }
 
-export function comparisonHref({ ingredient, productType, strengthMg, formulation, packQuantity, purchaseModel, sort }: Partial<ComparisonFilters>) {
+// Defaults are left out, so every view has one short, stable URL. `path` lets a product price page
+// reuse the same parameters for its own grid.
+export function comparisonHref(filters: Partial<ComparisonFilters>, path = "/ed/compare") {
+  const { ingredient, productType, strengthMg, formulation, packQuantity, purchaseModel, sort, view, anyPack, mode, medicineOnly, column, query: search, codes, layout, region, payment, minTrustpilot } = filters;
   const query = new URLSearchParams();
+  if (view === "list") query.set("view", view);
   if (ingredient) query.set("medicine", ingredientSlugs[ingredient]);
   if (productType) query.set("type", productType);
   if (strengthMg) query.set("strength", String(strengthMg));
   if (formulation) query.set("form", formulation);
-  if (packQuantity) query.set("pack", String(packQuantity));
+  if (anyPack) query.set("pack", "any");
+  else if (packQuantity) query.set("pack", String(packQuantity));
   if (purchaseModel) query.set("plan", purchaseModelSlugs[purchaseModel]);
   if (sort === "total") query.set("sort", sort);
-  const search = query.toString();
-  return search ? `/ed/compare?${search}` : "/ed/compare";
+  if (mode === "tablet") query.set("mode", mode);
+  if (medicineOnly) query.set("fees", "medicine");
+  if (column) query.set("col", String(column));
+  if (search) query.set("q", search);
+  if (codes) query.set("codes", "on");
+  if (layout) query.set("layout", layout);
+  if (region) query.set("region", slugify(region));
+  if (payment) query.set("payment", paymentMethodSlugs[payment]);
+  if (minTrustpilot) query.set("trustpilot", String(minTrustpilot / 10));
+  for (const key of gridFlagKeys) if (filters[key]) query.set(...gridFlagParams[key]);
+  const queryString = query.toString();
+  return queryString ? `${path}?${queryString}` : path;
 }
 
 // Stable, human-readable profile slug from the (unique) website domain: "www.click-pharmacy.co.uk"
@@ -187,6 +242,13 @@ const dateFormatter = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: 
 
 export function formatShortDate(date: Date) {
   return dateFormatter.format(date);
+}
+
+// UK time whatever the server's zone: "18 Oct 2026, 15:40".
+const dateTimeFormatter = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/London" });
+
+export function formatCheckedDateTime(date: Date) {
+  return dateTimeFormatter.format(date);
 }
 
 // A zero fee is only "Free" once staff have verified the fees; until then it may simply be

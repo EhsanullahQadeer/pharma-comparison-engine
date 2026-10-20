@@ -1,5 +1,44 @@
 # Product updates
 
+## 2026-10-20
+
+- Price alerts: on the price grid, "Price alert" lets a visitor ask to be emailed when a strength and pack they choose costs a set amount or less, including delivery. They first get an email asking them to confirm; nothing else is sent until they do, and their address is deleted if they don't confirm within 48 hours.
+- Once confirmed, the alert emails them when the cheapest listed price reaches their target, at most once a day, with a link to today's prices. Every email has a link to stop the alert, which deletes their address straight away. Alerts end on their own after a year.
+- The price-alert button appears once the site's email sending has been set up.
+- The privacy policy has a new "Price alerts" section explaining what is kept, for how long, and how to stop.
+- The admin pharmacy page has a new "Shopper-facing facts" box for recording a pharmacy's Trustpilot page, score and number of reviews, its last GPhC inspection result and date, whether it offers next-day delivery and discreet packaging, and the payment methods it takes. Each group shows when it was last checked, and a tick box marks everything as re-checked today.
+- In the price grid, each pharmacy now shows its GPhC inspection result, "Next day" and "Discreet packaging" where recorded, and a link to its Trustpilot page. Trustpilot scores are recorded but not shown on the site until Trustpilot's terms have been checked.
+- The Filters panel has new options: next-day delivery, discreet packaging, passed its last GPhC inspection, delivers to (England, Scotland, Wales or Northern Ireland) and pay with (card, Apple Pay, Google Pay, PayPal or Klarna). A pharmacy only matches once our team has recorded that fact for it.
+
+- On phones, the price grid now has two layouts to choose between. Layout A shows every strength at once with one price per cell; tapping a pharmacy opens its prices with a View button for each, plus its registration and any discount. The first pharmacy starts open. Layout B shows about two strengths at a time with the pharmacy names pinned, and you swipe sideways to see more; the columns snap into place and dots show where you are. Tapping a price goes straight to the pharmacy.
+- Every phone visitor sees layout A for now. Layout B can be previewed by adding "?layout=swipe" to the page address. Splitting visitors between the two and comparing them waits for a cookie consent banner, which the site doesn't have yet.
+- On phones the grid shows the first 20 pharmacies, with a "Show all" button for the rest.
+- On phones the price range is a single line for the strength being ranked (lowest, median and highest), instead of a box for every strength.
+- A "Copy link to this view" button copies a link to exactly the product, pack size, sort and filters on screen, ready to share.
+- Each pharmacy's page now has a "Price history" section: a small line for each of its prices that has changed in the last 90 days, with the current, lowest and highest price. Hovering over the line shows the price on each day. Prices that haven't changed are counted rather than drawn. A change in delivery charge shows as a change too, because the line follows the medicine price plus delivery.
+- In the price grid, the Current offer column now shows the discount that "With code" uses for that pharmacy's prices first, instead of whichever discount was recorded first.
+
+## 2026-10-19
+
+- The price comparison page now opens on a price grid: one row per pharmacy and one column per strength, so you can see every pharmacy's price for every dose at a glance. The previous long list is still there under "All prices".
+- Above the grid you can pick the product (generic sildenafil, Viagra, Viagra Connect, generic tadalafil, Cialis or Cialis Together), the pack size, and whether to see the pack total or the price per tablet. In per-tablet mode, "Any pack" shows each pharmacy's cheapest per-tablet price for each strength, whatever the pack size.
+- Viagra Connect and Cialis Together come in one strength only, so their grid compares pack sizes instead.
+- The grid opens on the pack size most pharmacies sell. Prices include delivery and fees by default; "Medicine only" leaves them out.
+- The cheapest in-stock price in every column is labelled "Lowest". Clicking a strength at the top of a column ranks the pharmacies by that price; pharmacies that don't sell it go to the bottom. Partner pharmacies never move up.
+- Each price in the grid goes straight to that exact product on the pharmacy's own website. Strengths a pharmacy doesn't sell in that pack show "Not stocked", and out-of-stock prices are shown greyed out and not ranked.
+- Above the grid, each strength has a box with its lowest, middle (median) and highest price and how many pharmacies have it in stock. These figures come from the same prices as the grid, so they always match it.
+- The grid shows one "Prices last checked" date and time for the prices on screen, and each pharmacy shows when its own prices were last checked.
+- Each pharmacy's GPhC registration number is shown under its name and links to its entry on the GPhC register. Its current discount, if one is on record, is shown at the end of the row.
+- There is a pharmacy name search above the grid, and a table key under it explaining every label and mark.
+- On phones and tablets the pharmacy names stay in place while you scroll the prices sideways, and the column headings stay in place as you scroll down.
+- Each product's own price page (for example the Viagra prices page) now shows the same grid for that product.
+- Approving a pharmacy's delivery charge in the admin now also marks its fees as checked, so its prices stop showing as "indicative" (*). Later price checks on that pharmacy keep them marked as checked.
+- Each price in the grid now shows whether it has gone down (↓) or up (↑) since the pharmacy's previous price check, and by how much. A "30-day low" tag marks a price that is the lowest it has been in the last 30 days.
+- A new "With code" switch shows prices after the pharmacy's best current discount code, taken off the medicine price, and ranks the grid by those prices. "Standard price" stays the default. It only appears when at least one price on screen has a code, and the Current offer column says who each code is for.
+- A pharmacy that has its medicines supplied by another pharmacy now shows "Dispensed by …" under its name, which explains why some pharmacies share a GPhC number.
+- A new Filters button opens a panel to narrow the grid: in stock only, free delivery, no consultation fee, checked fees only, has a discount, and one-off or subscription. Choices are applied with Apply, and Reset clears them. "In stock", "Free delivery" and "Has a discount" can also be switched on with one tap above the grid. "Clear filters" removes them all.
+- When filters leave nothing to show, the grid says so and offers to clear them. Free delivery only counts once we've checked a pharmacy's fees, so it shows nothing until fees have been checked.
+
 ## 2026-10-14
 
 - Price collection can now read Medy’s erectile dysfunction page, where each treatment has its own price list with dose, usage, quantity and price columns. For example Viagra 50mg × 4 £22.50, generic sildenafil 100mg × 8 £12.00, Cialis 10mg × 4 £34.40 and daily generic tadalafil 5mg × 28 £16.99. Medy labels every list "generic", even Viagra and Cialis, so we go by the treatment’s name instead.

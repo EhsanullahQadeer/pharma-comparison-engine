@@ -9,6 +9,7 @@ import { getAffiliateProgramme } from "@/actions/referrals/programmes";
 import { AffiliateProgrammeCard } from "@/components/admin/affiliate-programme-card";
 import { EditPharmacyModal } from "@/components/admin/edit-pharmacy-modal";
 import { ProductMatchReviewTable } from "@/components/admin/product-match-review-table";
+import { ProviderFactsCard } from "@/components/admin/provider-facts-card";
 import { ProviderLinkToggle } from "@/components/admin/provider-link-toggle";
 import { ProviderPricesSection } from "@/components/admin/provider-prices-section";
 import { ProviderSiteOffersSection } from "@/components/admin/provider-site-offers-section";
@@ -16,9 +17,11 @@ import { ProviderStatusControl } from "@/components/admin/provider-status-contro
 import { Badge } from "@/components/common/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/card";
 import Link from "@/components/Link";
+import { formFromFacts } from "@/lib/provider-facts";
 import { regulatorTypeLabels } from "@/lib/provider-labels";
 import { correctionStatusBadgeVariant, correctionStatusLabels, evidenceApprovalStatusBadgeVariant, evidenceApprovalStatusLabels } from "@/lib/review-labels";
 import { getStaffUser } from "@/lib/staff-auth";
+import { showTrustpilotScores } from "@/lib/trustpilot";
 
 import type { Metadata } from "next";
 
@@ -84,6 +87,13 @@ export default async function ProviderDetailPage(props: PageProps<"/admin/pharma
           canEdit={canEditCommercial}
         />
         <ProviderSiteOffersSection providerId={provider.id} siteOffers={siteOffers} canReview={canReviewMatches} />
+        <ProviderFactsCard
+          providerId={provider.id}
+          defaultValues={formFromFacts(provider)}
+          checkedAt={{ trustpilot: provider.trustpilotCheckedAt, inspection: provider.inspectionCheckedAt, service: provider.serviceFactsCheckedAt }}
+          canEdit={canReviewMatches}
+          scoresShown={showTrustpilotScores()}
+        />
       </div>
 
       <ProviderPricesSection providerId={provider.id} providerPublished={provider.status === "PUBLISHED"} offers={provider.offers} matches={pendingMatches} variants={variants} />

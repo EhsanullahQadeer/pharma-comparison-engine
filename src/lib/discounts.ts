@@ -21,3 +21,23 @@ export function providerDiscounts(offers: PublicOffer[]): PublicDiscount[] {
   }
   return [...seen.values()];
 }
+
+const saving: Record<DiscountValueType, (discount: PublicDiscount, itemPricePence: number) => number> = {
+  PERCENT: (discount, itemPricePence) => Math.round((itemPricePence * (discount.valuePercent ?? 0)) / 100),
+  FIXED_AMOUNT: (discount) => discount.valuePence ?? 0,
+};
+
+// What a discount takes off the medicine price (never off delivery or fees, and never below zero).
+export function discountSavingPence(discount: PublicDiscount, itemPricePence: number) {
+  return Math.max(0, Math.min(itemPricePence, saving[discount.valueType](discount, itemPricePence)));
+}
+
+// The single discount that saves the most — codes aren't assumed to stack.
+export function bestDiscount(discounts: PublicDiscount[], itemPricePence: number) {
+  let best: { discount: PublicDiscount; savingPence: number } | null = null;
+  for (const discount of discounts) {
+    const savingPence = discountSavingPence(discount, itemPricePence);
+    if (savingPence > 0 && (!best || savingPence > best.savingPence)) best = { discount, savingPence };
+  }
+  return best;
+}

@@ -1,0 +1,18 @@
+# Sample systemd unit for the price-alert sender (run by deploy/price-alerts.timer). Adjust User,
+# WorkingDirectory and EnvironmentFile to the VPS layout. The .env needs SMTP_HOST, SMTP_PORT,
+# SMTP_SECURE, SMTP_USER, SMTP_PASS, MAIL_FROM and NEXT_PUBLIC_SITE_URL.
+#   sudo cp deploy/price-alerts.service deploy/price-alerts.timer /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now price-alerts.timer
+#   journalctl -u price-alerts            # one summary line per run
+[Unit]
+Description=Pharma comparison price-alert emails
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=pharma
+WorkingDirectory=/srv/pharma-comparison-engine
+EnvironmentFile=/srv/pharma-comparison-engine/.env
+Environment=NODE_ENV=production
+ExecStart=/srv/pharma-comparison-engine/node_modules/.bin/tsx scripts/send-price-alerts.ts

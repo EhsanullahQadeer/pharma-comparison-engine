@@ -5,6 +5,8 @@ import { GradientText } from "@/components/ed/gradient-text";
 import { LiveSummary } from "@/components/ed/live-summary";
 import { OfferResults } from "@/components/ed/offer-results";
 import { PageShell } from "@/components/ed/page-shell";
+import type { GridProductTab } from "@/components/ed/price-grid-controls";
+import { PriceGridSection } from "@/components/ed/price-grid-section";
 import { PricingNotes } from "@/components/ed/pricing-notes";
 import { PublicEmptyState } from "@/components/ed/public-empty-state";
 import { VariantPriceCard } from "@/components/ed/variant-price-card";
@@ -15,7 +17,11 @@ import { comparisonHref, summarizeVariants } from "@/lib/comparison";
 import { edHref } from "@/lib/ed-pages";
 import { edProducts, productOffers, productPath } from "@/lib/ed-products";
 import { formatPence } from "@/lib/money";
-import type { EdProduct, PublicOffer } from "@/types/comparison";
+import { priceAlertOptions } from "@/lib/price-alerts";
+import { gridFromFilters, gridOffers, gridState } from "@/lib/price-grid";
+import type { ComparisonFilters, EdProduct, PublicOffer } from "@/types/comparison";
+
+import type { ReactNode } from "react";
 
 export const ingredientPageCopy: Record<Ingredient, { description: string; other: Ingredient }> = {
   SILDENAFIL: {
@@ -65,8 +71,9 @@ const explainedLink = (ingredient: Ingredient): PageLink => ({
   body: "A plain-English introduction to discuss with a pharmacist or prescriber.",
 });
 
-// The shared body of a price page, for one medicine or for one product of it.
-function PricesView({ label, description, note, offers, compareHref, products, related, now }: {
+// The shared body of a price page, for one medicine or for one product of it. A product page passes
+// its price grid, which replaces the strength cards and the top-prices list.
+function PricesView({ label, description, note, offers, compareHref, products, related, now, grid, summaryOffers = offers }: {
   label: string;
   description: string;
   note?: string;
@@ -76,6 +83,9 @@ function PricesView({ label, description, note, offers, compareHref, products, r
   products?: PageLink[];
   related: PageLink[];
   now: Date;
+  grid?: ReactNode;
+  // What the summary card counts: the grid's own prices when there is a grid.
+  summaryOffers?: PublicOffer[];
 }) {
   const summaries = summarizeVariants(offers);
   return (
@@ -85,7 +95,7 @@ function PricesView({ label, description, note, offers, compareHref, products, r
       eyebrow="Prices / Compare costs"
       description={description}
       crumbs={[{ label: "Home", href: "/" }, { label: "Compare prices", href: "/ed/compare" }]}
-      aside={<LiveSummary offers={offers} now={now} />}
+      aside={<LiveSummary offers={summaryOffers} now={now} />}
     >
       {note ? <p className="mt-6 max-w-3xl rounded-2xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">{note}</p> : null}
       {products ? (
@@ -95,7 +105,7 @@ function PricesView({ label, description, note, offers, compareHref, products, r
           <LinkCards links={products} />
         </section>
       ) : null}
-      {offers.length === 0 ? (
+      {grid ?? (offers.length === 0 ? (
         <div className="mt-12">
           <PublicEmptyState icon={PackageSearch} title={`${label} prices are being checked`} description="Verified prices will appear here once pharmacies and their prices have been checked." action={{ href: "/ed/pharmacies", label: "Browse pharmacies" }} />
         </div>
@@ -113,7 +123,7 @@ function PricesView({ label, description, note, offers, compareHref, products, r
             See all {offers.length} {label} prices<ArrowRight aria-hidden="true" className="size-4 transition-transform group-hover:translate-x-1" />
           </Link>
         </>
-      )}
+      ))}
       <section aria-labelledby="related-heading" className="mt-16">
         <h2 id="related-heading" className="text-2xl font-semibold">Keep exploring</h2>
         <LinkCards links={related} />
@@ -142,9 +152,24 @@ export async function IngredientPricesView({ ingredient }: { ingredient: Ingredi
   );
 }
 
-export async function ProductPricesView({ product }: { product: EdProduct }) {
-  const offers = productOffers(await getPublicOffers(), product);
+export async function ProductPricesView({ product, filters }: { product: EdProduct; filters: ComparisonFilters }) {
+  const allOffers = await getPublicOffers();
+  const offers = productOffers(allOffers, product);
   const siblings = edProducts.filter((other) => other.ingredient === product.ingredient && other.slug !== product.slug);
+  const now = new Date();
+  const grid = gridFromFilters(offers, filters, now);
+  const state = gridState(filters);
+  const path = edHref(productPath(product));
+  // Tabs are the product pages themselves; each keeps the price mode and fees choice.
+  const tabs: GridProductTab[] = edProducts
+    .filter((entry) => entry === product || productOffers(allOffers, entry).length > 0)
+    .map((entry) => ({
+      slug: entry.slug,
+      label: entry.name,
+      group: ingredientLabels[entry.ingredient],
+      href: comparisonHref({ mode: state.mode, medicineOnly: state.medicineOnly }, edHref(productPath(entry))),
+      active: entry === product,
+    }));
   return (
     <PricesView
       label={product.name}
@@ -153,7 +178,9 @@ export async function ProductPricesView({ product }: { product: EdProduct }) {
       offers={offers}
       compareHref={comparisonHref({ ingredient: product.ingredient, productType: product.typeSlug })}
       related={[...siblings.map((other) => productLink(other)), explainedLink(product.ingredient)]}
-      now={new Date()}
+      now={now}
+      summaryOffers={gridOffers(grid.rows)}
+      grid={<PriceGridSection grid={grid} product={product} tabs={tabs} href={(patch) => comparisonHref({ ...state, ...patch }, path)} filters={filters} productHasPrices={offers.length > 0} alertOptions={priceAlertOptions(offers)} placement="INGREDIENT_PRICES" now={now} />}
     />
   );
 }
