@@ -2,6 +2,7 @@ import { PackageSearch } from "lucide-react";
 
 import { getPartnerProviderIds } from "@/actions/referrals/outbound-links";
 import { CopyViewLink } from "@/components/ed/copy-view-link";
+import { GridLayoutBeacon } from "@/components/ed/grid-layout-beacon";
 import { PriceAlertModal } from "@/components/ed/price-alert-modal";
 import { PriceGridTable } from "@/components/ed/price-grid";
 import { GridProductTabs, PriceGridControls, type GridProductTab } from "@/components/ed/price-grid-controls";
@@ -16,6 +17,7 @@ import Link from "@/components/Link";
 import type { ReferralPlacement } from "@/generated/prisma/client";
 import { formatCheckedDateTime } from "@/lib/comparison";
 import { mailerConfigured } from "@/lib/mailer";
+import { scheduledPhoneLayout } from "@/lib/phone-layout";
 import { alertTargetKey } from "@/lib/price-alerts";
 import { activeGridFilterCount, gridDescription, gridFilterFlags, gridFiltered, gridOffers } from "@/lib/price-grid";
 import { showTrustpilotScores } from "@/lib/trustpilot";
@@ -28,10 +30,9 @@ import type { ComponentProps } from "react";
 type HrefFor = (patch: Partial<ComparisonFilters>) => string;
 type TableProps = ComponentProps<typeof PriceGridTable>;
 
-// Phone A/B test switch (PRICE_GRID_PHONE_LAYOUT=compact|swipe; `?layout=` previews either). There
-// is no per-visitor assignment yet: storing one needs analytics consent, which the site doesn't
-// ask for, so every phone visitor gets the configured layout and nothing about it is recorded.
-const defaultPhoneLayout: PhoneGridLayout = process.env.PRICE_GRID_PHONE_LAYOUT === "swipe" ? "swipe" : "compact";
+// Phone A/B test: the layout alternates week by week for everyone (src/lib/phone-layout.ts), so
+// nothing is stored on visitors' devices and no consent is needed. `?layout=` previews either one
+// without being counted.
 
 const phoneGrids: Record<PhoneGridLayout, (props: TableProps) => React.ReactNode> = {
   compact: (props) => <PriceGridPhoneCompact {...props} />,
@@ -104,6 +105,7 @@ export async function PriceGridSection({ grid, product, tabs, href, filters, pro
   // "With code" is only offered when some price on screen has a code to apply.
   const hasCodes = grid.codes || gridOffers(grid.rows).some((offer) => offer.discountedTotalPence !== null);
   const tableProps: TableProps = { grid, caption: description, sortHref: (column) => href({ column }), placement, partnerProviderIds: partners, now };
+  const phoneLayout = filters.layout ?? scheduledPhoneLayout(now, process.env.PRICE_GRID_PHONE_LAYOUT);
 
   if (!productHasPrices) {
     return (
@@ -143,7 +145,8 @@ export async function PriceGridSection({ grid, product, tabs, href, filters, pro
         {grid.rows.length > 0 ? (
           <>
             <div className="hidden sm:block"><PriceGridTable {...tableProps} /></div>
-            <div className="sm:hidden">{phoneGrids[filters.layout ?? defaultPhoneLayout](tableProps)}</div>
+            <div className="sm:hidden">{phoneGrids[phoneLayout](tableProps)}</div>
+            {filters.layout ? null : <GridLayoutBeacon layout={phoneLayout} />}
           </>
         ) : (
           <p className="rounded-3xl border border-dashed border-border bg-card/60 px-6 py-12 text-center text-sm text-muted-foreground">

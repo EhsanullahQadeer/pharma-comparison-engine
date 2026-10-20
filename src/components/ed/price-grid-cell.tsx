@@ -6,10 +6,11 @@ import { variantProductName } from "@/lib/comparison";
 import { formatPence } from "@/lib/money";
 import { codeSavingPence, gridValuePence, type GridPricing } from "@/lib/price-grid";
 import { cn } from "@/lib/utils";
-import type { GridCell, PublicOffer } from "@/types/comparison";
+import type { GridCell, PhoneGridLayout, PublicOffer } from "@/types/comparison";
 
 // `short`: narrow phone columns, where "£1.20 per tablet" becomes "£1.20/tab".
-type CellContext = { pricing: GridPricing; anyPack: boolean; placement: ReferralPlacement; rank: number; partner: boolean; short?: boolean };
+// `layout`: set inside a phone layout, so its clicks count towards that layout in the A/B test.
+type CellContext = { pricing: GridPricing; anyPack: boolean; placement: ReferralPlacement; rank: number; partner: boolean; short?: boolean; layout?: PhoneGridLayout };
 type PriceCellProps = CellContext & { offer: PublicOffer; valuePence: number; lowest: boolean };
 
 // The small line under the price: the other measure (per tablet under a pack total, the pack total
@@ -38,7 +39,7 @@ function movementText(offer: PublicOffer) {
 
 // The whole cell is the link, through /go/[offerId] to that exact product on the pharmacy's site.
 // Its text reads in full for screen readers, since the visible cell is just numbers and marks.
-function PriceCell({ offer, valuePence, lowest, pricing, anyPack, placement, rank, partner, short = false }: PriceCellProps) {
+function PriceCell({ offer, valuePence, lowest, pricing, anyPack, placement, rank, partner, short = false, layout }: PriceCellProps) {
   const { variant } = offer;
   const code = codeSavingPence(offer, pricing.codes) > 0 ? offer.discounts.find((discount) => discount.id === offer.codeDiscountId) : undefined;
   const price = `${formatPence(valuePence)}${pricing.mode === "tablet" ? " per tablet" : ""}`;
@@ -48,6 +49,7 @@ function PriceCell({ offer, valuePence, lowest, pricing, anyPack, placement, ran
       placement={placement}
       partner={partner}
       rank={rank}
+      layout={layout}
       className={cn(
         "flex h-full min-h-20 flex-col items-end justify-center gap-0.5 rounded-xl border border-transparent px-3 py-2 text-right transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-ring",
         lowest && "border-primary/40 bg-primary/10 hover:bg-primary/15",

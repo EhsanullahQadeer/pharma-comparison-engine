@@ -14,6 +14,9 @@ export type SiteOffersState = { error?: string; result?: SiteOffersCheckResult }
 export type SiteOfferDecision = "APPROVED" | "DISMISSED";
 
 const NOT_AUTHORIZED = "You are not authorized to review delivery charges and discounts.";
+// Approving updates every one of the pharmacy's offers one by one; for ~100 prices that takes well
+// over Prisma's default 5s against the remote database, which rolled the whole approval back.
+const DELIVERY_POLICY_TX_TIMEOUT_MS = 120_000;
 
 async function requireReviewer() {
   try {
@@ -63,7 +66,7 @@ export async function reviewDeliveryPolicy(policyId: string, decision: SiteOffer
     const changed = await applyDeliveryPolicyToOffers(tx, policy.providerId, policy, now);
     for (const offerId of changed) await recordPriceHistorySnapshot(tx, offerId, now);
     return changed.length;
-  });
+  }, { timeout: DELIVERY_POLICY_TX_TIMEOUT_MS });
 
   await recordAuditLog({
     actorId: staffUser.id,

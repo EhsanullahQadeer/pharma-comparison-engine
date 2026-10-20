@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
 
-import type { ReferralPlacement } from "@/generated/prisma/client";
+import type { GridLayout, ReferralPlacement } from "@/generated/prisma/client";
+import { gridLayoutValues } from "@/lib/phone-layout";
+import type { PhoneGridLayout } from "@/types/comparison";
 
 // Outbound "view at pharmacy" links (M7). Everything here is pure so the /go route stays thin and
 // the rules below are unit-tested. Nothing in this file is — or may ever be — read by ranking code.
@@ -18,18 +20,22 @@ const placementCodes: Record<ReferralPlacement, string> = {
 };
 const placementByCode = Object.fromEntries(Object.entries(placementCodes).map(([placement, code]) => [code, placement])) as Record<string, ReferralPlacement>;
 
-export function outboundHref(offerId: string, placement: ReferralPlacement, rank?: number) {
+// `layout`: only on links in a phone price-grid layout, so the A/B test can count their clicks.
+export function outboundHref(offerId: string, placement: ReferralPlacement, rank?: number, layout?: PhoneGridLayout) {
   const params = new URLSearchParams({ p: placementCodes[placement] });
   if (rank) params.set("r", String(rank));
+  if (layout) params.set("l", layout);
   return `/go/${encodeURIComponent(offerId)}?${params}`;
 }
 
 // Unknown or malformed values are dropped, never forwarded or stored as-is.
-export function parseOutboundParams(searchParams: URLSearchParams): { placement: ReferralPlacement | null; rankPosition: number | null } {
+export function parseOutboundParams(searchParams: URLSearchParams): { placement: ReferralPlacement | null; rankPosition: number | null; gridLayout: GridLayout | null } {
   const placement = placementByCode[searchParams.get("p") ?? ""] ?? null;
   const rank = Number(searchParams.get("r"));
   const rankPosition = Number.isInteger(rank) && rank >= 1 && rank <= MAX_RANK ? rank : null;
-  return { placement, rankPosition };
+  const layout = searchParams.get("l");
+  const gridLayout = layout === "compact" || layout === "swipe" ? gridLayoutValues[layout] : null;
+  return { placement, rankPosition, gridLayout };
 }
 
 // The only destinations /go will redirect to: an https URL on the provider's own reviewed domain

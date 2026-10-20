@@ -2,6 +2,14 @@
 
 ## 2026-10-20
 
+- The admin Discovery sources page has a new "Add a website for review" box. Paste the address of a pharmacy you've found yourself and it joins the review queue like any other discovered pharmacy, with the name and any GPhC number shown on its homepage. Sites already listed or already waiting for review are spotted, and a site that can't be read automatically is still added for you to check in your browser.
+- Approving a delivery charge for a pharmacy with many prices no longer fails part-way. Previously it could give up after a few seconds and undo the approval.
+- The nine pharmacies whose delivery charges were approved before this change (529 prices) now have their fees marked as checked, so their prices no longer show as "indicative" (*).
+- Three pharmacies that had been wrongly turned away by the automatic check, because it missed their product pages, are now in the review queue: Holroyd Pharmacy, The Care Pharmacy and Doorstep Pharmacy. Each needs its GPhC number checked before it can go further.
+
+- The phone layout test is now running. Instead of asking visitors for cookie consent, the two phone layouts take turns week by week: everyone on a phone sees layout A (compact table) one week and layout B (swipe columns) the next. Nothing is saved on visitors' devices, so no cookie banner is needed.
+- The "Clicks to pharmacies" report has a new "Phone layout test" box showing, for each layout, how many times the price grid was viewed on a phone, how many clicks to pharmacies came from it, and the click-through rate. Run each layout for at least two full weeks before deciding.
+- The privacy policy explains the layout test: a daily count of phone views per layout and which layout a click came from, with nothing recorded about the visitor.
 - Price alerts: on the price grid, "Price alert" lets a visitor ask to be emailed when a strength and pack they choose costs a set amount or less, including delivery. They first get an email asking them to confirm; nothing else is sent until they do, and their address is deleted if they don't confirm within 48 hours.
 - Once confirmed, the alert emails them when the cheapest listed price reaches their target, at most once a day, with a link to today's prices. Every email has a link to stop the alert, which deletes their address straight away. Alerts end on their own after a year.
 - The price-alert button appears once the site's email sending has been set up.
@@ -11,7 +19,7 @@
 - The Filters panel has new options: next-day delivery, discreet packaging, passed its last GPhC inspection, delivers to (England, Scotland, Wales or Northern Ireland) and pay with (card, Apple Pay, Google Pay, PayPal or Klarna). A pharmacy only matches once our team has recorded that fact for it.
 
 - On phones, the price grid now has two layouts to choose between. Layout A shows every strength at once with one price per cell; tapping a pharmacy opens its prices with a View button for each, plus its registration and any discount. The first pharmacy starts open. Layout B shows about two strengths at a time with the pharmacy names pinned, and you swipe sideways to see more; the columns snap into place and dots show where you are. Tapping a price goes straight to the pharmacy.
-- Every phone visitor sees layout A for now. Layout B can be previewed by adding "?layout=swipe" to the page address. Splitting visitors between the two and comparing them waits for a cookie consent banner, which the site doesn't have yet.
+- Either layout can be previewed by adding "?layout=compact" or "?layout=swipe" to the page address; previews aren't counted in the layout test.
 - On phones the grid shows the first 20 pharmacies, with a "Show all" button for the rest.
 - On phones the price range is a single line for the strength being ranked (lowest, median and highest), instead of a box for every strength.
 - A "Copy link to this view" button copies a link to exactly the product, pack size, sort and filters on screen, ready to share.

@@ -1,6 +1,7 @@
 import { getAvailableDiscoverySourceTypesForCreate, getDiscoverySources } from "@/actions/discovery/discovery-sources";
 import { CreateDiscoverySourceModal } from "@/components/admin/discovery-source-form-modal";
 import { DiscoverySourcesTable } from "@/components/admin/discovery-sources-table";
+import { WebsiteIntakeCard } from "@/components/admin/website-intake-card";
 import { isDeepSeekEnabled } from "@/lib/discovery/enrichment-worker";
 
 import type { Metadata } from "next";
@@ -28,6 +29,7 @@ export default async function DiscoverySourcesPage() {
         <CreateDiscoverySourceModal availableTypes={availableTypes} />
       </div>
       <DiscoverySourcesTable sources={sources} />
+      <WebsiteIntakeCard />
     </div>
   );
 }

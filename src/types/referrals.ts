@@ -1,4 +1,4 @@
-import type { ClickDevice } from "@/generated/prisma/client";
+import type { ClickDevice, GridLayout } from "@/generated/prisma/client";
 
 // A published pharmacy we have a commercial relationship with (an affiliate partner): the public
 // disclosure list on the independence and partners pages.
@@ -26,4 +26,15 @@ export type OutboundDestination = {
   // The offer's total to pay when the visitor clicked.
   totalPricePence: number;
   programme: { id: string; linkTemplate: string } | null;
+};
+
+// One phone price-grid layout's results in the A/B test report.
+export type LayoutTestRow = {
+  layout: GridLayout;
+  pageViews: number;
+  clicks: number;
+  // Days with at least one phone page view of this layout.
+  days: number;
+  // Clicks per page view; null before any page view is counted.
+  clickThrough: number | null;
 };

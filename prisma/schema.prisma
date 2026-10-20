@@ -559,6 +559,8 @@ model ReferralClick {
   sourcePath       String?
   // What the visitor was shown: the offer's total to pay at the moment of the click.
   totalPricePence  Int?
+  // Set only for clicks from a phone price-grid layout (the A/B test); null everywhere else.
+  gridLayout       GridLayout?
   createdAt        DateTime            @default(now())
 
   @@index([createdAt])
@@ -813,4 +815,21 @@ model PriceAlert {
 
   @@index([email])
   @@index([confirmedAt])
+}
+
+// The two phone price-grid layouts being compared (A: compact table, B: swipe columns).
+enum GridLayout {
+  COMPACT
+  SWIPE
+}
+
+// Phone page views of the price grid, as a daily total per layout — the denominator for the A/B
+// test's click-through rate. Deliberately a bare counter: nothing about the visitor is stored, and
+// nothing is stored on their device (layouts alternate by week instead of per visitor).
+model GridLayoutView {
+  day    DateTime   @db.Date
+  layout GridLayout
+  views  Int        @default(0)
+
+  @@id([day, layout])
 }

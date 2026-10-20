@@ -184,7 +184,7 @@ export function PriceGridTable({ grid, caption, sortHref, placement, partnerProv
         <Header row={row} partner={partner} now={now} />
         {row.cells.map((cell, cellIndex) => (
           <TableCell key={grid.columns[cellIndex]} className={cn("p-1.5 align-top", cellClass, grid.columns[cellIndex] === grid.sortColumn && "bg-muted/40")}>
-            <PriceGridCell cell={cell} pricing={pricing} anyPack={anyPack} placement={placement} rank={index + 1} partner={partner} short={layout === "swipe"} />
+            <PriceGridCell cell={cell} pricing={pricing} anyPack={anyPack} placement={placement} rank={index + 1} partner={partner} short={layout === "swipe"} layout={layout === "swipe" ? "swipe" : undefined} />
           </TableCell>
         ))}
         {offerColumn ? <TableCell className="p-3 align-top whitespace-normal"><CurrentOffer row={row} /></TableCell> : null}

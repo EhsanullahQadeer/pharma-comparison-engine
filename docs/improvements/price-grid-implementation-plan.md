@@ -138,7 +138,7 @@ check on the full live dataset (85 published pharmacies), at 375px, 768px and 14
    the mock-up). Region / next-day / Trustpilot / inspection / payment / discreet filters wait for
    the data in Phase 3. No clinical-screening filters, ever.
 
-## Phase 3 — new provider data and A/B test — all done 2026-10-20 except the phone A/B assignment and tracking, which waits on a consent banner
+## Phase 3 — new provider data and A/B test — all done 2026-10-20 (the A/B test alternates layouts by week instead of per visitor, so no consent banner is needed)
 
 1. **Schema** (one migration): on `Provider` — `trustpilotScore`, `trustpilotReviewCount`,
    `trustpilotUrl`, `trustpilotCheckedAt`, `inspectionOutcome`, `inspectionDate`,

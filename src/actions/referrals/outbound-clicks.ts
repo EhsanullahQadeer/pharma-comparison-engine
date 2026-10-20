@@ -2,7 +2,7 @@
 // module: that would expose recordOutboundClick as a public POST endpoint anyone could call with
 // forged clicks. Only the route handler imports these.
 
-import type { ReferralPlacement } from "@/generated/prisma/client";
+import type { GridLayout, ReferralPlacement } from "@/generated/prisma/client";
 import { deliveredTotalPence } from "@/lib/comparison";
 import { prisma } from "@/lib/prisma";
 import { BOT_CLICKS_PER_HOUR, isAllowedDestination, VISITOR_HASH_TTL_MS } from "@/lib/referrals";
@@ -39,13 +39,15 @@ export async function resolveOutboundDestination(offerId: string): Promise<Outbo
   };
 }
 
-export async function recordOutboundClick({ clickId, programmeId, target, placement, rankPosition, visitorHash, isLikelyBot, details, now }: {
+export async function recordOutboundClick({ clickId, programmeId, target, placement, rankPosition, gridLayout, visitorHash, isLikelyBot, details, now }: {
   // Generated before the redirect so it can be sent to the affiliate network as the clickRef.
   clickId: string;
   programmeId: string | null;
   target: OutboundDestination;
   placement: ReferralPlacement | null;
   rankPosition: number | null;
+  // Which phone price-grid layout the click came from (A/B test); null for every other link.
+  gridLayout: GridLayout | null;
   visitorHash: string | null;
   isLikelyBot: boolean;
   details: ClickDetails;
@@ -64,6 +66,7 @@ export async function recordOutboundClick({ clickId, programmeId, target, placem
       productVariantId: target.productVariantId,
       placement,
       rankPosition,
+      gridLayout,
       visitorHash,
       isLikelyBot: isLikelyBot || recentFromVisitor >= BOT_CLICKS_PER_HOUR,
       ...details,

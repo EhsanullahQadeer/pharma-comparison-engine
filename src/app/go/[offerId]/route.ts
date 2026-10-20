@@ -32,7 +32,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   // still valid); otherwise the plain product page, with zero commission assumed.
   const programme = target.programme && !linkTemplateError(target.programme.linkTemplate) ? target.programme : null;
   const redirectUrl = programme ? buildTrackedUrl(programme.linkTemplate, target.destination, clickId) : target.destination;
-  const { placement, rankPosition } = parseOutboundParams(request.nextUrl.searchParams);
+  const { placement, rankPosition, gridLayout } = parseOutboundParams(request.nextUrl.searchParams);
   const userAgent = request.headers.get("user-agent") ?? "";
   const click = {
     clickId,
@@ -40,6 +40,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     target,
     placement,
     rankPosition,
+    gridLayout,
     visitorHash: visitorHash(clientIp(request.headers), userAgent, process.env.AUTH_SECRET, now),
     isLikelyBot: isLikelyBotRequest(request.headers),
     details: clickDetails(request.headers),

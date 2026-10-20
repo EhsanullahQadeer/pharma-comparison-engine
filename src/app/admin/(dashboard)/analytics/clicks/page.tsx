@@ -1,6 +1,8 @@
 import { getClickReport } from "@/actions/analytics/click-report";
+import { getLayoutTestReport } from "@/actions/analytics/layout-test";
 import { ClickBreakdownTable } from "@/components/admin/click-breakdown-table";
 import { ClickReportTable } from "@/components/admin/click-report-table";
+import { LayoutTestCard } from "@/components/admin/layout-test-card";
 import { Button, buttonVariants } from "@/components/common/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/common/card";
 import { EmptyState } from "@/components/common/empty-state";
@@ -16,7 +18,7 @@ const PAGE_PATH = "/admin/analytics/clicks";
 
 export default async function ClickReportPage(props: PageProps<"/admin/analytics/clicks">) {
   const range = parseClickReportRange(await props.searchParams, new Date());
-  const report = await getClickReport({ from: range.from, to: range.to });
+  const [report, layoutTest] = await Promise.all([getClickReport({ from: range.from, to: range.to }), getLayoutTestReport({ from: range.from, to: range.to })]);
 
   const totals = [
     { label: "Clicks to pharmacies", value: report.peopleClicks, hint: "Visitors sent to a pharmacy's website" },
@@ -80,6 +82,8 @@ export default async function ClickReportPage(props: PageProps<"/admin/analytics
           </Card>
         ))}
       </div>
+
+      <LayoutTestCard rows={layoutTest} />
 
       {breakdowns.map((breakdown) => (
         <Card key={breakdown.title}>

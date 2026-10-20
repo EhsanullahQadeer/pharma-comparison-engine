@@ -25,6 +25,7 @@ export default function PrivacyPage() {
           "When you choose “View”, we count the click (which pharmacy and product, and which of our pages and price positions it came from), then send you straight to the pharmacy's own website. This shows us which prices people find useful.",
           "With that count we keep a few general details that don't identify you: the approximate area you were in (country, region and town or city), whether you used a phone, tablet or computer, the name of your browser and system, the page of ours you clicked from with any filters you had chosen, and the price you were shown.",
           "We don't store your IP address. It's used for a moment to work out the approximate area and is then discarded. To filter out automated traffic, we keep a scrambled code made from your connection details that changes every day, and delete it within 24 hours.",
+          "On phones we're comparing two layouts of the price table, which take turns week by week. We add one to a daily total of phone views for the layout on screen, and note which layout a click came from. Nothing about you is recorded for this, and nothing is saved on your device.",
         ]} />
       </ContentSection>
       <ContentSection id="forms" title="When you use one of our forms">

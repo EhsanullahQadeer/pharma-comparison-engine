@@ -47,7 +47,7 @@ function DetailLine({ cell, label, pricing, placement, rank, partner, providerNa
         className="rounded-full"
         nativeButton={false}
         render={
-          <OutboundLink offerId={offer.id} placement={placement} partner={partner} rank={rank}>
+          <OutboundLink offerId={offer.id} placement={placement} partner={partner} rank={rank} layout="compact">
             View<ArrowUpRight aria-hidden="true" className="size-4" />
             <span className="sr-only"> {label} at {providerName} (opens in a new tab)</span>
           </OutboundLink>

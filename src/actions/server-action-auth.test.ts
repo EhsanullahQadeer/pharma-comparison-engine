@@ -15,6 +15,7 @@ const intentionallyPublic: Record<string, string> = {
   "auth/sign-in.ts#staffSignIn": "the login itself",
   "auth/sign-out.ts#staffSignOut": "ends the caller's own session",
   "offers/public-offers.ts#getPublicOffers": "public comparison: published offers of PUBLISHED providers only",
+  "analytics/layout-test.ts#recordGridLayoutView": "adds one to a daily per-layout counter; bots ignored, nothing about the visitor kept",
   "price-alerts/price-alerts.ts#createPriceAlert": "public sign-up: validated, rate-limited, double opt-in by email",
   "price-alerts/price-alerts.ts#getPriceAlertByToken": "acts only through the alert's own secret token",
   "price-alerts/price-alerts.ts#confirmPriceAlert": "acts only through the alert's own secret token",
