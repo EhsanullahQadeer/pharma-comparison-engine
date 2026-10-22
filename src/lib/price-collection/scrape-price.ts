@@ -17,11 +17,15 @@ import { readSectionedTextPrice } from "@/lib/price-collection/sectioned-text-pr
 import { pickSelectOptionPrice } from "@/lib/price-collection/select-option-prices";
 import { pickShopifyMetaPrice } from "@/lib/price-collection/shopify-meta-price";
 import { brandSideMatches, labelMatchesVariant, otcProductMismatch, preferPrescriptionLabels, type VariantSpec } from "@/lib/price-collection/variant-label";
+import { agreedWasPrice } from "@/lib/price-collection/was-price";
 import { pickWooCommercePrice } from "@/lib/price-collection/woocommerce-price";
 import { passPostcodePrompt } from "@/lib/product-detection/browser-shop-pages";
 
 export type ScrapedPrice = {
   itemPricePence: number;
+  // The page's own crossed-out "was" price, from readers whose data states one (schema.org
+  // StrikethroughPrice/ListPrice, WooCommerce's regular price). Checked by `saleWasPricePence` on save.
+  wasPricePence?: number;
   deliveryFeePence: number;
   deliveryAssumption: string;
   availability: "IN_STOCK" | "OUT_OF_STOCK" | "UNKNOWN";
@@ -96,6 +100,20 @@ const availabilityMap: Record<string, "IN_STOCK" | "OUT_OF_STOCK"> = {
   "https://schema.org/OutOfStock": "OUT_OF_STOCK",
 };
 
+const WAS_PRICE_TYPES = /schema\.org\/(?:StrikethroughPrice|ListPrice)$/i;
+
+// A GBP offer's own "was" price: a price specification typed StrikethroughPrice (Google's sale
+// markup) or ListPrice. Exported for its test.
+export function strikethroughPence(offer: Record<string, unknown>): number | undefined {
+  for (const spec of asRecords(offer.priceSpecification)) {
+    const type = textField(spec, "priceType");
+    if (!WAS_PRICE_TYPES.test(type) || (spec.priceCurrency !== undefined && spec.priceCurrency !== "GBP")) continue;
+    const pence = toPence(spec.price);
+    if (pence !== undefined) return pence;
+  }
+  return undefined;
+}
+
 function pickStructuredPrice(html: string, matchedTokens: string[], sourceUrl: string): ScrapedPrice | undefined {
   for (const block of extractJsonLdBlocks(html)) {
     if (!hasType(block, "Product")) continue;
@@ -123,7 +141,7 @@ function pickStructuredPrice(html: string, matchedTokens: string[], sourceUrl: s
     }
 
     const availability = typeof offerNode.availability === "string" ? (availabilityMap[offerNode.availability] ?? "UNKNOWN") : "UNKNOWN";
-    return { itemPricePence, deliveryFeePence, deliveryAssumption, availability, sourceUrl, source: "json-ld-product-offer" };
+    return { itemPricePence, wasPricePence: strikethroughPence(offerNode), deliveryFeePence, deliveryAssumption, availability, sourceUrl, source: "json-ld-product-offer" };
   }
   return undefined;
 }
@@ -146,7 +164,7 @@ function pickStructuredVariantPrice(html: string, matchedTokens: string[], varia
   const products = extractJsonLdBlocks(html)
     .flatMap((block) => [block, ...asRecords(block.hasVariant)])
     .filter((node) => hasType(node, "Product"));
-  const matches: { itemPricePence: number; availability: ScrapedPrice["availability"]; evidence: string }[] = [];
+  const matches: { itemPricePence: number; wasPricePence?: number; availability: ScrapedPrice["availability"]; evidence: string }[] = [];
   for (const product of products) {
     const offers = asRecords(product.offers).flatMap((offer) => (hasType(offer, "AggregateOffer") ? asRecords(offer.offers) : [offer]));
     for (const offer of offers) {
@@ -157,7 +175,7 @@ function pickStructuredVariantPrice(html: string, matchedTokens: string[], varia
       const itemPricePence = toPence(offer.price);
       if (itemPricePence === undefined) continue;
       const availability = typeof offer.availability === "string" ? (availabilityMap[offer.availability] ?? "UNKNOWN") : "UNKNOWN";
-      matches.push({ itemPricePence, availability, evidence: label });
+      matches.push({ itemPricePence, wasPricePence: strikethroughPence(offer), availability, evidence: label });
     }
   }
   const preferred = preferPrescriptionLabels(matches, (match) => match.evidence);
@@ -165,6 +183,7 @@ function pickStructuredVariantPrice(html: string, matchedTokens: string[], varia
   if (new Set(preferred.map((match) => match.itemPricePence)).size !== 1) return undefined;
   return {
     ...preferred[0],
+    wasPricePence: agreedWasPrice(preferred),
     deliveryFeePence: 0,
     deliveryAssumption: "As shown on the provider's product page at collection time",
     sourceUrl,
@@ -201,6 +220,7 @@ function pickSingleProductHeadingPrice(html: string, matchedTokens: string[], va
   if (itemPricePence === undefined) return undefined;
   return {
     itemPricePence,
+    wasPricePence: strikethroughPence(offer),
     availability: typeof offer.availability === "string" ? (availabilityMap[offer.availability] ?? "UNKNOWN") : "UNKNOWN",
     evidence: heading,
     deliveryFeePence: 0,

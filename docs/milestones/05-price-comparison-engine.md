@@ -1,6 +1,6 @@
 # M4/M5 — Price Comparison Engine: Collection & Calculation
 
-**Status:** 🟨 In progress — collection adapters, manual/scheduled collection and the public comparison engine are built; remaining: §4.7 failure tests, 7-day production run
+**Status:** 🟨 In progress — collection adapters, manual/scheduled collection and the public comparison engine are built; remaining: Well's two subscription intervals (staff data entry), 7-day production run
 **Depends on:** M3a (including the offer/discount history item), M3b (need providers before prices)
 **Roadmap:** [§ Milestone 4](../monj-functionality-and-ed-milestones.md#milestone-4--price-collection-and-freshness-monitoring), [§ Milestone 5](../monj-functionality-and-ed-milestones.md#milestone-5--comparison-calculations-filters-and-provider-pages)
 **Platform context:** the 2026-09-16 multi-vertical pivot ([`00-platform-strategy.md`](00-platform-strategy.md)) was reversed 2026-09-18 — this is an ED-only engine again, single database, no `ProductCategory` concept. First real pilot scoped to ED (sildenafil/tadalafil) only: product-detection (which providers sell which `ProductVariant`) then daily/12h price scraping on confirmed offers — see `docs/current-tasks.md`'s 2026-09-18 entry.
@@ -106,7 +106,7 @@ Roadmap §4.6's 50 providers × 20 variant pages × 2 checks/day ≈ 2,000 check
 - [x] Deterministic sort/tie-break — verified fees first, then price, then provider id (`compareOffers`), tested
 - [x] "Unknown fee never becomes zero" invariant enforced and tested — unverified fees show "Not listed" (`feeText`), and an indicative total never outranks a verified one (test in `comparison.test.ts`)
 - [x] Regression tests from the roadmap's worked examples — £16 + £3 delivery vs £18 inclusive case in `src/lib/comparison.test.ts`
-- [ ] Test coverage for every roadmap §4.7 failure scenario
+- [x] Test coverage for every roadmap §4.7 failure scenario the code is responsible for (2026-10-22) — `src/lib/failure-scenarios.test.ts`, one test per row: commission-blind ranking, disagreeing page prices (none taken), pack totals only within one pack, zero/blank/nonsense scrapes refused, blocked sites not retried, unknown vs sold-out stock, unstacked discounts counted only on request, indicative fees ranked after verified, and one-off vs subscription never ranked together (found live: 2 subscription offers were mixed into the default ranking — one-off is now the default in grid, list and price alerts; subscriptions are their own choice). Business/operating rows are listed in the file's header with where they're handled. "28 days vs calendar month" (2026-10-22): public pages now show a recorded interval ("every 28 days") or say the pharmacy doesn't state one — never "monthly" (`subscriptionTerms`, tested). Data still open: Well's two subscriptions have no interval recorded.
 - [x] Comparison page UI wired to the engine (depends on M2 routes existing) — `/ed/compare`, `/ed/prices/sildenafil|tadalafil` and pharmacy profile pages; reads only published offers from `PUBLISHED` providers
 
 ## Open questions

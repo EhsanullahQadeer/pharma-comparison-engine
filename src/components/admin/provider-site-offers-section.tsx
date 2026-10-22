@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, RefreshCw } from "lucide-react";
+import { AppWindow, ExternalLink, RefreshCw } from "lucide-react";
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 
 import type { SiteOfferDecision, SiteOffersState } from "@/actions/price-collection/site-offers";
@@ -102,8 +102,15 @@ function deliveryCheckMessage(result: NonNullable<SiteOffersState["result"]>) {
 
 export function ProviderSiteOffersSection({ providerId, siteOffers, canReview }: { providerId: string; siteOffers: ProviderSiteOffers; canReview: boolean }) {
   const [reviewError, setReviewError] = useState<string>();
+  // Which of the two buttons started the running check, so only that one says "Checking…".
+  const [checkingInChrome, setCheckingInChrome] = useState(false);
   const check = useMutate("checkProviderSiteOffers");
   const result = check.data?.result;
+  const { mutate: runCheck } = check;
+  const startCheck = useCallback((inChrome: boolean) => {
+    setCheckingInChrome(inChrome);
+    runCheck(providerId, inChrome);
+  }, [runCheck, providerId]);
 
   const deliveryFindings = useMemo<Finding[]>(
     () => siteOffers.deliveryPolicies.map((policy) => ({ id: policy.id, status: policy.status, title: describeDeliveryPolicy(policy), evidenceText: policy.evidenceText, sourceUrl: policy.sourceUrl, lastSeenAt: policy.lastSeenAt })),
@@ -133,10 +140,17 @@ export function ProviderSiteOffersSection({ providerId, siteOffers, canReview }:
           </p>
         </div>
         {canReview ? (
-          <Button type="button" size="sm" variant="outline" className="shrink-0" disabled={check.isPending} onClick={() => check.mutate(providerId)}>
-            <RefreshCw aria-hidden="true" className={check.isPending ? "size-3.5 animate-spin" : "size-3.5"} />
-            {check.isPending ? "Checking…" : "Check website now"}
-          </Button>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <Button type="button" size="sm" variant="outline" disabled={check.isPending} onClick={() => startCheck(false)}>
+              <RefreshCw aria-hidden="true" className={check.isPending && !checkingInChrome ? "size-3.5 animate-spin" : "size-3.5"} />
+              {check.isPending && !checkingInChrome ? "Checking…" : "Check website now"}
+            </Button>
+            {/* For a website behind a security check: you complete the check in the Chrome window that opens. */}
+            <Button type="button" size="sm" variant="outline" disabled={check.isPending} onClick={() => startCheck(true)} title="Opens the website in the Chrome window. Complete any security check there yourself; the check waits up to five minutes per page.">
+              <AppWindow aria-hidden="true" className={check.isPending && checkingInChrome ? "size-3.5 animate-pulse" : "size-3.5"} />
+              {check.isPending && checkingInChrome ? "Waiting for Chrome…" : "Check in Chrome window"}
+            </Button>
+          </div>
         ) : null}
       </CardHeader>
       <CardContent className="space-y-2">

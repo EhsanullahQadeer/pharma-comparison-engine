@@ -1,5 +1,6 @@
 import type { ScrapedPrice } from "@/lib/price-collection/scrape-price";
 import { brandSideMatches, labelMatchesVariant, type VariantSpec } from "@/lib/price-collection/variant-label";
+import { agreedWasPrice } from "@/lib/price-collection/was-price";
 
 // WooCommerce variable products (strength / pack-size dropdowns — e.g. Pharmaceutra, Be Online,
 // Razi Meds, Newtons Chemist) embed every dropdown combination and its price as JSON in the add-to-
@@ -11,6 +12,8 @@ import { brandSideMatches, labelMatchesVariant, type VariantSpec } from "@/lib/p
 type WooVariation = {
   attributes?: Record<string, string>;
   display_price?: unknown;
+  // The price before a sale; WooCommerce shows it crossed out when it is above display_price.
+  display_regular_price?: unknown;
   is_in_stock?: unknown;
 };
 
@@ -67,7 +70,7 @@ export function pickWooCommercePrice(html: string, matchedTokens: string[], vari
   const nameStrengths = [...new Set([...name.matchAll(/(\d{1,3}(?:\.\d+)?)\s*mg\b/gi)].map((match) => match[1]))];
   const dropdowns = readAttributeOptions(html);
 
-  const matches: { itemPricePence: number; availability: ScrapedPrice["availability"]; evidence: string }[] = [];
+  const matches: { itemPricePence: number; wasPricePence?: number; availability: ScrapedPrice["availability"]; evidence: string }[] = [];
   for (const variation of variations) {
     const parts: string[] = [];
     let ambiguous = false;
@@ -89,8 +92,10 @@ export function pickWooCommercePrice(html: string, matchedTokens: string[], vari
     const price = typeof variation.display_price === "number" ? variation.display_price : Number(variation.display_price);
     if (!Number.isFinite(price) || price <= 0) continue;
     const stock = { true: "IN_STOCK", false: "OUT_OF_STOCK" } as const;
+    const regular = Number(variation.display_regular_price);
     matches.push({
       itemPricePence: Math.round(price * 100),
+      wasPricePence: Number.isFinite(regular) && regular > price ? Math.round(regular * 100) : undefined,
       availability: typeof variation.is_in_stock === "boolean" ? stock[`${variation.is_in_stock}`] : "UNKNOWN",
       evidence: `${name}: ${optionsLabel}`,
     });
@@ -98,6 +103,7 @@ export function pickWooCommercePrice(html: string, matchedTokens: string[], vari
   if (new Set(matches.map((match) => match.itemPricePence)).size !== 1) return undefined;
   return {
     ...matches[0],
+    wasPricePence: agreedWasPrice(matches),
     deliveryFeePence: 0,
     deliveryAssumption: "As shown on the provider's product page at collection time",
     sourceUrl,

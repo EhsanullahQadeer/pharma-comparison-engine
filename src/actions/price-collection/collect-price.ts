@@ -12,6 +12,7 @@ import { resolveScrapedDelivery } from "@/lib/price-collection/delivery-policy";
 import { impossiblePriceReason } from "@/lib/price-collection/price-sanity";
 import { scrapeProductPrice } from "@/lib/price-collection/scrape-price";
 import { isGenericFormulation, variantTokens } from "@/lib/price-collection/variant-label";
+import { wasPriceField } from "@/lib/price-collection/was-price";
 import { prisma } from "@/lib/prisma";
 
 function isHumanVerificationError(message: string) {
@@ -95,6 +96,7 @@ export async function collectPriceForMatch(matchId: string, options: { actorId?:
           data: {
             itemPricePence: scraped.itemPricePence,
             ...delivery,
+            ...wasPriceField(scraped),
             availability: scraped.availability,
             sourceUrl: scraped.sourceUrl,
             retrievedAt: now,
@@ -107,6 +109,7 @@ export async function collectPriceForMatch(matchId: string, options: { actorId?:
             productVariantId,
             itemPricePence: scraped.itemPricePence,
             ...delivery,
+            ...wasPriceField(scraped),
             availability: scraped.availability,
             sourceUrl: scraped.sourceUrl,
             retrievedAt: now,
@@ -131,6 +134,7 @@ export async function collectPriceForMatch(matchId: string, options: { actorId?:
           offerId: offer.id,
           itemPricePence: scraped.itemPricePence,
           deliveryFeePence: delivery.deliveryFeePence,
+          ...wasPriceField(scraped),
           deliveredTotalPence: scraped.itemPricePence + delivery.deliveryFeePence,
           availability: scraped.availability,
           effectiveFrom: now,

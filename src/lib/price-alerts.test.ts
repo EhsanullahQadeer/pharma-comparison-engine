@@ -9,7 +9,7 @@ const now = new Date("2026-10-20T12:00:00Z");
 const HOUR = 60 * 60 * 1000;
 
 function offer(id: string, strengthMg: number, packQuantity: number, deliveredTotalPence: number, availability: PublicOffer["availability"] = "IN_STOCK") {
-  return { id, deliveredTotalPence, availability, variant: { id: `${strengthMg}x${packQuantity}`, ingredient: "SILDENAFIL", brandName: null, strengthMg, formulation: "Tablet", packQuantity } } as PublicOffer;
+  return { id, deliveredTotalPence, availability, purchaseModel: "ONE_OFF", variant: { id: `${strengthMg}x${packQuantity}`, ingredient: "SILDENAFIL", brandName: null, strengthMg, formulation: "Tablet", packQuantity } } as PublicOffer;
 }
 
 test("alerts watch the lowest in-stock delivered total; out-of-stock prices never count", () => {

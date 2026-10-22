@@ -7,13 +7,19 @@ import ts from "typescript";
 
 // Milestone 8 permission boundary: every export of a "use server" module is a callable endpoint,
 // so each one must check the staff role (requireStaffRole/getStaffUser, directly or via a helper in
-// the same file) unless it is deliberately public and listed here with the reason.
+// the same file) unless it is deliberately public and listed here with the reason. Pharmacy portal
+// actions (actions/partners/) may instead check the partner (requirePartner/getPartnerUser) — but
+// only there, so a staff action can never pass by checking the wrong kind of account.
 const intentionallyPublic: Record<string, string> = {
   "articles/articles.ts#getPublishedArticle": "public read of reviewed, published articles",
   "articles/articles.ts#getPublishedArticleSummaries": "public read of reviewed, published articles",
   "articles/articles.ts#getPublishedArticleSitemapEntries": "sitemap generation",
   "auth/sign-in.ts#staffSignIn": "the login itself",
   "auth/sign-out.ts#staffSignOut": "ends the caller's own session",
+  "auth/sign-in.ts#partnerSignIn": "the pharmacy portal login itself (partner accounts only)",
+  "auth/sign-out.ts#partnerSignOut": "ends the caller's own session",
+  "partners/partner-invite.ts#getPartnerInvite": "acts only through the invite's own secret token (hashed, one use, 7 days)",
+  "partners/partner-invite.ts#acceptPartnerInvite": "acts only through the invite's own secret token (hashed, one use, 7 days)",
   "offers/public-offers.ts#getPublicOffers": "public comparison: published offers of PUBLISHED providers only",
   "analytics/layout-test.ts#recordGridLayoutView": "adds one to a daily per-layout counter; bots ignored, nothing about the visitor kept",
   "price-alerts/price-alerts.ts#createPriceAlert": "public sign-up: validated, rate-limited, double opt-in by email",
@@ -31,6 +37,7 @@ const intentionallyPublic: Record<string, string> = {
 
 const actionsDir = join(process.cwd(), "src", "actions");
 const staffChecks = new Set(["requireStaffRole", "getStaffUser"]);
+const partnerChecks = new Set(["requirePartner", "getPartnerUser"]);
 
 function listFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -51,7 +58,7 @@ function calledNames(node: ts.Node) {
 }
 
 // Exported functions of one "use server" file that never reach a staff check.
-function unguardedExports(path: string) {
+function unguardedExports(path: string, accountChecks: Set<string>) {
   const text = readFileSync(path, "utf8");
   const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true);
   const isServerModule = source.statements[0] && ts.isExpressionStatement(source.statements[0])
@@ -75,7 +82,7 @@ function unguardedExports(path: string) {
     changed = false;
     for (const [name, { body }] of functions) {
       if (guarded.has(name)) continue;
-      if ([...calledNames(body)].some((called) => staffChecks.has(called) || guarded.has(called))) {
+      if ([...calledNames(body)].some((called) => accountChecks.has(called) || guarded.has(called))) {
         guarded.add(name);
         changed = true;
       }
@@ -86,7 +93,8 @@ function unguardedExports(path: string) {
 
 const unguarded = listFiles(actionsDir).flatMap((path) => {
   const relative = path.slice(actionsDir.length + 1).split("\\").join("/");
-  return unguardedExports(path).map((name) => `${relative}#${name}`);
+  const checks = relative.startsWith("partners/") ? new Set([...staffChecks, ...partnerChecks]) : staffChecks;
+  return unguardedExports(path, checks).map((name) => `${relative}#${name}`);
 });
 
 test("every server action checks the staff role unless it is deliberately public", () => {

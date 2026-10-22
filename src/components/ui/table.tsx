@@ -3,9 +3,9 @@
 import { cn } from "cn"
 import * as React from "react"
 
-function Table({ className, container, ...props }: React.ComponentProps<"table"> & { container?: React.ComponentProps<"div"> }) {
+function Table({ className, container, frameClassName, ...props }: React.ComponentProps<"table"> & { container?: React.ComponentProps<"div">; frameClassName?: string }) {
   return (
-    <div className="relative w-full overflow-hidden rounded-b-xl border border-border bg-card">
+    <div className={cn("relative w-full overflow-hidden rounded-b-xl border border-border bg-card", frameClassName)}>
       <div data-slot="table-container" {...container} className={cn("w-full overflow-x-auto scrollbar-thumb-only", container?.className)}>
         <table
           data-slot="table"

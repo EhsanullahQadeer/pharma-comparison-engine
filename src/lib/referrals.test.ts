@@ -1,18 +1,33 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { clientIp, isAllowedDestination, isLikelyBotRequest, outboundHref, parseOutboundParams, visitorHash } from "./referrals";
+import type { OutboundOffer } from "@/types/referrals";
+
+import { clientIp, isAllowedDestination, isLikelyBotRequest, offerIdFromGoPath, outboundHref, parseOutboundParams, visitorHash } from "./referrals";
 
 const browserUa = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36";
 
-test("outbound links carry only a page code and rank, and round-trip", () => {
-  const href = outboundHref("offer_1", "COMPARE", 3);
-  assert.equal(href, "/go/offer_1?p=compare&r=3");
+const generic: OutboundOffer = { id: "offer_1", providerSlug: "pharmica", variant: { id: "v", ingredient: "SILDENAFIL", brandName: "Viagra", strengthMg: 50, formulation: "Film-coated tablet (generic)", packQuantity: 8 } };
+const branded: OutboundOffer = { id: "offer_2", providerSlug: "boots-com", variant: { id: "v2", ingredient: "SILDENAFIL", brandName: "Viagra", strengthMg: 100, formulation: "Film-coated tablet", packQuantity: 4 } };
+
+test("outbound links are readable, carry only a page code and rank, and round-trip", () => {
+  const href = outboundHref(generic, "COMPARE", 3);
+  assert.equal(href, "/go/pharmica/generic-sildenafil-50mg-x8/offer_1?p=compare&r=3");
   assert.deepEqual(parseOutboundParams(new URL(href, "https://x.test").searchParams), { placement: "COMPARE", rankPosition: 3, gridLayout: null });
-  assert.equal(outboundHref("offer_1", "COMPARE", 2, "swipe"), "/go/offer_1?p=compare&r=2&l=swipe");
+  assert.equal(outboundHref(generic, "COMPARE", 2, "swipe"), "/go/pharmica/generic-sildenafil-50mg-x8/offer_1?p=compare&r=2&l=swipe");
   assert.equal(parseOutboundParams(new URLSearchParams("p=compare&l=swipe")).gridLayout, "SWIPE");
   assert.equal(parseOutboundParams(new URLSearchParams("p=compare&l=desktop")).gridLayout, null);
-  assert.equal(outboundHref("offer_1", "PHARMACY_PROFILE"), "/go/offer_1?p=pharmacy");
+  assert.equal(outboundHref(branded, "PHARMACY_PROFILE"), "/go/boots-com/viagra-100mg-x4/offer_2?p=pharmacy");
+});
+
+test("the offer id is read from the readable path and from the original /go/<id>", () => {
+  assert.equal(offerIdFromGoPath(["pharmica", "generic-sildenafil-50mg-x8", "offer_1"]), "offer_1");
+  assert.equal(offerIdFromGoPath(["offer_1"]), "offer_1", "links shared before the change keep working");
+  // The words are cosmetic: an outdated product name still reaches the same offer.
+  assert.equal(offerIdFromGoPath(["pharmica", "old-name", "offer_1"]), "offer_1");
+  assert.equal(offerIdFromGoPath(["pharmica", "offer_1"]), null);
+  assert.equal(offerIdFromGoPath(["a", "b", "c", "offer_1"]), null);
+  assert.equal(offerIdFromGoPath([]), null);
 });
 
 test("unknown placements and junk ranks are dropped", () => {

@@ -1,4 +1,8 @@
 import type { ClickDevice, GridLayout } from "@/generated/prisma/client";
+import type { PublicOffer } from "@/types/comparison";
+
+// What an outbound link needs to build its readable address: /go/<pharmacy>/<product>/<offer id>.
+export type OutboundOffer = Pick<PublicOffer, "id" | "providerSlug" | "variant">;
 
 // A published pharmacy we have a commercial relationship with (an affiliate partner): the public
 // disclosure list on the independence and partners pages.
@@ -16,7 +20,7 @@ export type ClickDetails = {
   sourcePath: string | null;
 };
 
-// Where /go/[offerId] may send a visitor: the offer's own validated product page, and — only while
+// Where /go/…/[offer id] may send a visitor: the offer's own validated product page, and — only while
 // the pharmacy's affiliate programme is ACTIVE — that programme's tracked-link template.
 export type OutboundDestination = {
   offerId: string;

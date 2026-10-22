@@ -1,8 +1,10 @@
 import { createHash } from "node:crypto";
 
 import type { GridLayout, ReferralPlacement } from "@/generated/prisma/client";
+import { slugify, variantProductName } from "@/lib/comparison";
 import { gridLayoutValues } from "@/lib/phone-layout";
 import type { PhoneGridLayout } from "@/types/comparison";
+import type { OutboundOffer } from "@/types/referrals";
 
 // Outbound "view at pharmacy" links (M7). Everything here is pure so the /go route stays thin and
 // the rules below are unit-tested. Nothing in this file is — or may ever be — read by ranking code.
@@ -21,11 +23,23 @@ const placementCodes: Record<ReferralPlacement, string> = {
 const placementByCode = Object.fromEntries(Object.entries(placementCodes).map(([placement, code]) => [code, placement])) as Record<string, ReferralPlacement>;
 
 // `layout`: only on links in a phone price-grid layout, so the A/B test can count their clicks.
-export function outboundHref(offerId: string, placement: ReferralPlacement, rank?: number, layout?: PhoneGridLayout) {
+// Readable: /go/pharmica/generic-sildenafil-50mg-x8/<offer id>. The pharmacy and product words are
+// for people (hover, shared links) only — the offer id alone decides where the link goes — so the
+// tracked affiliate address never appears on our pages.
+export function outboundHref(offer: OutboundOffer, placement: ReferralPlacement, rank?: number, layout?: PhoneGridLayout) {
   const params = new URLSearchParams({ p: placementCodes[placement] });
   if (rank) params.set("r", String(rank));
   if (layout) params.set("l", layout);
-  return `/go/${encodeURIComponent(offerId)}?${params}`;
+  const product = slugify(`${variantProductName(offer.variant)} ${offer.variant.strengthMg}mg x${offer.variant.packQuantity}`);
+  return `/go/${offer.providerSlug}/${product}/${encodeURIComponent(offer.id)}?${params}`;
+}
+
+const GO_PATH_LENGTHS = new Set([1, 3]);
+
+// The offer id from a /go/ path: the readable form (pharmacy/product/id) or the original /go/<id>,
+// which must keep working for links already shared or bookmarked. Anything else is not a link of ours.
+export function offerIdFromGoPath(segments: string[]) {
+  return GO_PATH_LENGTHS.has(segments.length) ? (segments.at(-1) ?? null) : null;
 }
 
 // Unknown or malformed values are dropped, never forwarded or stored as-is.

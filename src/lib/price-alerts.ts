@@ -1,4 +1,5 @@
-import { isRankable } from "@/lib/comparison";
+import { DEFAULT_PURCHASE_MODEL, isRankable } from "@/lib/comparison";
+import { emailBody } from "@/lib/email-body";
 import { formatPence } from "@/lib/money";
 import type { PublicOffer } from "@/types/comparison";
 import type { PriceAlertDecision, PriceAlertOption, PriceAlertState } from "@/types/price-alerts";
@@ -16,9 +17,10 @@ export const ALERT_LIFETIME_MS = 365 * 24 * HOUR_MS;
 // A visitor can watch this many prices per email address.
 export const MAX_ALERTS_PER_EMAIL = 10;
 
-// The cheapest in-stock delivered total for one strength × pack of a product's offers.
+// The cheapest in-stock one-off delivered total for one strength × pack of a product's offers —
+// the price the grid shows by default (a subscription price is never compared with it).
 export function lowestTotalPence(offers: PublicOffer[], strengthMg: number, packQuantity: number) {
-  const totals = offers.filter((offer) => isRankable(offer) && offer.variant.strengthMg === strengthMg && offer.variant.packQuantity === packQuantity).map((offer) => offer.deliveredTotalPence);
+  const totals = offers.filter((offer) => isRankable(offer) && offer.purchaseModel === DEFAULT_PURCHASE_MODEL && offer.variant.strengthMg === strengthMg && offer.variant.packQuantity === packQuantity).map((offer) => offer.deliveredTotalPence);
   return totals.length > 0 ? Math.min(...totals) : null;
 }
 
@@ -55,19 +57,6 @@ export function alertDecision({ thresholdPence, lastNotifiedAt, lastNotifiedPenc
 
 export function alertTargetLabel(productName: string, strengthMg: number, packQuantity: number) {
   return `${productName} ${strengthMg}mg × ${packQuantity}`;
-}
-
-const htmlEscapes: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
-const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (char) => htmlEscapes[char]);
-
-function emailBody(paragraphs: string[], link: { url: string; label: string }, footer: string) {
-  const text = [...paragraphs, `${link.label}: ${link.url}`, "", footer].join("\n\n");
-  const html = [
-    ...paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`),
-    `<p><a href="${escapeHtml(link.url)}">${escapeHtml(link.label)}</a></p>`,
-    `<p style="color:#666;font-size:12px">${escapeHtml(footer)}</p>`,
-  ].join("\n");
-  return { text, html };
 }
 
 const FOOTER = "You're getting this because you asked for a price alert on our site. We only use your email address for this alert, and delete it when you stop the alert or after a year.";

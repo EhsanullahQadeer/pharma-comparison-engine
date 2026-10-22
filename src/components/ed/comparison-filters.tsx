@@ -3,7 +3,7 @@ import { SlidersHorizontal, X } from "lucide-react";
 import { FilterDropdown } from "@/components/ed/filter-dropdown";
 import Link from "@/components/Link";
 import { ingredientLabels, ingredientValues, purchaseModelValues } from "@/lib/catalogue-labels";
-import { baseFormulation, comparisonHref, filterOffers, publicPurchaseModelLabels, slugify, variantProductName, variantTypeSlug } from "@/lib/comparison";
+import { baseFormulation, comparedOffers, comparisonHref, DEFAULT_PURCHASE_MODEL, filterOffers, publicPurchaseModelLabels, slugify, variantProductName, variantTypeSlug } from "@/lib/comparison";
 import type { ComparisonFilters, ComparisonSort, FilterOption, FilterOptionGroup, PublicOffer } from "@/types/comparison";
 
 const sortLabels: Record<ComparisonSort, string> = { tablet: "Price per tablet", total: "Total price" };
@@ -51,7 +51,7 @@ export function ComparisonFiltersPanel({ offers, filters }: { offers: PublicOffe
   const packs = uniqueSorted(filterOffers(offers, { ingredient, productType, strengthMg, formulation, sort }).map((offer) => offer.variant.packQuantity));
   const planModels = new Set(filterOffers(offers, { ingredient, productType, strengthMg, formulation, packQuantity, sort }).map((offer) => offer.purchaseModel));
   const plans = purchaseModelValues.filter((value) => planModels.has(value));
-  const resultCount = filterOffers(offers, filters).length;
+  const resultCount = comparedOffers(offers, filters).length;
 
   const productGroups: FilterOptionGroup[] = [
     { options: [{ label: "All products", href: listHref({ sort }), active: !ingredient && !productType }] },
@@ -85,8 +85,9 @@ export function ComparisonFiltersPanel({ offers, filters }: { offers: PublicOffe
   }];
   const planGroups: FilterOptionGroup[] = [{
     options: [
-      { label: "Any", href: listHref({ ingredient, productType, strengthMg, formulation, packQuantity, sort }), active: !purchaseModel },
-      ...plans.map((value) => ({ label: publicPurchaseModelLabels[value], href: listHref({ ingredient, productType, strengthMg, formulation, packQuantity, purchaseModel: value, sort }), active: purchaseModel === value })),
+      // One-off and subscription prices are never ranked together, so there is no "Any".
+      { label: publicPurchaseModelLabels[DEFAULT_PURCHASE_MODEL], href: listHref({ ingredient, productType, strengthMg, formulation, packQuantity, sort }), active: !purchaseModel },
+      ...plans.filter((value) => value !== DEFAULT_PURCHASE_MODEL).map((value) => ({ label: publicPurchaseModelLabels[value], href: listHref({ ingredient, productType, strengthMg, formulation, packQuantity, purchaseModel: value, sort }), active: purchaseModel === value })),
     ],
   }];
   const sortGroups: FilterOptionGroup[] = [{ options: sortValues.map((value) => ({ label: sortLabels[value], href: listHref({ ...filters, sort: value }), active: sort === value })) }];
@@ -113,7 +114,7 @@ export function ComparisonFiltersPanel({ offers, filters }: { offers: PublicOffe
         {forms.length > 1 || formulation ? <FilterDropdown label="Form" value={selectedLabel(formGroups)} selected={Boolean(formulation)} groups={formGroups} /> : null}
         <FilterDropdown label="Pack size" value={selectedLabel(packGroups)} selected={Boolean(packQuantity)} groups={packGroups} />
         {/* Nearly every price is one-off today, so the choice only appears once there is one to make. */}
-        {plans.length > 1 || purchaseModel ? <FilterDropdown label="Buying" value={selectedLabel(planGroups)} selected={Boolean(purchaseModel)} groups={planGroups} /> : null}
+        {plans.some((value) => value !== DEFAULT_PURCHASE_MODEL) || purchaseModel ? <FilterDropdown label="Buying" value={selectedLabel(planGroups)} selected={Boolean(purchaseModel)} groups={planGroups} /> : null}
         <FilterDropdown label="Sort by" value={sortLabels[sort]} selected={false} groups={sortGroups} />
       </div>
       {applied.length > 0 ? (

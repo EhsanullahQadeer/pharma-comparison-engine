@@ -7,10 +7,11 @@ import { FreshnessPill } from "@/components/ed/freshness-pill";
 import { LinkNote } from "@/components/ed/link-note";
 import { OutboundLink } from "@/components/ed/outbound-link";
 import { PharmacyAvatar } from "@/components/ed/pharmacy-avatar";
+import { WasPrice } from "@/components/ed/was-price";
 import Link from "@/components/Link";
 import type { ReferralPlacement } from "@/generated/prisma/client";
 import { availabilityBadgeVariant, availabilityLabels } from "@/lib/catalogue-labels";
-import { feeText, variantLabel, variantMedicineNote } from "@/lib/comparison";
+import { feeText, offerAnchor, subscriptionTerms, variantLabel, variantMedicineNote } from "@/lib/comparison";
 import { discountHeadline } from "@/lib/discounts";
 import { formatPence } from "@/lib/money";
 import { cn } from "@/lib/utils";
@@ -19,8 +20,9 @@ import type { ComparisonSort, PublicOffer } from "@/types/comparison";
 type RowProps = { offer: PublicOffer; now: Date; sort: ComparisonSort; placement: ReferralPlacement; partner: boolean; showOffers: boolean; showRank: boolean; rank?: number; best: boolean };
 
 function OfferRow({ offer, now, sort, placement, partner, showOffers, showRank, rank, best }: RowProps) {
+  const terms = subscriptionTerms(offer);
   return (
-    <TableRow className={cn(best && "bg-primary/5 hover:bg-primary/10")}>
+    <TableRow id={offerAnchor(offer.id)} tabIndex={-1} className={cn("scroll-mt-28 outline-none data-highlighted:bg-primary/15 data-highlighted:outline-2 data-highlighted:-outline-offset-2 data-highlighted:outline-primary", best && "bg-primary/5 hover:bg-primary/10")}>
       {showRank ? (
         <TableCell className="text-center">
           {rank ? (
@@ -36,6 +38,7 @@ function OfferRow({ offer, now, sort, placement, partner, showOffers, showRank, 
           <div className="min-w-0">
             <Link href={`/ed/pharmacies/${offer.providerSlug}`} className="font-semibold underline-offset-4 hover:underline">{offer.providerName}</Link>
             <p className="text-xs text-muted-foreground">{variantLabel(offer.variant)} · {variantMedicineNote(offer.variant)}</p>
+            {terms ? <p className="text-xs font-medium">{terms.full}</p> : null}
             <div className="mt-1 flex flex-wrap gap-1.5">
               {best ? (
                 <Badge>
@@ -48,7 +51,10 @@ function OfferRow({ offer, now, sort, placement, partner, showOffers, showRank, 
           </div>
         </div>
       </TableCell>
-      <TableCell className="text-right tabular-nums">{formatPence(offer.itemPricePence)}</TableCell>
+      <TableCell className="text-right tabular-nums">
+        {formatPence(offer.itemPricePence)}
+        {offer.wasPricePence !== null ? <p><WasPrice pence={offer.wasPricePence} /></p> : null}
+      </TableCell>
       <TableCell className="text-right tabular-nums">{feeText(offer.deliveryFeePence, offer.feesVerified)}</TableCell>
       <TableCell className="text-right tabular-nums">
         <span className={cn(sort === "total" ? "text-base font-semibold" : "font-medium")}>{formatPence(offer.deliveredTotalPence)}</span>
@@ -75,7 +81,7 @@ function OfferRow({ offer, now, sort, placement, partner, showOffers, showRank, 
             className="rounded-full"
             nativeButton={false}
             render={
-              <OutboundLink offerId={offer.id} placement={placement} partner={partner} rank={rank}>
+              <OutboundLink offer={offer} placement={placement} partner={partner} rank={rank}>
                 View
                 <ArrowUpRight aria-hidden="true" className="size-4" />
                 <span className="sr-only"> {offer.providerName} (opens {offer.providerDomain} in a new tab)</span>
@@ -134,7 +140,7 @@ export function OfferTable({ ranked, other, now, sort, placement, showRank, show
 }) {
   const columnCount = 7 + Number(showRank) + Number(showOffers);
   return (
-    <Table resizable={false} stickyHeader={false} aria-label={label} className="min-w-4xl">
+    <Table resizable={false} stickyHeader={false} aria-label={label} className="min-w-4xl" frameClassName="rounded-xl">
       <TableHeader>
         <TableRow>
           {showRank ? <TableHead className="w-14 text-center">#</TableHead> : null}

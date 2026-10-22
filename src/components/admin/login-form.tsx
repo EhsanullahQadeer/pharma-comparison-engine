@@ -9,13 +9,14 @@ import { Label } from "@/components/common/label";
 
 const initialState: SignInState = {};
 
-export function LoginForm() {
-  const [state, formAction, pending] = useActionState(staffSignIn, initialState);
+// The staff login by default; the pharmacy portal passes its own sign-in action and label.
+export function LoginForm({ action = staffSignIn, emailLabel = "Staff email" }: { action?: (state: SignInState, formData: FormData) => Promise<SignInState>; emailLabel?: string }) {
+  const [state, formAction, pending] = useActionState(action, initialState);
 
   return (
     <form action={formAction} className="space-y-4">
       <div className="space-y-1.5">
-        <Label htmlFor="email">Staff email</Label>
+        <Label htmlFor="email">{emailLabel}</Label>
         <Input id="email" name="email" type="email" autoComplete="username" required />
       </div>
       <div className="space-y-1.5">

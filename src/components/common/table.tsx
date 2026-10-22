@@ -34,6 +34,8 @@ interface TableProps extends React.ComponentProps<typeof TableRoot> {
   dragScroll?: boolean;
   /** Names the scroll box for screen readers and makes it focusable, so arrow keys scroll it. */
   scrollLabel?: string;
+  /** Classes for the bordered frame around the table (e.g. `rounded-xl` for a table that isn't under a card heading). */
+  frameClassName?: string;
   /** Column definitions from `useTableColumns`. When provided, the header row is rendered automatically — omit the manual `<TableHeader>` block. */
   columns?: ResolvedColumn[];
   /** Current sort column key (from `useServerTable`). Required when `columns` has sortable entries. */
@@ -61,6 +63,7 @@ function Table({
   maxHeight,
   dragScroll = false,
   scrollLabel,
+  frameClassName,
   className,
   columns,
   sortBy,
@@ -102,6 +105,7 @@ function Table({
           className={className}
           style={style}
           container={container}
+          frameClassName={frameClassName}
           {...props}
         >
           {columns ? (
@@ -181,7 +185,7 @@ function Table({
       <div
         aria-hidden="true"
         className={cn(
-          "pointer-events-none absolute top-px right-px bottom-3 w-10 rounded-br-xl bg-linear-to-l from-card to-transparent transition-opacity",
+          "pointer-events-none absolute top-px right-px bottom-3 w-10 rounded-r-xl bg-linear-to-l from-card to-transparent transition-opacity",
           edges.overflow && !edges.atEnd ? "opacity-100" : "opacity-0",
         )}
       />

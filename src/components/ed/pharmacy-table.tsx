@@ -12,7 +12,7 @@ import type { PublicProviderSummary } from "@/types/comparison";
 // Directory rows as one scannable table; scrolls horizontally on narrow screens.
 export function PharmacyTable({ providers }: { providers: PublicProviderSummary[] }) {
   return (
-    <Table resizable={false} stickyHeader={false} aria-label="Checked pharmacies" className="min-w-3xl">
+    <Table resizable={false} stickyHeader={false} aria-label="Checked pharmacies" className="min-w-3xl" frameClassName="rounded-xl">
       <TableHeader>
         <TableRow>
           <TableHead>Pharmacy</TableHead>

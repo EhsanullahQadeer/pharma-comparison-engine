@@ -1,4 +1,4 @@
-import { freshnessTier, isRankable, perTabletPence } from "@/lib/comparison";
+import { comparedPurchaseModel, freshnessTier, isRankable, perTabletPence } from "@/lib/comparison";
 import { inspectionPassed } from "@/lib/provider-labels";
 import type { ComparisonFilters, GridCell, GridFilterFlags, GridColumnAxis, GridPack, GridPriceMode, PriceGrid, PriceGridColumnSummary, PriceGridOptions, PriceGridRow, PublicDiscount, PublicOffer } from "@/types/comparison";
 
@@ -44,7 +44,7 @@ type GridFilterInput = GridFilterFlags & Pick<ComparisonFilters, "purchaseModel"
 function matchesChoices(offer: PublicOffer, { purchaseModel, region, payment, minTrustpilot }: GridFilterInput) {
   const facts = offer.providerFacts;
   return (
-    (!purchaseModel || offer.purchaseModel === purchaseModel) &&
+    offer.purchaseModel === comparedPurchaseModel(purchaseModel) &&
     (!region || facts.serviceRegions.some((served) => served.trim().toLowerCase() === region.toLowerCase())) &&
     (!payment || facts.paymentMethods.includes(payment)) &&
     // A hidden score (scores switched off) is null, so this filter then matches nothing; the

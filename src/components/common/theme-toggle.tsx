@@ -10,11 +10,11 @@ function getServerSnapshot() {
   return false;
 }
 
-export function ThemeToggle() {
+export function ThemeToggle({ className }: { className?: string }) {
   const isDark = useSyncExternalStore(subscribeToTheme, getThemeSnapshot, getServerSnapshot);
 
   return (
-    <Button type="button" variant="ghost" size="icon" onClick={() => setTheme(!isDark)} aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}>
+    <Button type="button" variant="ghost" size="icon" className={className} onClick={() => setTheme(!isDark)} aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}>
       {isDark ? <Sun aria-hidden="true" className="size-4" /> : <Moon aria-hidden="true" className="size-4" />}
     </Button>
   );

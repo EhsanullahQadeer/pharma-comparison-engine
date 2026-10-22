@@ -68,3 +68,16 @@ test("returns nothing without embedded variations or a matching product", () => 
   assert.equal(pickWooCommercePrice(wooPage("Viagra (Sildenafil) Tablets", "false", {}), tokens, { strengthMg: 50, packQuantity: 4 }, url), undefined);
   assert.equal(pickWooCommercePrice(pharmaceutraViagra, ["cialis"], { strengthMg: 50, packQuantity: 4, generic: false }, url), undefined);
 });
+
+test("a regular price above the sale price is kept as the was price", () => {
+  const sale = wooPage("Viagra (Sildenafil) Tablets", [
+    { attributes: { attribute_quantity: "", attribute_strength: "Sildenafil (Generic) 50mg" }, display_price: 9.99, display_regular_price: 14.99, is_in_stock: true },
+    { attributes: { attribute_quantity: "", attribute_strength: "Viagra (Branded) 50mg" }, display_price: 29.99, display_regular_price: 29.99, is_in_stock: true },
+  ], { attribute_quantity: ["4 tablets"], attribute_strength: ["Sildenafil (Generic) 50mg", "Viagra (Branded) 50mg"] });
+  const onSale = pickWooCommercePrice(sale, tokens, { strengthMg: 50, packQuantity: 4, generic: true }, url);
+  assert.equal(onSale?.itemPricePence, 999);
+  assert.equal(onSale?.wasPricePence, 1499);
+  const fullPrice = pickWooCommercePrice(sale, tokens, { strengthMg: 50, packQuantity: 4, generic: false }, url);
+  assert.equal(fullPrice?.itemPricePence, 2999);
+  assert.equal(fullPrice?.wasPricePence, undefined);
+});

@@ -28,7 +28,8 @@ import type { PriceAlertOption } from "@/types/price-alerts";
 import type { ComponentProps } from "react";
 
 type HrefFor = (patch: Partial<ComparisonFilters>) => string;
-type TableProps = ComponentProps<typeof PriceGridTable>;
+// The compact phone layout needs everything the grid table does, plus where its "View" links count from.
+type TableProps = ComponentProps<typeof PriceGridPhoneCompact>;
 
 // Phone A/B test: the layout alternates week by week for everyone (src/lib/phone-layout.ts), so
 // nothing is stored on visitors' devices and no consent is needed. `?layout=` previews either one

@@ -4,6 +4,7 @@ import { ChevronDown, Menu, X, ArrowUpRight } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { ThemeToggle } from "@/components/common/theme-toggle";
 import Link from "@/components/Link";
 import { edHref, navigationGroups } from "@/lib/ed-pages";
 import { siteConfig } from "@/lib/site-config";
@@ -83,10 +84,14 @@ export function SiteHeader() {
             ))}
           </div>
         </nav>
-        <Link href="/ed/pharmacies" onClick={close} className="hidden shrink-0 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/80 xl:block">Explore pharmacies</Link>
-        <button ref={toggleRef} type="button" onClick={() => { if (mobileOpen) close(); else setMobileOpen(true); }} aria-expanded={mobileOpen} aria-controls="primary-navigation" aria-label={mobileOpen ? "Close navigation" : "Open navigation"} className="rounded-lg p-3 hover:bg-muted lg:hidden">
-          {mobileOpen ? <X aria-hidden="true" className="size-5" /> : <Menu aria-hidden="true" className="size-5" />}
-        </button>
+        <div className="flex shrink-0 items-center gap-1">
+          {/* 44px, the same touch target as the menu button. */}
+          <ThemeToggle className="size-11 rounded-lg [&_svg]:size-5" />
+          <Link href="/ed/pharmacies" onClick={close} className="ml-2 hidden shrink-0 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/80 xl:block">Explore pharmacies</Link>
+          <button ref={toggleRef} type="button" onClick={() => { if (mobileOpen) close(); else setMobileOpen(true); }} aria-expanded={mobileOpen} aria-controls="primary-navigation" aria-label={mobileOpen ? "Close navigation" : "Open navigation"} className="rounded-lg p-3 hover:bg-muted lg:hidden">
+            {mobileOpen ? <X aria-hidden="true" className="size-5" /> : <Menu aria-hidden="true" className="size-5" />}
+          </button>
+        </div>
       </div>
     </header>
   );

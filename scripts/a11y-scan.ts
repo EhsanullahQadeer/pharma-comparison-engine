@@ -34,9 +34,11 @@ async function main() {
   const routes = [
     ...new Set(publicRoutes.map((route) => route.href)),
     "/ed/compare?medicine=sildenafil&type=generic",
+    "/ed/compare?view=list",
     ...(await pharmacyProfiles(browser)),
     "/this-page-does-not-exist",
     "/admin/login",
+    "/partner/login",
   ];
   const findings = new Map<string, Finding>();
   let scanned = 0;

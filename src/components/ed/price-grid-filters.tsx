@@ -9,7 +9,7 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { toolbarButton } from "@/components/ed/price-grid-controls";
 import type { PaymentMethod, PurchaseModel } from "@/generated/prisma/client";
 import { useRouter } from "@/hooks/useRouter";
-import { gridFlagParams, paymentMethodSlugs, publicPurchaseModelLabels, purchaseModelSlugs, slugify, trustpilotMinimums } from "@/lib/comparison";
+import { DEFAULT_PURCHASE_MODEL, gridFlagParams, paymentMethodSlugs, publicPurchaseModelLabels, purchaseModelSlugs, slugify, trustpilotMinimums } from "@/lib/comparison";
 import { paymentMethodLabels, paymentMethodValues, serviceRegionOptions } from "@/lib/provider-labels";
 import { cn } from "@/lib/utils";
 import type { GridFilterFlags } from "@/types/comparison";
@@ -33,13 +33,14 @@ const flagKeys = Object.keys(flagLabels) as (keyof GridFilterFlags)[];
 // browser bundle). Keep in sync with PurchaseModel.
 const planValues: PurchaseModel[] = ["ONE_OFF", "RECURRING"];
 
-// A row of single-choice pills ("Any" first), one group in the drawer.
-function ChoiceGroup<T extends string | number>({ legend, value, options, onChange }: { legend: string; value?: T; options: { value: T; label: string }[]; onChange: (value?: T) => void }) {
+// A row of single-choice pills, one group in the drawer. The first pill is the unset choice:
+// "Any" unless the group names its default instead.
+function ChoiceGroup<T extends string | number>({ legend, value, options, onChange, unsetLabel = "Any" }: { legend: string; value?: T; options: { value: T; label: string }[]; onChange: (value?: T) => void; unsetLabel?: string }) {
   return (
     <fieldset>
       <legend className="mb-2 font-medium">{legend}</legend>
       <div className="flex flex-wrap gap-2">
-        {[{ value: undefined, label: "Any" }, ...options].map((option) => (
+        {[{ value: undefined, label: unsetLabel }, ...options].map((option) => (
           <button
             key={String(option.value ?? "any")}
             type="button"
@@ -55,7 +56,8 @@ function ChoiceGroup<T extends string | number>({ legend, value, options, onChan
   );
 }
 
-const planOptions = planValues.map((value) => ({ value, label: publicPurchaseModelLabels[value] }));
+// One-off is the unset default and subscriptions the alternative; the two are never ranked together.
+const planOptions = planValues.filter((value) => value !== DEFAULT_PURCHASE_MODEL).map((value) => ({ value, label: publicPurchaseModelLabels[value] }));
 const regionOptions = serviceRegionOptions.map((region) => ({ value: region as string, label: region }));
 const paymentOptions = paymentMethodValues.map((value) => ({ value, label: paymentMethodLabels[value] }));
 const trustpilotOptions = trustpilotMinimums.map((tenths) => ({ value: tenths, label: `${(tenths / 10).toFixed(1)}+` }));
@@ -92,12 +94,13 @@ export function PriceGridFilters({ baseHref, current, activeCount, showTrustpilo
         Filters{activeCount > 0 ? ` (${activeCount})` : ""}
       </Button>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
+        <SheetContent side="right" className="w-full sm:max-w-md">
           <SheetHeader>
             <SheetTitle>Filters</SheetTitle>
             <SheetDescription>Narrow the grid. Prices are still ranked by price only.</SheetDescription>
           </SheetHeader>
-          <div className="space-y-6 px-4">
+          {/* Only the choices scroll, so Reset and Apply stay on screen on a phone. */}
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 pb-4">
             <ul className="space-y-4">
               {flagKeys.map((key) => (
                 <li key={key}>
@@ -114,10 +117,10 @@ export function PriceGridFilters({ baseHref, current, activeCount, showTrustpilo
             <ChoiceGroup legend="Delivers to" value={draft.region} options={regionOptions} onChange={set("region")} />
             <ChoiceGroup legend="Pay with" value={draft.payment} options={paymentOptions} onChange={set("payment")} />
             {showTrustpilot ? <ChoiceGroup legend="Trustpilot score" value={draft.minTrustpilot} options={trustpilotOptions} onChange={set("minTrustpilot")} /> : null}
-            <ChoiceGroup legend="Buying" value={draft.purchaseModel} options={planOptions} onChange={set("purchaseModel")} />
+            <ChoiceGroup legend="Buying" value={draft.purchaseModel} options={planOptions} onChange={set("purchaseModel")} unsetLabel={publicPurchaseModelLabels[DEFAULT_PURCHASE_MODEL]} />
             <p className="text-xs text-muted-foreground">Pharmacy facts are recorded by our team from each pharmacy&apos;s site and the GPhC register. A pharmacy we haven&apos;t recorded a fact for doesn&apos;t match that filter.</p>
           </div>
-          <SheetFooter className="flex-row gap-2">
+          <SheetFooter className="mt-0 flex-row gap-2 border-t border-border">
             <Button type="button" variant="outline" className="flex-1 rounded-full" onClick={() => setDraft({})}>Reset</Button>
             <Button type="button" className="flex-1 rounded-full" onClick={apply}>Apply</Button>
           </SheetFooter>

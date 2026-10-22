@@ -234,7 +234,8 @@ export async function setProviderAffiliateApproved(providerId: string, approved:
   if (!provider) return { error: "Provider not found." };
   if (provider.affiliateApproved === approved) return {};
 
-  await prisma.provider.update({ where: { id: providerId }, data: { affiliateApproved: approved } });
+  // Ending a partnership starts its portal users' 90-day read-only window (partner portal plan).
+  await prisma.provider.update({ where: { id: providerId }, data: { affiliateApproved: approved, partnershipEndedAt: approved ? null : new Date() } });
 
   await recordAuditLog({
     actorId: staffUser.id,

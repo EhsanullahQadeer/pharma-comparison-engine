@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 // Describes what the public site actually does today: no accounts, third-party analytics, advertising or
 // tracking cookies. "View" clicks are counted server-side with coarse, non-identifying detail (area,
 // device, browser, page clicked from, price shown) and never the IP or raw user agent
-// (/go/[offerId], M7); the only personal data kept is what someone types into the site's forms.
+// (/go/…/[offer id], M7); the only personal data kept is what someone types into the site's forms.
 export default function PrivacyPage() {
   return (
     <PageShell title="Privacy policy" eyebrow="Trust / Policies" description="You can compare prices and read every page on this site without giving us any personal information." crumbs={[{ label: "Home", href: "/" }]}>

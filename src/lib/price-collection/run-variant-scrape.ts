@@ -8,6 +8,7 @@ import { impossiblePriceReason } from "@/lib/price-collection/price-sanity";
 import { assertRobotsAllowInBrowser } from "@/lib/price-collection/robots-in-browser";
 import { scrapeProductPrice, type ScrapedPrice } from "@/lib/price-collection/scrape-price";
 import { isGenericFormulation, variantTokens, type VariantSpec } from "@/lib/price-collection/variant-label";
+import { wasPriceField } from "@/lib/price-collection/was-price";
 import { prisma } from "@/lib/prisma";
 import { collectHomepageLinks } from "@/lib/product-detection/detect-products";
 import { isEdCategoryRootPath, matchEdProductPath } from "@/lib/product-detection/ed-tokens";
@@ -114,6 +115,7 @@ async function saveVariantScrapedOffer(providerId: string, productVariantId: str
         data: {
           itemPricePence: scraped.itemPricePence,
           ...delivery,
+          ...wasPriceField(scraped),
           availability: scraped.availability,
           sourceUrl: scraped.sourceUrl,
           retrievedAt: now,
@@ -126,6 +128,7 @@ async function saveVariantScrapedOffer(providerId: string, productVariantId: str
           productVariantId,
           itemPricePence: scraped.itemPricePence,
           ...delivery,
+          ...wasPriceField(scraped),
           availability: scraped.availability,
           sourceUrl: scraped.sourceUrl,
           retrievedAt: now,
@@ -138,6 +141,7 @@ async function saveVariantScrapedOffer(providerId: string, productVariantId: str
         offerId: offer.id,
         itemPricePence: scraped.itemPricePence,
         deliveryFeePence: delivery.deliveryFeePence,
+        ...wasPriceField(scraped),
         deliveredTotalPence: scraped.itemPricePence + delivery.deliveryFeePence,
         availability: scraped.availability,
         effectiveFrom: now,

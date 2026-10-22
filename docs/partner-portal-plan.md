@@ -1,6 +1,6 @@
 # Partner Portal — Plan
 
-**Status:** Step A done (2026-09-26); steps B–F not started. Builds on
+**Status:** Steps A (2026-09-26) and B (2026-10-22) done; steps C–F not started. Builds on
 [`referral-earnings-plan.md`](referral-earnings-plan.md) Phases 1–2
 (`ReferralClick`, `AffiliateProgramme`, partner-only links).
 
@@ -43,7 +43,7 @@ are excluded from every figure.
 | Panel | Source | Notes |
 | --- | --- | --- |
 | Clicks to your site, per day | `ReferralClick` (own `providerId`, `isLikelyBot=false`) | The headline number, with change vs the previous period |
-| Estimated unique visitors per day | Nightly rollup of distinct `visitorHash` per day, computed **before** the hash is cleared | Approximate: shown as "about N people", never per person |
+| ~~Estimated unique visitors per day~~ | Dropped (decision 3, 2026-10-22) | Clicks only |
 | By section of our site | `placement`: Compare, Medicine prices, Your profile page, Repeat costs | The "which sections" question. Add new placements as new link surfaces appear |
 | By product | `productVariantId` → e.g. "Sildenafil 50mg × 8" | Their own products only |
 | By ranking position shown | `rankPosition` buckets: #1, #2–3, #4–10, lower | Shows how price position drives clicks |
@@ -107,21 +107,20 @@ are excluded from every figure.
 | Step | What | Effort |
 | --- | --- | --- |
 | A ✅ | **Security first:** account type in session; admin layout, proxy and `requireStaffRole` reject non-staff; tests. As built, `getStaffUser()` also re-reads the staff record, so deactivation and role changes apply immediately | done 2026-09-26 |
-| B | `PartnerUser` + invite tokens + `/partner/login` + set-password flow + admin "Portal access" card on the pharmacy page | 2 days |
+| B ✅ | `PartnerUser` + invite tokens + `/partner/login` + set-password flow + admin "Portal access" card on the pharmacy page. As built: invites are emailed (copyable link when email isn't set up); `/partner` shows 30-day clicks and the published-price count as a first figure; 16-step end-to-end check passed | done 2026-10-22 |
 | C | Dashboard v1 from live queries: clicks per day, by section, by product, by rank, listing now, corrections, CSV export | 2–3 days |
 | D | Nightly rollup + unique-visitor estimate; move dashboards onto it | 1 day |
 | E | Staff "view as pharmacy"; privacy page and partners page copy | 0.5 day |
 | F | Sales & commission panel (after referral-earnings Phase 3) | 1 day |
 
-## Decisions needed
+## Decisions (made 2026-10-22)
 
-1. **One login for everyone or a separate one?** Recommended: one NextAuth
-   setup with an account type, plus a separate `/partner` area. The
-   alternative is a completely separate auth instance and cookie: stronger
-   isolation, but more code to maintain.
-2. **Invite by copyable link now, or add an email provider first?**
-   Recommended: link now, email later.
-3. **Should the unique-visitor estimate be shown at all?** It's
-   approximate. Clicks alone are simpler and fully accurate.
-4. **Do partners keep portal access after the partnership ends?**
-   Recommended: read-only for 90 days, then deactivated.
+1. **One login for everyone:** one NextAuth setup with an account type, plus
+   a separate `/partner` area. Each login page only checks its own kind.
+2. **Invites by email:** the site can send email since 2026-10-20 (price
+   alerts). When email isn't configured, staff get the one-time link to send.
+3. **No unique-visitor estimate:** clicks only, so step D's rollup needs no
+   visitor hash.
+4. **After a partnership ends:** read-only access for 90 days (from
+   `Provider.partnershipEndedAt`, set when "Affiliate partner" is unticked),
+   then sign-in stops on its own. The account is kept.

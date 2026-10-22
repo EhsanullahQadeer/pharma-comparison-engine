@@ -1,4 +1,4 @@
-// Server-only data access for the /go/[offerId] redirect (M7). Deliberately NOT a "use server"
+// Server-only data access for the /go/…/[offer id] redirect (src/app/go/[...path], M7). Deliberately NOT a "use server"
 // module: that would expose recordOutboundClick as a public POST endpoint anyone could call with
 // forged clicks. Only the route handler imports these.
 

@@ -2,6 +2,7 @@ import { ArrowUpRight, CalendarClock, Layers, PackageSearch, TicketPercent } fro
 import { Suspense } from "react";
 
 import { Button } from "@/components/common/button";
+import { HashHighlight } from "@/components/common/hash-highlight";
 import { CopyCodeButton } from "@/components/ed/copy-code-button";
 import { LinkNote } from "@/components/ed/link-note";
 import { OfferResults } from "@/components/ed/offer-results";
@@ -39,7 +40,7 @@ export function VisitAction({ model, tone = "primary", className, full = false }
     </>
   );
   const link = bestOffer
-    ? <OutboundLink offerId={bestOffer.id} placement="PHARMACY_PROFILE" partner={partner}>{label}</OutboundLink>
+    ? <OutboundLink offer={bestOffer} placement="PHARMACY_PROFILE" partner={partner}>{label}</OutboundLink>
     : <a href={`https://${provider.websiteDomain}`} target="_blank" rel="nofollow noopener noreferrer">{label}</a>;
   return (
     <div className={className}>
@@ -146,6 +147,8 @@ export function PricesBlock({ model, layout = "cards", className }: { model: Pha
       ) : (
         <>
           <OfferResults offers={provider.offers} sort="tablet" now={now} placement="PHARMACY_PROFILE" context="profile" layout={layout} />
+          {/* A price clicked in the comparison grid links here as #offer-<id>. */}
+          <HashHighlight prefix="offer-" />
           <Suspense fallback={<PriceHistorySkeleton />}>
             <PriceHistoryBlock offers={provider.offers} pharmacyName={provider.name} />
           </Suspense>

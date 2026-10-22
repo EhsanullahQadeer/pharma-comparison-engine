@@ -1,0 +1,40 @@
+# Type-check, lint and unit tests on every push to main and every pull request.
+# No database and no secrets: none of these steps connects to one (DATABASE_URL is a placeholder
+# so Prisma's config loads). The accessibility scan (npm run test:a11y) needs a running site, so
+# it isn't part of this check.
+name: Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # The generated client is gitignored (src/generated/prisma).
+      - run: npx prisma generate
+      # A few tests drive a headless browser; patchright only, never playwright (AGENTS.md rule 18).
+      - run: npx patchright install --with-deps chromium
+      - run: npx tsc --noEmit
+      - run: npm run lint
+      - run: npm test
+      - name: Deploy scripts parse
+        run: for script in deploy/*.sh; do bash -n "$script"; done

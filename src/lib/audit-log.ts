@@ -12,6 +12,7 @@ type AuditEntityType =
   | "Correction"
   | "AffiliateProgramme"
   | "StaffUser"
+  | "PartnerUser"
   | "DiscoverySource"
   | "DiscoveryCandidate"
   | "ProductMatch"

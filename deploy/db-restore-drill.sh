@@ -34,6 +34,11 @@ if [ "$existing" != "0" ]; then
   exit 1
 fi
 
+# The dump creates the "public" schema itself (db-backup.sh dumps only that schema), and a new
+# database already has an empty one. It was just confirmed to hold no tables; no CASCADE, so this
+# can never drop anything with contents.
+psql "$drill_url" -qc "drop schema public"
+
 started=$(date +%s)
 echo "Restoring $dump into the drill database…"
 pg_restore --no-owner --no-privileges --exit-on-error --dbname="$drill_url" "$dump"

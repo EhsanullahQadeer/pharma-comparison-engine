@@ -1,16 +1,15 @@
 import { ArrowDown, ArrowUp } from "lucide-react";
 
-import { OutboundLink } from "@/components/ed/outbound-link";
-import type { ReferralPlacement } from "@/generated/prisma/client";
-import { variantProductName } from "@/lib/comparison";
+import { SalePill, saleText } from "@/components/ed/was-price";
+import Link from "@/components/Link";
+import { offerAnchor, subscriptionTerms, variantProductName } from "@/lib/comparison";
 import { formatPence } from "@/lib/money";
 import { codeSavingPence, gridValuePence, type GridPricing } from "@/lib/price-grid";
 import { cn } from "@/lib/utils";
-import type { GridCell, PhoneGridLayout, PublicOffer } from "@/types/comparison";
+import type { GridCell, PublicOffer } from "@/types/comparison";
 
 // `short`: narrow phone columns, where "£1.20 per tablet" becomes "£1.20/tab".
-// `layout`: set inside a phone layout, so its clicks count towards that layout in the A/B test.
-type CellContext = { pricing: GridPricing; anyPack: boolean; placement: ReferralPlacement; rank: number; partner: boolean; short?: boolean; layout?: PhoneGridLayout };
+type CellContext = { pricing: GridPricing; anyPack: boolean; short?: boolean };
 type PriceCellProps = CellContext & { offer: PublicOffer; valuePence: number; lowest: boolean };
 
 // The small line under the price: the other measure (per tablet under a pack total, the pack total
@@ -37,19 +36,18 @@ function movementText(offer: PublicOffer) {
   return `${change}${offer.thirtyDayLow ? ", lowest in 30 days" : ""}`;
 }
 
-// The whole cell is the link, through /go/[offerId] to that exact product on the pharmacy's site.
-// Its text reads in full for screen readers, since the visible cell is just numbers and marks.
-function PriceCell({ offer, valuePence, lowest, pricing, anyPack, placement, rank, partner, short = false, layout }: PriceCellProps) {
+// The whole cell is the link, to this price on the pharmacy's own page with us (client decision
+// 2026-10-22): the shopper sees its registration, delivery and other prices first, and goes on to
+// the pharmacy from there ("View at pharmacy", counted). Its text reads in full for screen readers,
+// since the visible cell is just numbers and marks.
+function PriceCell({ offer, valuePence, lowest, pricing, anyPack, short = false }: PriceCellProps) {
   const { variant } = offer;
   const code = codeSavingPence(offer, pricing.codes) > 0 ? offer.discounts.find((discount) => discount.id === offer.codeDiscountId) : undefined;
   const price = `${formatPence(valuePence)}${pricing.mode === "tablet" ? " per tablet" : ""}`;
+  const terms = subscriptionTerms(offer);
   return (
-    <OutboundLink
-      offerId={offer.id}
-      placement={placement}
-      partner={partner}
-      rank={rank}
-      layout={layout}
+    <Link
+      href={`/ed/pharmacies/${offer.providerSlug}#${offerAnchor(offer.id)}`}
       className={cn(
         "flex h-full min-h-20 flex-col items-end justify-center gap-0.5 rounded-xl border border-transparent px-3 py-2 text-right transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-ring",
         lowest && "border-primary/40 bg-primary/10 hover:bg-primary/15",
@@ -60,17 +58,19 @@ function PriceCell({ offer, valuePence, lowest, pricing, anyPack, placement, ran
       </span>
       <span aria-hidden="true" className="text-xs text-muted-foreground tabular-nums">{secondaryLine(offer, pricing, anyPack, short)}</span>
       {code ? <span aria-hidden="true" className="text-xs font-medium">with {code.code ?? "offer"}</span> : null}
+      {terms ? <span aria-hidden="true" className="text-xs font-medium">{terms.short}</span> : null}
       <span aria-hidden="true" className="mt-0.5 flex flex-wrap items-center justify-end gap-1.5">
         {offer.priceChangePence !== null ? <PriceChange pence={offer.priceChangePence} /> : null}
+        {offer.wasPricePence !== null ? <SalePill /> : null}
         {offer.thirtyDayLow ? <span className="rounded-full border border-border px-1.5 py-px text-[0.6875rem] font-medium">30-day low</span> : null}
         {lowest ? <span className="rounded-full bg-primary px-2 py-0.5 text-[0.6875rem] font-semibold text-primary-foreground">Lowest</span> : null}
       </span>
       <span className="sr-only">
         {offer.providerName}, {variantProductName(variant)} {variant.strengthMg}mg × {variant.packQuantity}, {price}
         {code ? `, with ${code.code ? `code ${code.code}` : "the pharmacy's offer"} (${code.eligibility})` : ""}
-        {offer.feesVerified ? "" : ", indicative: fees not yet verified"}{lowest ? ", lowest in this column" : ""}{movementText(offer)}, opens {offer.providerDomain} in a new tab
+        {offer.feesVerified ? "" : ", indicative: fees not yet verified"}{lowest ? ", lowest in this column" : ""}{movementText(offer)}{saleText(offer)}{terms ? `, ${terms.full}` : ""}: see this price at {offer.providerName}
       </span>
-    </OutboundLink>
+    </Link>
   );
 }
 

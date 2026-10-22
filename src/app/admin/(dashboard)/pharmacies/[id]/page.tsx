@@ -1,5 +1,6 @@
 import { Globe, MapPin, ShieldCheck } from "lucide-react";
 
+import { getProviderPartnerUsers } from "@/actions/partners/partner-users";
 import { getPendingPriceCollectionForProvider } from "@/actions/price-collection/price-collection";
 import { getProviderSiteOffers } from "@/actions/price-collection/site-offers";
 import { getProductMatchesForReview } from "@/actions/product-matches/product-matches";
@@ -8,6 +9,7 @@ import { getProvider } from "@/actions/providers/providers";
 import { getAffiliateProgramme } from "@/actions/referrals/programmes";
 import { AffiliateProgrammeCard } from "@/components/admin/affiliate-programme-card";
 import { EditPharmacyModal } from "@/components/admin/edit-pharmacy-modal";
+import { PartnerAccessCard } from "@/components/admin/partner-access-card";
 import { ProductMatchReviewTable } from "@/components/admin/product-match-review-table";
 import { ProviderFactsCard } from "@/components/admin/provider-facts-card";
 import { ProviderLinkToggle } from "@/components/admin/provider-link-toggle";
@@ -33,13 +35,14 @@ export async function generateMetadata(props: PageProps<"/admin/pharmacies/[id]"
 
 export default async function ProviderDetailPage(props: PageProps<"/admin/pharmacies/[id]">) {
   const { id } = await props.params;
-  const [provider, variants, staffUser, pendingMatches, programme, siteOffers] = await Promise.all([
+  const [provider, variants, staffUser, pendingMatches, programme, siteOffers, partnerAccounts] = await Promise.all([
     getProvider(id),
     getAllProductVariants(),
     getStaffUser(),
     getPendingPriceCollectionForProvider(id),
     getAffiliateProgramme(id),
     getProviderSiteOffers(id),
+    getProviderPartnerUsers(id),
   ]);
   const canEditCommercial = staffUser?.role === "COMMERCIAL_MANAGER" || staffUser?.role === "ADMINISTRATOR";
   // Detected matches awaiting a decision, confirmed here next to the price collection list.
@@ -86,6 +89,7 @@ export default async function ProviderDetailPage(props: PageProps<"/admin/pharma
           sampleUrl={provider.offers[0]?.sourceUrl ?? null}
           canEdit={canEditCommercial}
         />
+        <PartnerAccessCard providerId={provider.id} accounts={partnerAccounts} isPartner={provider.affiliateApproved} canManage={canEditCommercial} />
         <ProviderSiteOffersSection providerId={provider.id} siteOffers={siteOffers} canReview={canReviewMatches} />
         <ProviderFactsCard
           providerId={provider.id}

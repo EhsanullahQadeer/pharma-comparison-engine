@@ -15,7 +15,7 @@ import { PublicEmptyState } from "@/components/ed/public-empty-state";
 import { ComparisonFiltersSkeleton, ComparisonResultsSkeleton, PriceGridSkeleton, SummarySkeleton } from "@/components/ed/skeletons";
 import { StatTile } from "@/components/ed/stat-tile";
 import { ingredientLabels } from "@/lib/catalogue-labels";
-import { comparisonHref, filterOffers, formatCheckedAgo, isRankable, parseComparisonFilters } from "@/lib/comparison";
+import { comparedOffers, comparisonHref, formatCheckedAgo, isRankable, parseComparisonFilters } from "@/lib/comparison";
 import { edProducts, gridProduct, productOffers } from "@/lib/ed-products";
 import { formatPence } from "@/lib/money";
 import { parsePageSize } from "@/lib/pagination";
@@ -113,7 +113,7 @@ function NoPricesYet() {
 async function Results({ offers: offersPromise, filters, page }: SectionProps & { page: ResultsPage }) {
   const allOffers = await offersPromise;
   if (allOffers.length === 0) return <NoPricesYet />;
-  const offers = filterOffers(allOffers, filters);
+  const offers = comparedOffers(allOffers, filters);
   if (offers.length === 0) {
     return <PublicEmptyState icon={PackageSearch} title="No prices match these filters" description="Try another product, strength, form or pack size, or clear the filters to see every current price." action={{ href: comparisonHref({ sort: filters.sort, view: "list" }), label: "Clear filters" }} />;
   }

@@ -217,6 +217,34 @@ model StaffUser {
   triggeredDiscoveryRuns      DiscoveryRun[]       @relation("DiscoveryRunTrigger")
   reviewedDiscoveryCandidates DiscoveryCandidate[] @relation("DiscoveryCandidateReviewer")
   reviewedProductMatches      ProductMatch[]       @relation("ProductMatchReviewer")
+  invitedPartnerUsers         PartnerUser[]        @relation("PartnerUserInviter")
+}
+
+// A person at an affiliated pharmacy with access to that pharmacy's own portal
+// (docs/partner-portal-plan.md). Kept apart from StaffUser so a partner can never be given a staff
+// role, and staff tooling never lists pharmacy people. Created by staff with a one-time invite; the
+// password is only set when the invite is accepted.
+model PartnerUser {
+  id              String     @id @default(cuid())
+  email           String     @unique
+  name            String
+  providerId      String
+  provider        Provider   @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  // Null until the invite is accepted.
+  passwordHash    String?
+  // Staff's "Portal access" switch; ending a partnership doesn't change it (see Provider.partnershipEndedAt).
+  active          Boolean    @default(true)
+  // SHA-256 of the one-time invite token (the token itself is only ever in the invite link).
+  inviteTokenHash String?    @unique
+  inviteExpiresAt DateTime?
+  invitedById     String?
+  invitedBy       StaffUser? @relation("PartnerUserInviter", fields: [invitedById], references: [id], onDelete: SetNull)
+  invitedAt       DateTime   @default(now())
+  lastLoginAt     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([providerId])
 }
 
 // Trading/legal names, website, regulator references, dispensing partner, service regions (roadmap §4).
@@ -224,16 +252,19 @@ model StaffUser {
 // trading brand / domain / premises records for multi-brand dispensers) is a later refinement, not
 // required for the first manual-entry + discovery pass.
 model Provider {
-  id                    String         @id @default(cuid())
+  id                    String             @id @default(cuid())
   legalName             String
   tradingName           String
-  websiteDomain         String         @unique
+  websiteDomain         String             @unique
   regulatorType         RegulatorType
   regulatorReference    String
   dispensingPartnerName String?
   serviceRegions        String[]
-  status                ProviderStatus @default(DISCOVERED)
-  affiliateApproved     Boolean        @default(false)
+  status                ProviderStatus     @default(DISCOVERED)
+  affiliateApproved     Boolean            @default(false)
+  // When "Affiliate partner" was last unticked; its portal users keep read-only access for 90 days
+  // after this. Cleared when the pharmacy is a partner again.
+  partnershipEndedAt    DateTime?
   // Path under /public (e.g. /pharmacy-logos/boots-com.png) or an https URL; null shows a monogram.
   logoUrl               String?
   // When this pharmacy's own website was last read for its delivery charge and discount offers.
@@ -241,21 +272,21 @@ model Provider {
   // Shopper-facing facts staff record from the pharmacy's own site and public registers, each
   // group with the date it was last checked so stale facts can be flagged like prices. Null =
   // not recorded (shown as unknown, never as "no").
-  trustpilotUrl              String?
+  trustpilotUrl         String?
   // Score × 10 (4.8 → 48), integers like every other figure. Only shown publicly once
   // SHOW_TRUSTPILOT_SCORES is switched on (Trustpilot's terms first).
-  trustpilotScoreTenths      Int?
-  trustpilotReviewCount      Int?
-  trustpilotCheckedAt        DateTime?
-  inspectionOutcome          InspectionOutcome?
-  inspectionDate             DateTime?
-  inspectionCheckedAt        DateTime?
-  nextDayDelivery            Boolean?
-  discreetPackaging          Boolean?
-  paymentMethods             PaymentMethod[]
-  serviceFactsCheckedAt      DateTime?
-  createdAt             DateTime       @default(now())
-  updatedAt             DateTime       @updatedAt
+  trustpilotScoreTenths Int?
+  trustpilotReviewCount Int?
+  trustpilotCheckedAt   DateTime?
+  inspectionOutcome     InspectionOutcome?
+  inspectionDate        DateTime?
+  inspectionCheckedAt   DateTime?
+  nextDayDelivery       Boolean?
+  discreetPackaging     Boolean?
+  paymentMethods        PaymentMethod[]
+  serviceFactsCheckedAt DateTime?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
 
   offers              Offer[]
   discounts           Discount[]
@@ -267,6 +298,7 @@ model Provider {
   productMatches      ProductMatch[]
   referralClicks      ReferralClick[]
   affiliateProgramme  AffiliateProgramme?
+  partnerUsers        PartnerUser[]
 
   @@index([status])
 }
@@ -297,6 +329,9 @@ model Offer {
   productVariantId        String
   productVariant          ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Restrict)
   itemPricePence          Int
+  // The pharmacy's own crossed-out "was" medicine price at the last check, when it shows one
+  // (always higher than itemPricePence); null when the page shows no sale.
+  wasPricePence           Int?
   deliveryFeePence        Int            @default(0)
   consultationFeePence    Int            @default(0)
   otherMandatoryFeesPence Int            @default(0)
@@ -408,6 +443,7 @@ model PriceHistory {
   offerId                 String
   offer                   Offer        @relation(fields: [offerId], references: [id], onDelete: Cascade)
   itemPricePence          Int
+  wasPricePence           Int?
   deliveryFeePence        Int          @default(0)
   consultationFeePence    Int          @default(0)
   otherMandatoryFeesPence Int          @default(0)

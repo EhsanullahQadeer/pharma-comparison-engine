@@ -38,10 +38,12 @@ export async function getProviderSiteOffers(providerId: string): Promise<Provide
   return { checkedAt: provider?.siteOffersCheckedAt ?? null, deliveryPolicies, discounts };
 }
 
-export async function checkProviderSiteOffers(providerId: string): Promise<SiteOffersState> {
+// `humanAssist`: for a website behind a security check — its pages open in the visible Chrome window
+// and the staff member completes the check there themselves (nothing is bypassed).
+export async function checkProviderSiteOffers(providerId: string, humanAssist = false): Promise<SiteOffersState> {
   if (!(await requireReviewer())) return { error: NOT_AUTHORIZED };
   try {
-    const result = await collectSiteOffers(providerId);
+    const result = await collectSiteOffers(providerId, { humanAssist });
     revalidatePath(`/admin/pharmacies/${providerId}`);
     return { result };
   } catch (error) {

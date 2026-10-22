@@ -2,6 +2,31 @@
 
 ## 2026-10-22
 
+- Clicking a price in the comparison grid now opens that pharmacy's page on our site, scrolled to the price you clicked and outlined, instead of going straight to the pharmacy's website. From there, "View at pharmacy" takes you on to the pharmacy, and that click is counted as before. Shoppers see the pharmacy's registration, delivery details and other prices before they leave.
+
+- The website's header now has a light/dark mode button (a moon or sun icon) next to "Explore pharmacies", and next to the menu button on phones. Your choice is remembered on your device. Before you choose, the site follows your device's own setting.
+
+- Links from our price tables to pharmacies are now readable, for example /go/pharmica/generic-sildenafil-50mg-x8/…, instead of a string of letters and numbers. They still go through our own page first, so every visit is counted and the pharmacy's tracking address is never shown on our site. Older links people have already shared keep working.
+
+- The price tables on the public site (the price grid, the phone layout, the "All prices" list and the pharmacy list) now have rounded corners at the top as well as the bottom.
+
+- Keyboard users: after re-sorting the price grid by a column, the cursor now stays on that column heading. Before, it jumped back to the top of the page, so the next Tab skipped the whole table.
+- On phones, the Filters panel's Apply and Reset buttons now stay on screen. Before, you had to scroll past every filter to find them.
+- We ran a full backup-and-restore test of the database. The restored copy matched the live one exactly, and the test found and fixed two problems that would have stopped real backups from being usable.
+
+- Duplicate prices have been removed. Some pharmacies had the same product listed two or three times because it appeared on more than one of their web pages, and in five cases the copies showed different prices. Each now has one price, taken from the page named after the product. For example, Somer Pharmacy's Viagra 25mg × 4 now shows its Viagra page price of £29.99, not the £9.99 generic price from its sildenafil page. 41 duplicate prices were removed.
+- Partner pharmacies can now have their own login: the pharmacy portal. On a partner pharmacy's admin page, the new "Pharmacy portal access" box lets a commercial manager invite someone from that pharmacy by email. They choose their own password from the invite link (it works once and lasts 7 days), then sign in to see how many visitors our comparison sent to their website in the last 30 days. A pharmacy only ever sees its own figures, and nothing that identifies a visitor.
+- Portal access can be turned off at any time from the same box. If a pharmacy stops being a partner, its people can still see their figures for 90 days, then sign-in stops automatically.
+- No pharmacy is marked as an affiliate partner yet, so nobody can be invited until one is.
+
+- Subscription prices now say how often you're billed, for example "8 tablets every 28 days", once our team has recorded it. Where the pharmacy doesn't state it, the price says so plainly instead of implying a monthly plan. Well's two subscription prices show "interval not stated" for now, until we confirm it with them.
+
+- Subscription prices are no longer ranked alongside one-off prices. By default the price grid, the "All prices" list and price alerts now compare one-off purchases only. Two subscription prices were previously mixed in without a label, which could make a repeat plan look like the cheapest one-off price. To see subscription prices, choose "Subscription" under "Buying" in the filters. The old "Any" choice, which mixed the two, has gone.
+
+- Pharmacies whose websites sit behind a security check can now have their delivery charge and discount offers read too. On a pharmacy's admin page, the "Delivery charge and discounts from the website" box has a new "Check in Chrome window" button. It opens the pharmacy's website in the Chrome window; you complete any "are you human" check there yourself, and the check carries on. As before, anything it finds waits for your approval before it's used.
+
+- Sale prices: when a pharmacy's own website shows a medicine on sale with a crossed-out "was" price, we now record it. The price grid marks that price "Sale", and the "All prices" list shows the old price crossed out next to the current one. Rankings still use the current price only. When the sale ends, the mark disappears at the next price check. No pharmacy we list has a sale running right now, so nothing is marked yet.
+
 - On computers and tablets, the price grid's sideways scrollbar now sits at the bottom of the visible table, next to the up-and-down one. Before, it only appeared after scrolling all the way to the last pharmacy.
 - The grid's heading row (strengths and pack sizes) now stays at the top while you scroll down through the pharmacies.
 - With a mouse, you can now grab the price grid anywhere and drag it sideways to see more columns. The cursor turns into a hand when there's more to see. Letting go after a drag never opens a pharmacy, and a normal click on a price works as before. Discount codes can still be highlighted and copied.

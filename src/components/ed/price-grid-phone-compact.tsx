@@ -8,6 +8,7 @@ import { LinkNote } from "@/components/ed/link-note";
 import { OutboundLink } from "@/components/ed/outbound-link";
 import { CurrentOffer, DispensedBy, GridColumnHeads, PHONE_ROW_LIMIT, PharmacyFacts, PharmacyMeta, RegulatorLink, stickyColumn, TrustpilotLink } from "@/components/ed/price-grid";
 import { PriceChange } from "@/components/ed/price-grid-cell";
+import { WasPrice } from "@/components/ed/was-price";
 import type { ReferralPlacement } from "@/generated/prisma/client";
 import { formatCheckedAgo } from "@/lib/comparison";
 import { formatPence } from "@/lib/money";
@@ -41,13 +42,14 @@ function DetailLine({ cell, label, pricing, placement, rank, partner, providerNa
       <div>
         <p className="font-semibold">{label} × {offer.variant.packQuantity}</p>
         <p className="text-xs text-muted-foreground tabular-nums">{formatPence(total)}{offer.feesVerified ? "" : "*"} total · {formatPence(perTablet)} per tablet{change}</p>
+        {offer.wasPricePence !== null ? <p className="text-xs">Sale: medicine {formatPence(offer.itemPricePence)}, <WasPrice pence={offer.wasPricePence} /></p> : null}
       </div>
       <Button
         size="sm"
         className="rounded-full"
         nativeButton={false}
         render={
-          <OutboundLink offerId={offer.id} placement={placement} partner={partner} rank={rank} layout="compact">
+          <OutboundLink offer={offer} placement={placement} partner={partner} rank={rank} layout="compact">
             View<ArrowUpRight aria-hidden="true" className="size-4" />
             <span className="sr-only"> {label} at {providerName} (opens in a new tab)</span>
           </OutboundLink>
@@ -88,7 +90,7 @@ export function PriceGridPhoneCompact({ grid, caption, sortHref, placement, part
   const pricing = { mode: grid.mode, fees: grid.fees, codes: grid.codes };
   const colSpan = grid.columns.length + 1;
   return (
-    <Table resizable={false}>
+    <Table resizable={false} frameClassName="rounded-xl">
       <TableCaption className="sr-only">{caption}</TableCaption>
       <TableHeader>
         <TableRow>

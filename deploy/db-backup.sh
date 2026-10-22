@@ -23,7 +23,10 @@ stamp="$(date -u +%Y%m%dT%H%M%SZ)"
 target="$BACKUP_DIR/pharma-$stamp.dump"
 partial="$target.partial"
 
-pg_dump --format=custom --no-owner --no-privileges --file="$partial" "$db_url"
+# Only the app's own schema (every table, plus Prisma's migration history, lives in "public"). A
+# managed host adds its own schemas and extensions (Supabase: auth, storage, supabase_vault…) that
+# can't be restored onto an ordinary Postgres server, which made a whole-database dump unrestorable.
+pg_dump --format=custom --no-owner --no-privileges --schema=public --file="$partial" "$db_url"
 # A dump with no table data means something went wrong even if pg_dump exited 0.
 if ! pg_restore --list "$partial" | grep -q "TABLE DATA"; then
   echo "$(date -u +%FT%TZ) backup FAILED: $partial contains no table data" >&2

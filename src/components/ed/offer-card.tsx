@@ -6,10 +6,11 @@ import { FreshnessPill } from "@/components/ed/freshness-pill";
 import { LinkNote } from "@/components/ed/link-note";
 import { OutboundLink } from "@/components/ed/outbound-link";
 import { PriceBar } from "@/components/ed/price-bar";
+import { WasPrice } from "@/components/ed/was-price";
 import Link from "@/components/Link";
 import type { ReferralPlacement } from "@/generated/prisma/client";
 import { availabilityBadgeVariant, availabilityLabels } from "@/lib/catalogue-labels";
-import { feeText, offerSortValue, variantLabel, variantMedicineNote } from "@/lib/comparison";
+import { feeText, offerAnchor, offerSortValue, subscriptionTerms, variantLabel, variantMedicineNote } from "@/lib/comparison";
 import { formatPence } from "@/lib/money";
 import { revealClass, revealStyle } from "@/lib/motion";
 import { cn } from "@/lib/utils";
@@ -30,17 +31,21 @@ export function OfferCard({ offer, now, placement, partner, rank, best, max, sor
   context?: "comparison" | "profile";
 }) {
   const fees = [
-    { label: "Medicine", value: formatPence(offer.itemPricePence) },
+    { label: "Medicine", value: <>{formatPence(offer.itemPricePence)}{offer.wasPricePence !== null ? <WasPrice pence={offer.wasPricePence} className="ml-1 font-normal" /> : null}</> },
     { label: "Delivery", value: feeText(offer.deliveryFeePence, offer.feesVerified) },
     { label: "Consultation", value: feeText(offer.consultationFeePence, offer.feesVerified) },
     ...(offer.otherMandatoryFeesPence > 0 ? [{ label: "Other fees", value: formatPence(offer.otherMandatoryFeesPence) }] : []),
   ];
   const product = `${variantLabel(offer.variant)} · ${variantMedicineNote(offer.variant)}`;
+  const terms = subscriptionTerms(offer);
 
   return (
     <li
+      id={offerAnchor(offer.id)}
+      tabIndex={-1}
       className={cn(
-        "group relative rounded-3xl border bg-card p-5 shadow-(--shadow) transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg sm:p-6",
+        // Arriving from a price in the comparison grid marks the price that was clicked (HashHighlight).
+        "group relative scroll-mt-28 rounded-3xl border bg-card p-5 shadow-(--shadow) transition-all duration-300 outline-none hover:-translate-y-0.5 hover:shadow-lg data-highlighted:ring-2 data-highlighted:ring-primary sm:p-6",
         best ? "border-primary/60 ring-1 ring-primary/30" : "border-border hover:border-primary/40",
         revealClass,
       )}
@@ -65,6 +70,7 @@ export function OfferCard({ offer, now, placement, partner, rank, best, max, sor
             )}
           </h3>
           <p className="mt-0.5 text-sm text-muted-foreground">{context === "profile" ? `${variantMedicineNote(offer.variant)} · ${offer.variant.formulation}` : product}</p>
+          {terms ? <p className="mt-0.5 text-sm font-medium">{terms.full}</p> : null}
           <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs">
             {fees.map((fee) => (
               <div key={fee.label} className="flex gap-1">
@@ -91,7 +97,7 @@ export function OfferCard({ offer, now, placement, partner, rank, best, max, sor
               className="rounded-full px-4 transition-transform active:scale-95"
               nativeButton={false}
               render={
-                <OutboundLink offerId={offer.id} placement={placement} partner={partner} rank={rank}>
+                <OutboundLink offer={offer} placement={placement} partner={partner} rank={rank}>
                   View at pharmacy
                   <ArrowUpRight aria-hidden="true" className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                   <span className="sr-only"> (opens {offer.providerDomain} in a new tab)</span>

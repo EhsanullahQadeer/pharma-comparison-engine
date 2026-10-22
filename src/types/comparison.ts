@@ -83,6 +83,9 @@ export type PublicOffer = {
   providerFacts: PublicProviderFacts;
   variant: PublicVariant;
   itemPricePence: number;
+  // The pharmacy's own crossed-out "was" medicine price while it shows a sale; null otherwise.
+  // Display only: ranking always uses the current price.
+  wasPricePence: number | null;
   deliveryFeePence: number;
   consultationFeePence: number;
   otherMandatoryFeesPence: number;
@@ -93,6 +96,8 @@ export type PublicOffer = {
   feesVerified: boolean;
   availability: Availability;
   purchaseModel: PurchaseModel;
+  // Days between subscription orders as staff recorded it; null when unknown (or one-off).
+  billingPeriodDays: number | null;
   sourceUrl: string;
   checkedAt: Date;
   freshness: FreshnessTier;

@@ -25,6 +25,7 @@ function offer({ id, provider, strength = 50, pack = 8, total, item = total, ver
     providerFacts: { serviceRegions: [], nextDayDelivery: null, discreetPackaging: null, paymentMethods: [], inspectionOutcome: null, inspectionDate: null, trustpilotUrl: null, trustpilotScoreTenths: null, trustpilotReviewCount: null },
     variant: { id: `v-${strength}-${pack}`, ingredient: "SILDENAFIL", brandName: null, strengthMg: strength, formulation: "Film-coated tablet (generic)", packQuantity: pack },
     itemPricePence: item,
+    wasPricePence: null,
     deliveryFeePence: total - item,
     consultationFeePence: 0,
     otherMandatoryFeesPence: 0,
@@ -33,6 +34,7 @@ function offer({ id, provider, strength = 50, pack = 8, total, item = total, ver
     feesVerified: verified,
     availability: outOfStock ? "OUT_OF_STOCK" : "IN_STOCK",
     purchaseModel: "ONE_OFF",
+    billingPeriodDays: null,
     sourceUrl: `https://${provider}.co.uk/p`,
     checkedAt,
     freshness: hoursAgo <= 24 ? "fresh" : "stale",
@@ -178,7 +180,7 @@ test("'With code' prices and ranks by the code price; standard mode ignores code
   assert.equal(withCodes.summaries[0].lowestPence, 800);
 });
 
-test("drawer filters drop offers that fail them; free delivery needs checked fees", () => {
+test("drawer filters drop offers that fail them; free delivery needs checked fees; one-off unless subscriptions are chosen", () => {
   const offers = [
     offer({ id: "oos", provider: "a", total: 500, outOfStock: true }),
     offer({ id: "unchecked-free", provider: "b", total: 600 }),
@@ -186,10 +188,10 @@ test("drawer filters drop offers that fail them; free delivery needs checked fee
     { ...offer({ id: "subscription", provider: "d", total: 800 }), purchaseModel: "RECURRING" as const },
   ];
   const ids = (list: PublicOffer[]) => list.map((entry) => entry.id);
-  assert.deepEqual(ids(filterGridOffers(offers, { inStock: true })), ["unchecked-free", "checked-free", "subscription"]);
+  assert.deepEqual(ids(filterGridOffers(offers, { inStock: true })), ["unchecked-free", "checked-free"]);
   assert.deepEqual(ids(filterGridOffers(offers, { freeDelivery: true })), ["checked-free"]);
   assert.deepEqual(ids(filterGridOffers(offers, { purchaseModel: "RECURRING" })), ["subscription"]);
-  assert.deepEqual(ids(filterGridOffers(offers, {})), ids(offers));
+  assert.deepEqual(ids(filterGridOffers(offers, {})), ["oos", "unchecked-free", "checked-free"]);
 });
 
 test("a row lists the discount 'With code' applies first", () => {

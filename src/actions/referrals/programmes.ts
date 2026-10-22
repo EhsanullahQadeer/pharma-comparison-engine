@@ -99,7 +99,7 @@ export async function setAffiliateProgrammeStatus(providerId: string, status: Af
 
   await prisma.$transaction([
     prisma.affiliateProgramme.update({ where: { id: programme.id }, data: { status, ...(activating ? { activatedAt: new Date() } : {}) } }),
-    ...(linking ? [prisma.provider.update({ where: { id: providerId }, data: { affiliateApproved: true } })] : []),
+    ...(linking ? [prisma.provider.update({ where: { id: providerId }, data: { affiliateApproved: true, partnershipEndedAt: null } })] : []),
   ]);
 
   await recordAuditLog({ actorId: staffUser.id, action: "UPDATE", entityType: "AffiliateProgramme", entityId: programme.id, changes: { status: { from: programme.status, to: status } } });

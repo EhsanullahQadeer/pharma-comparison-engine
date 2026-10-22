@@ -137,7 +137,7 @@ for what's actually built vs. in progress.
    query Prisma directly from a page/component, and never add a REST route
    for internal data** (the exceptions are `src/app/api/discovery` and
    `src/app/api/auth`, which are genuine external/NextAuth integration
-   points, and `src/app/go/[offerId]`, the public outbound-click redirect —
+   points, and `src/app/go/[...path]`, the public outbound-click redirect (`/go/<pharmacy>/<product>/<offer id>`, old `/go/<offer id>` links still work) —
    its data access lives in `src/actions/referrals/outbound-clicks.ts`,
    which is intentionally *not* a `"use server"` module so click-writing
    isn't exposed as a callable endpoint). Actions are colocated by domain

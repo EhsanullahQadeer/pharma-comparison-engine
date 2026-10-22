@@ -3,6 +3,7 @@
 import { Prisma } from "@/generated/prisma/client";
 import { deliveredTotalPence, displayName, freshnessTier, perTabletPence, providerSlug } from "@/lib/comparison";
 import { bestDiscount } from "@/lib/discounts";
+import { saleWasPricePence } from "@/lib/price-collection/was-price";
 import { HISTORY_DAYS, MOVEMENT_WINDOW_DAYS, priceMovement } from "@/lib/price-movement";
 import { prisma } from "@/lib/prisma";
 import { showTrustpilotScores } from "@/lib/trustpilot";
@@ -57,11 +58,13 @@ export async function getPublicOffers(where: { providerId?: string } = {}): Prom
     select: {
       id: true,
       itemPricePence: true,
+      wasPricePence: true,
       deliveryFeePence: true,
       consultationFeePence: true,
       otherMandatoryFeesPence: true,
       availability: true,
       purchaseModel: true,
+      billingPeriodDays: true,
       sourceUrl: true,
       retrievedAt: true,
       priceVerifiedAt: true,
@@ -104,6 +107,8 @@ export async function getPublicOffers(where: { providerId?: string } = {}): Prom
       },
       variant: offer.productVariant,
       itemPricePence: offer.itemPricePence,
+      // Re-checked here too: a staff edit of the price can leave an old "was" price at or below it.
+      wasPricePence: saleWasPricePence(offer.itemPricePence, offer.wasPricePence ?? undefined),
       deliveryFeePence: offer.deliveryFeePence,
       consultationFeePence: offer.consultationFeePence,
       otherMandatoryFeesPence: offer.otherMandatoryFeesPence,
@@ -112,6 +117,7 @@ export async function getPublicOffers(where: { providerId?: string } = {}): Prom
       feesVerified: offer.feeVerifiedAt !== null,
       availability: offer.availability,
       purchaseModel: offer.purchaseModel,
+      billingPeriodDays: offer.purchaseModel === "RECURRING" ? offer.billingPeriodDays : null,
       sourceUrl: offer.sourceUrl,
       checkedAt,
       freshness: freshnessTier(checkedAt, now),

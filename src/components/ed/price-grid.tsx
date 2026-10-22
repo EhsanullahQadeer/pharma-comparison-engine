@@ -1,5 +1,6 @@
 import { ArrowUp, ChevronsUpDown, Tag } from "lucide-react";
 
+import { KeepFocus } from "@/components/common/keep-focus";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/common/table";
 import { FreshnessPill } from "@/components/ed/freshness-pill";
 import { LimitedRows } from "@/components/ed/limited-rows";
@@ -7,7 +8,6 @@ import { LinkNote } from "@/components/ed/link-note";
 import { PharmacyAvatar } from "@/components/ed/pharmacy-avatar";
 import { PriceGridCell } from "@/components/ed/price-grid-cell";
 import Link from "@/components/Link";
-import type { ReferralPlacement } from "@/generated/prisma/client";
 import { formatCheckedAgo } from "@/lib/comparison";
 import { discountHeadline } from "@/lib/discounts";
 import { gridColumnLabel } from "@/lib/price-grid";
@@ -87,7 +87,7 @@ type HeaderProps = { row: PriceGridRow; partner: boolean; now: Date };
 
 function PharmacyHeader({ row, partner, now }: HeaderProps) {
   return (
-    <th scope="row" className={cn(stickyColumn, "z-[5] min-w-40 border-r border-border p-3 text-left align-top font-normal sm:min-w-64")}>
+    <th scope="row" className={cn(stickyColumn, "z-5 min-w-40 border-r border-border p-3 text-left align-top font-normal sm:min-w-64")}>
       <div className="flex items-start gap-3">
         <PharmacyAvatar name={row.providerName} logoUrl={row.providerLogoUrl} size="sm" className="hidden sm:flex" />
         <div className="min-w-0 space-y-1">
@@ -105,7 +105,7 @@ function PharmacyHeader({ row, partner, now }: HeaderProps) {
 
 function SwipePharmacyHeader({ row, partner, now }: HeaderProps) {
   return (
-    <th scope="row" className={cn(stickyColumn, "z-[5] border-r border-border p-2 text-left align-top font-normal")}>
+    <th scope="row" className={cn(stickyColumn, "z-5 border-r border-border p-2 text-left align-top font-normal")}>
       {/* A table cell grows to fit its content; this fixed box keeps the pinned column at 8rem. */}
       <div className="w-28 whitespace-normal">
         <Link href={`/ed/pharmacies/${row.providerSlug}`} className="flex min-h-6 items-center font-semibold wrap-break-word underline-offset-4 hover:underline">{row.providerName}</Link>
@@ -139,6 +139,7 @@ export function GridColumnHeads({ grid, sortHref, className }: { grid: PriceGrid
         <Link
           href={sortHref(column)}
           scroll={false}
+          data-keep-focus={`grid-sort-${column}`}
           className={cn(
             "inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 font-semibold whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-ring",
             sorted ? "bg-foreground text-background" : "text-foreground hover:bg-background",
@@ -166,11 +167,10 @@ const layouts: Record<GridLayout, { table?: string; maxHeight?: string; dragScro
 // One row per pharmacy, one column per strength (or pack size). Server-rendered: sorting is a link
 // to the re-sorted URL, so the whole table is in the HTML. Order comes from the grid alone — partner
 // status is only looked up for the link labels, after the order is fixed.
-export function PriceGridTable({ grid, caption, sortHref, placement, partnerProviderIds, now, layout = "full" }: {
+export function PriceGridTable({ grid, caption, sortHref, partnerProviderIds, now, layout = "full" }: {
   grid: PriceGrid;
   caption: string;
   sortHref: (column: number) => string;
-  placement: ReferralPlacement;
   partnerProviderIds: ReadonlySet<string>;
   now: Date;
   layout?: GridLayout;
@@ -178,14 +178,14 @@ export function PriceGridTable({ grid, caption, sortHref, placement, partnerProv
   const anyPack = grid.pack === "any";
   const pricing = { mode: grid.mode, fees: grid.fees, codes: grid.codes };
   const { table, maxHeight, dragScroll, priceColumn, cell: cellClass, offerColumn, Header } = layouts[layout];
-  const rows = grid.rows.map((row, index) => {
+  const rows = grid.rows.map((row) => {
     const partner = partnerProviderIds.has(row.providerId);
     return (
       <TableRow key={row.providerId} className="hover:bg-transparent">
         <Header row={row} partner={partner} now={now} />
         {row.cells.map((cell, cellIndex) => (
           <TableCell key={grid.columns[cellIndex]} className={cn("p-1.5 align-top", cellClass, grid.columns[cellIndex] === grid.sortColumn && "bg-muted/40")}>
-            <PriceGridCell cell={cell} pricing={pricing} anyPack={anyPack} placement={placement} rank={index + 1} partner={partner} short={layout === "swipe"} layout={layout === "swipe" ? "swipe" : undefined} />
+            <PriceGridCell cell={cell} pricing={pricing} anyPack={anyPack} short={layout === "swipe"} />
           </TableCell>
         ))}
         {offerColumn ? <TableCell className="p-3 align-top whitespace-normal"><CurrentOffer row={row} /></TableCell> : null}
@@ -193,8 +193,8 @@ export function PriceGridTable({ grid, caption, sortHref, placement, partnerProv
     );
   });
   return (
-    <Table resizable={false} maxHeight={maxHeight} dragScroll={dragScroll} scrollLabel={`${caption}. Scroll sideways for more columns.`} className={table}>
-      <TableCaption className="sr-only">{caption}</TableCaption>
+    <Table resizable={false} maxHeight={maxHeight} dragScroll={dragScroll} scrollLabel={`${caption}. Scroll sideways for more columns.`} className={table} frameClassName="rounded-xl">
+      <TableCaption className="sr-only">{caption}<KeepFocus /></TableCaption>
       <TableHeader>
         <TableRow>
           <TableHead scope="col" className={cn(stickyColumn, "left-0 z-20 border-r border-border bg-muted")}>Pharmacy</TableHead>

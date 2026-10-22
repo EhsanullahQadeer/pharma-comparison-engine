@@ -71,6 +71,12 @@ export function filterOffers(offers: PublicOffer[], { ingredient, productType, s
   );
 }
 
+// The offers a ranked list compares: the filters, plus only one way of buying (one-off by default).
+// filterOffers alone leaves an unset plan open, for working out which choices exist.
+export function comparedOffers(offers: PublicOffer[], filters: ComparisonFilters) {
+  return filterOffers(offers, { ...filters, purchaseModel: comparedPurchaseModel(filters.purchaseModel) });
+}
+
 export function summarizeVariants(offers: PublicOffer[]): VariantPriceSummary[] {
   const byVariant = new Map<string, PublicOffer[]>();
   for (const offer of offers) byVariant.set(offer.variant.id, [...(byVariant.get(offer.variant.id) ?? []), offer]);
@@ -91,6 +97,30 @@ const ingredientBySlug = Object.fromEntries(ingredientValues.map((value) => [ing
 export const purchaseModelSlugs: Record<PurchaseModel, string> = { ONE_OFF: "one-off", RECURRING: "subscription" };
 export const publicPurchaseModelLabels: Record<PurchaseModel, string> = { ONE_OFF: "One-off", RECURRING: "Subscription" };
 const purchaseModelBySlug = Object.fromEntries(Object.entries(purchaseModelSlugs).map(([model, slug]) => [slug, model])) as Record<string, PurchaseModel>;
+
+// Prices are only compared within one way of buying (roadmap §4.7): one-off unless the shopper
+// chooses subscriptions, never both in one ranking. One-off is the default, so it has no URL value.
+export const DEFAULT_PURCHASE_MODEL: PurchaseModel = "ONE_OFF";
+
+export function comparedPurchaseModel(purchaseModel: PurchaseModel | undefined) {
+  return purchaseModel ?? DEFAULT_PURCHASE_MODEL;
+}
+
+// How a subscription bills, in the shopper's words (roadmap §4.7: show the real interval and
+// quantity, never call every plan "monthly"). `short` fits a grid cell. Null for a one-off purchase.
+export function subscriptionTerms(offer: Pick<PublicOffer, "purchaseModel" | "billingPeriodDays" | "variant">) {
+  if (offer.purchaseModel === DEFAULT_PURCHASE_MODEL) return null;
+  const interval = offer.billingPeriodDays ? `every ${offer.billingPeriodDays} days` : null;
+  return {
+    full: `Subscription: ${offer.variant.packQuantity} tablets ${interval ?? "per order — the pharmacy doesn't state how often it bills"}`,
+    short: interval ?? "interval not stated",
+  };
+}
+
+function planParam(value: string | string[] | undefined) {
+  const model = typeof value === "string" ? purchaseModelBySlug[value] : undefined;
+  return model === DEFAULT_PURCHASE_MODEL ? undefined : model;
+}
 
 function positiveInt(value: string | string[] | undefined) {
   const parsed = typeof value === "string" ? Number.parseInt(value, 10) : Number.NaN;
@@ -148,7 +178,7 @@ export function parseComparisonFilters(params: Record<string, string | string[] 
     strengthMg: positiveInt(params.strength),
     formulation: slugParam(params.form),
     packQuantity: positiveInt(params.pack),
-    purchaseModel: typeof params.plan === "string" ? purchaseModelBySlug[params.plan] : undefined,
+    purchaseModel: planParam(params.plan),
     sort: params.sort === "total" ? "total" : "tablet",
   };
 }
@@ -212,6 +242,11 @@ export function variantLabel(variant: PublicVariant) {
 // carries the medicine's name in its heading, so it is described as unbranded instead.
 export function variantMedicineNote(variant: PublicVariant) {
   return variantTypeLabel(variant) === "Generic" ? "Unbranded" : `Contains ${ingredientLabels[variant.ingredient].toLowerCase()}`;
+}
+
+// The element id of one price on a pharmacy's page, so a price elsewhere can link straight to it.
+export function offerAnchor(offerId: string) {
+  return `offer-${offerId}`;
 }
 
 export function slugify(text: string) {
