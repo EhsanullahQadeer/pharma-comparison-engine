@@ -2,6 +2,12 @@
 
 ## In Progress
 
+Nothing is being worked on right now.
+
+## Waiting on you
+
+Code-complete work that only needs a live run in your own signed-in browser or terminal (it can't be done by tools).
+
 - **Waiting on you (2026-10-20): discovery runs that need your own signed-in browser.** These six earlier entries (2026-09-18, 09-24 DeepSeek, 09-26 ×2, 09-28 ×2) are code-complete; each only lacks a live run in *your* Chrome/terminal. Tools must not open your signed-in Google/ChatGPT/DeepSeek profiles (it signs them out or gets them flagged), so these can't be finished for you. In order:
   1. **ChatGPT reviewer, The Feel Good Pharmacy (Google sequence 101):** copy the open ChatGPT conversation URL, stop any old workflow, then `npm.cmd run discovery:review-distance-selling -- --source-sequence 101 --resume-chat-url <URL> --limit 1` and check its decision and the 15-second diagnostics.
   2. **Church Pharmacy (1121625) retry:** `npm.cmd run discovery:distance-selling-workflow -- --limit 1` — it should reuse Google sequence 53 and retry only ChatGPT (contradictory output now downgrades to `NEEDS_REVIEW`). Then one more one-candidate run to confirm capture before batches.
@@ -26,6 +32,10 @@
 - M3b remainder (`docs/milestones/04-pharmacy-listing.md`): suggest-a-provider form and pilot run are done (checklist audit 2026-09-26: 66 published pharmacies, 122 published prices). All five discovery sources now have real, live-verified adapters (Companies House, CQC, NHS ODS, NHSBSA, GPhC). Companies House needs a real, working API key **re-entered** (its previous one was accidentally overwritten by a verification test on 2026-09-17, see Done log). GPhC's data-reuse licence is an open, unresolved compliance question the client explicitly chose to accept as risk rather than wait on — needs real legal sign-off before public launch. GPhC will keep showing 0 candidates until the regulator publishes a newer quarterly file (current file's newest registration is 2026-06-14) — not a bug, see 2026-09-17 fix entry.
 
 ## Done
+
+- 2026-10-22: Price grid key redesign (user request: columns looked misaligned). `src/components/ed/price-grid-key.tsx`: 2:1 layout on lg (key box | formulas box + "Before you buy" note), key as a `<dl>` in CSS columns with a fixed 7rem term column, formulas as highlighted rows, same wording split into shorter lines. Checked by screenshots at 1440 (light/dark), 820 and 390px with no page overflow; tsc and eslint pass.
+
+- 2026-10-22: Price grid scrolling (user request). `common/table.tsx` with `maxHeight` no longer nests a vertical box around `ui/table.tsx`'s sideways box: `ui/table.tsx` `Table` takes `container` props and the one container scrolls both ways, so the sideways scrollbar sits on the visible bottom edge and the sticky header actually sticks (before, it stuck to the inner, unbounded box). New opt-in `dragScroll` (hook `src/hooks/useDragScroll.ts`: mouse only, 5px threshold, swallows the click after a drag, ignores presses on `code`/inputs/`[data-no-drag-scroll]`, cancels native link dragging, grab/grabbing cursor only while the table overflows, right-edge fade while more columns are off-screen) and `scrollLabel` (focusable `role="region"` so arrow keys scroll). Turned on for `PriceGridTable` "full" layout (drag) and both layouts (label). Checked with patchright on :3001 (`/go/` requests blocked): drag from a price link scrolls 150px with no popup, plain click still opens, header stays at the box top after scrolling down, ArrowRight scrolls, light/dark fade OK, no page errors. tsc and eslint pass. Not checked: real (non-headless) scrollbar look, Firefox/Safari, `npm run test:a11y`.
 
 - 2026-10-20: Anonymous marketing detail on outbound clicks (started 2026-10-13) — verified live: a request through `/go/[offerId]` saved placement, rank, device (MOBILE), browser/system (Safari/iOS), source page with filters and the price shown; the report's grouping query reads it (test row deleted). Country/region/town stay empty except on Vercel, by design. Not done (needs consent): traffic source/campaign.
 - 2026-10-20: Delivery charges and discounts from pharmacy websites (started 2026-10-01) — closed. Decision (1) settled: approving a charge marks that pharmacy's fees verified; the 9 charges approved earlier were re-applied (529 prices now verified, no fee changed). Found and fixed: the Approve button's transaction hit Prisma's 5s default on ~100-price pharmacies and rolled back — now 120s (`src/actions/price-collection/site-offers.ts`). No suggestions are pending review. Decisions (2) and (3) moved to Next.

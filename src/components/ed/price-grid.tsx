@@ -157,9 +157,10 @@ type GridLayout = "full" | "swipe";
 
 // "full": desktop and tablet. "swipe": phone layout B — about two strength columns per screen that
 // snap into place, a narrow pinned pharmacy column, no offer column, and the first 20 rows.
-const layouts: Record<GridLayout, { table?: string; maxHeight?: string; priceColumn: string; cell?: string; offerColumn: boolean; Header: (props: HeaderProps) => React.ReactNode }> = {
-  full: { table: "min-w-xl", maxHeight: "75vh", priceColumn: "min-w-28", offerColumn: true, Header: PharmacyHeader },
-  swipe: { priceColumn: "min-w-[calc((100vw-2rem-8rem)/2)]", cell: "snap-start", offerColumn: false, Header: SwipePharmacyHeader },
+// "full" also drags sideways with the mouse; the phone layout already swipes.
+const layouts: Record<GridLayout, { table?: string; maxHeight?: string; dragScroll: boolean; priceColumn: string; cell?: string; offerColumn: boolean; Header: (props: HeaderProps) => React.ReactNode }> = {
+  full: { table: "min-w-xl", maxHeight: "75vh", dragScroll: true, priceColumn: "min-w-28", offerColumn: true, Header: PharmacyHeader },
+  swipe: { dragScroll: false, priceColumn: "min-w-[calc((100vw-2rem-8rem)/2)]", cell: "snap-start", offerColumn: false, Header: SwipePharmacyHeader },
 };
 
 // One row per pharmacy, one column per strength (or pack size). Server-rendered: sorting is a link
@@ -176,7 +177,7 @@ export function PriceGridTable({ grid, caption, sortHref, placement, partnerProv
 }) {
   const anyPack = grid.pack === "any";
   const pricing = { mode: grid.mode, fees: grid.fees, codes: grid.codes };
-  const { table, maxHeight, priceColumn, cell: cellClass, offerColumn, Header } = layouts[layout];
+  const { table, maxHeight, dragScroll, priceColumn, cell: cellClass, offerColumn, Header } = layouts[layout];
   const rows = grid.rows.map((row, index) => {
     const partner = partnerProviderIds.has(row.providerId);
     return (
@@ -192,7 +193,7 @@ export function PriceGridTable({ grid, caption, sortHref, placement, partnerProv
     );
   });
   return (
-    <Table resizable={false} maxHeight={maxHeight} className={table}>
+    <Table resizable={false} maxHeight={maxHeight} dragScroll={dragScroll} scrollLabel={`${caption}. Scroll sideways for more columns.`} className={table}>
       <TableCaption className="sr-only">{caption}</TableCaption>
       <TableHeader>
         <TableRow>

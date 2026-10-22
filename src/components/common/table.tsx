@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { usePageTransition } from "@/contexts/transition-context";
 import type { ResolvedColumn } from "@/hooks/table-columns-registry";
+import { useDragScroll } from "@/hooks/useDragScroll";
 import { cn } from "@/lib/utils";
 
 export type SortDirection = "asc" | "desc" | false;
@@ -27,8 +28,12 @@ interface TableProps extends React.ComponentProps<typeof TableRoot> {
   resizable?: boolean;
   /** Makes the header row sticky when the table's scrollable parent has a constrained height. */
   stickyHeader?: boolean;
-  /** Max height of the table container. Enables vertical scroll + sticky header. */
+  /** Max height of the table container. Enables vertical scroll + sticky header. The same box scrolls sideways, so both scrollbars stay on its visible edges. */
   maxHeight?: string;
+  /** Lets a mouse drag the table sideways (grab cursor) and fades the right edge while more columns are off-screen. */
+  dragScroll?: boolean;
+  /** Names the scroll box for screen readers and makes it focusable, so arrow keys scroll it. */
+  scrollLabel?: string;
   /** Column definitions from `useTableColumns`. When provided, the header row is rendered automatically — omit the manual `<TableHeader>` block. */
   columns?: ResolvedColumn[];
   /** Current sort column key (from `useServerTable`). Required when `columns` has sortable entries. */
@@ -54,6 +59,8 @@ function Table({
   resizable = true,
   stickyHeader = true,
   maxHeight,
+  dragScroll = false,
+  scrollLabel,
   className,
   columns,
   sortBy,
@@ -71,6 +78,22 @@ function Table({
   const isEmpty =
     !children || (Array.isArray(children) && children.length === 0);
   const { isPending } = usePageTransition();
+  const { ref: scrollRef, edges } = useDragScroll<HTMLDivElement>(dragScroll);
+  const container = React.useMemo(
+    () => ({
+      ref: scrollRef,
+      style: maxHeight ? { maxHeight } : undefined,
+      tabIndex: scrollLabel ? 0 : undefined,
+      role: scrollLabel ? "region" : undefined,
+      "aria-label": scrollLabel,
+      className: cn(
+        maxHeight && "overflow-y-auto",
+        scrollLabel && "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+        dragScroll && edges.overflow && "cursor-grab data-dragging:cursor-grabbing data-dragging:select-none data-dragging:[&_*]:cursor-grabbing",
+      ),
+    }),
+    [scrollRef, maxHeight, scrollLabel, dragScroll, edges.overflow],
+  );
 
   const table = (
     <TableResizableContext.Provider value={resizable}>
@@ -78,6 +101,7 @@ function Table({
         <TableRoot
           className={className}
           style={style}
+          container={container}
           {...props}
         >
           {columns ? (
@@ -148,18 +172,21 @@ function Table({
     </TableResizableContext.Provider>
   );
 
-  if (maxHeight) {
-    return (
-      <div
-        className="relative w-full overflow-y-auto"
-        style={{ maxHeight }}
-      >
-        {table}
-      </div>
-    );
-  }
+  if (!dragScroll) return table;
 
-  return table;
+  return (
+    <div className="relative">
+      {table}
+      {/* More columns off to the right: fade the edge (stops above the sideways scrollbar). */}
+      <div
+        aria-hidden="true"
+        className={cn(
+          "pointer-events-none absolute top-px right-px bottom-3 w-10 rounded-br-xl bg-linear-to-l from-card to-transparent transition-opacity",
+          edges.overflow && !edges.atEnd ? "opacity-100" : "opacity-0",
+        )}
+      />
+    </div>
+  );
 }
 
 interface TableHeadProps extends React.ComponentProps<"th"> {

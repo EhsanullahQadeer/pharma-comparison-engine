@@ -1,5 +1,14 @@
 # Product updates
 
+## 2026-10-22
+
+- On computers and tablets, the price grid's sideways scrollbar now sits at the bottom of the visible table, next to the up-and-down one. Before, it only appeared after scrolling all the way to the last pharmacy.
+- The grid's heading row (strengths and pack sizes) now stays at the top while you scroll down through the pharmacies.
+- With a mouse, you can now grab the price grid anywhere and drag it sideways to see more columns. The cursor turns into a hand when there's more to see. Letting go after a drag never opens a pharmacy, and a normal click on a price works as before. Discount codes can still be highlighted and copied.
+- A soft fade on the right edge of the grid shows when more columns are hidden off to the side. It disappears once you reach the last column.
+- Keyboard users can tab to the price grid and scroll it with the arrow keys.
+- The explanation section under the price grid has been tidied up. The table key is now a neat two-column list, with each mark or label shown on the left and its meaning beside it. "How prices are worked out" shows the pack-total and per-tablet sums as clear highlighted lines with the rules listed underneath. "Before you buy" stands out as a highlighted note. On phones the three parts stack one after another.
+
 ## 2026-10-20
 
 - The admin Discovery sources page has a new "Add a website for review" box. Paste the address of a pharmacy you've found yourself and it joins the review queue like any other discovered pharmacy, with the name and any GPhC number shown on its homepage. Sites already listed or already waiting for review are spotted, and a site that can't be read automatically is still added for you to check in your browser.
