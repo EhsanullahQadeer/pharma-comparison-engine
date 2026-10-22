@@ -5,6 +5,7 @@ import { useCallback, type FormEvent } from "react";
 
 import { Button } from "@/components/common/button";
 import { Input } from "@/components/common/input";
+import { toolbarButton } from "@/components/ed/price-grid-controls";
 import Link from "@/components/Link";
 import { useRouter } from "@/hooks/useRouter";
 
@@ -27,7 +28,7 @@ export function PriceGridSearch({ baseHref, query }: { baseHref: string; query?:
     <form role="search" onSubmit={onSubmit} className="flex flex-wrap items-center gap-2">
       <label htmlFor="pharmacy-search" className="text-sm font-medium">Search</label>
       <Input id="pharmacy-search" name="q" type="search" defaultValue={query} placeholder="Pharmacy name" maxLength={60} className="h-9 w-56 rounded-full" />
-      <Button type="submit" size="sm" variant="outline" className="rounded-full">
+      <Button type="submit" size="sm" variant="outline" className={toolbarButton}>
         <Search aria-hidden="true" className="size-4" />
         Find
       </Button>

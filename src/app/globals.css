@@ -190,6 +190,40 @@
   }
 }
 
+/* A slim scrollbar with only its thumb showing: no track, no arrow buttons, no corner square. The
+   thumb darkens while the box is hovered. Chrome, Edge and Safari use the ::-webkit- rules; the
+   standard properties are for Firefox only, because once they are set Chrome ignores the ::-webkit-
+   rules and draws its arrow buttons again. */
+@utility scrollbar-thumb-only {
+  --scrollbar-thumb: color-mix(in oklab, var(--muted-foreground) 45%, transparent);
+  &:hover {
+    --scrollbar-thumb: color-mix(in oklab, var(--muted-foreground) 70%, transparent);
+  }
+  @supports not selector(::-webkit-scrollbar) {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+    background: transparent;
+  }
+  &::-webkit-scrollbar-track,
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-button {
+    display: none;
+  }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: var(--scrollbar-thumb);
+  }
+  &:hover::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--muted-foreground) 70%, transparent);
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

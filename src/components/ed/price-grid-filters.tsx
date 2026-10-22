@@ -6,6 +6,7 @@ import { useCallback, useState } from "react";
 import { Button } from "@/components/common/button";
 import { Checkbox } from "@/components/common/checkbox";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/common/sheet";
+import { toolbarButton } from "@/components/ed/price-grid-controls";
 import type { PaymentMethod, PurchaseModel } from "@/generated/prisma/client";
 import { useRouter } from "@/hooks/useRouter";
 import { gridFlagParams, paymentMethodSlugs, publicPurchaseModelLabels, purchaseModelSlugs, slugify, trustpilotMinimums } from "@/lib/comparison";
@@ -86,7 +87,7 @@ export function PriceGridFilters({ baseHref, current, activeCount, showTrustpilo
 
   return (
     <>
-      <Button type="button" size="sm" variant="outline" className="rounded-full" onClick={() => onOpenChange(true)}>
+      <Button type="button" size="sm" variant="outline" className={toolbarButton} onClick={() => onOpenChange(true)}>
         <SlidersHorizontal aria-hidden="true" className="size-4" />
         Filters{activeCount > 0 ? ` (${activeCount})` : ""}
       </Button>

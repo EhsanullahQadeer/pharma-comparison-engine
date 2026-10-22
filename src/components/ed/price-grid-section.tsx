@@ -65,7 +65,7 @@ function QuickFilters({ filters, href }: { filters: ComparisonFilters; href: Hre
             href={href({ [key]: !filters[key] })}
             scroll={false}
             aria-current={filters[key] ? "true" : undefined}
-            className={cn("inline-flex min-h-9 items-center rounded-full border px-4 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-ring", filters[key] ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-muted")}
+            className={cn("inline-flex h-9 items-center rounded-full border px-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring", filters[key] ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-muted")}
           >
             {label}
           </Link>

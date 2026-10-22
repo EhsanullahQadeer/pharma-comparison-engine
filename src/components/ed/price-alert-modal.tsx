@@ -9,6 +9,7 @@ import { Button } from "@/components/common/button";
 import { FormFeilds } from "@/components/common/form";
 import InputField from "@/components/common/input";
 import Modal, { DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/common/modal";
+import { toolbarButton } from "@/components/ed/price-grid-controls";
 import { PublicForm } from "@/components/ed/public-form";
 import Link from "@/components/Link";
 import { formatPence } from "@/lib/money";
@@ -24,7 +25,7 @@ export function PriceAlertModal({ productSlug, productName, options, defaultTarg
   );
   const target = selectOptions.some((option) => option.value === defaultTarget) ? defaultTarget : selectOptions[0]?.value;
   const trigger = useMemo(() => (
-    <Button type="button" size="sm" variant="outline" className="rounded-full">
+    <Button type="button" size="sm" variant="outline" className={toolbarButton}>
       <BellRing aria-hidden="true" className="size-4" />
       Price alert
     </Button>

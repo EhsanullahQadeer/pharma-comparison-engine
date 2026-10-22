@@ -5,6 +5,9 @@ import type { ComparisonFilters, PriceGrid } from "@/types/comparison";
 export type GridProductTab = { slug: string; label: string; group: string; href: string; active: boolean };
 type HrefFor = (patch: Partial<ComparisonFilters>) => string;
 
+// Buttons in the search/filter row: the same 36px pill as the search box and quick-filter chips.
+export const toolbarButton = "h-9 gap-1.5 rounded-full px-4 text-sm";
+
 const chip = "inline-flex items-center rounded-full border px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring";
 const chipStyles = {
   on: "border-primary bg-primary text-primary-foreground",

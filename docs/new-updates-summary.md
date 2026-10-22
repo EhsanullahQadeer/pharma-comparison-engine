@@ -7,6 +7,8 @@
 - With a mouse, you can now grab the price grid anywhere and drag it sideways to see more columns. The cursor turns into a hand when there's more to see. Letting go after a drag never opens a pharmacy, and a normal click on a price works as before. Discount codes can still be highlighted and copied.
 - A soft fade on the right edge of the grid shows when more columns are hidden off to the side. It disappears once you reach the last column.
 - Keyboard users can tab to the price grid and scroll it with the arrow keys.
+- In the search and filter row above the price grid, the Find, Filters, Copy link and Price alert buttons are now the same size as the search box and the In stock, Free delivery and Has a discount buttons. Before, they were noticeably smaller.
+- Scrollbars inside tables are now slim and show only the bar you drag, with no grey track or arrow buttons behind it. The bar gets slightly darker when your mouse is over the table, so it's easy to find. This applies to the price grid and the admin tables.
 - The explanation section under the price grid has been tidied up. The table key is now a neat two-column list, with each mark or label shown on the left and its meaning beside it. "How prices are worked out" shows the pack-total and per-tablet sums as clear highlighted lines with the rules listed underneath. "Before you buy" stands out as a highlighted note. On phones the three parts stack one after another.
 
 ## 2026-10-20

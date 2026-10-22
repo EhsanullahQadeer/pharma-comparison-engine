@@ -4,6 +4,7 @@ import { Check, Link2 } from "lucide-react";
 import { useCallback, useState } from "react";
 
 import { Button } from "@/components/common/button";
+import { toolbarButton } from "@/components/ed/price-grid-controls";
 
 // The grid's whole state is in the URL, so the current address is a link to exactly this view —
 // handy for sharing a particular product, pack and sort in a post or message.
@@ -19,7 +20,7 @@ export function CopyViewLink() {
     }
   }, []);
   return (
-    <Button type="button" size="sm" variant="ghost" className="rounded-full" onClick={copy}>
+    <Button type="button" size="sm" variant="ghost" className={toolbarButton} onClick={copy}>
       {copied ? <Check aria-hidden="true" className="size-4" /> : <Link2 aria-hidden="true" className="size-4" />}
       <span aria-live="polite">{copied ? "Link copied" : "Copy link to this view"}</span>
     </Button>

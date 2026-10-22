@@ -6,7 +6,7 @@ import * as React from "react"
 function Table({ className, container, ...props }: React.ComponentProps<"table"> & { container?: React.ComponentProps<"div"> }) {
   return (
     <div className="relative w-full overflow-hidden rounded-b-xl border border-border bg-card">
-      <div data-slot="table-container" {...container} className={cn("w-full overflow-x-auto [scrollbar-color:color-mix(in_oklab,var(--muted-foreground)_50%,transparent)_transparent] scrollbar-thin", container?.className)}>
+      <div data-slot="table-container" {...container} className={cn("w-full overflow-x-auto scrollbar-thumb-only", container?.className)}>
         <table
           data-slot="table"
           className={cn("w-full caption-bottom text-sm", className)}
