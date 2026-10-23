@@ -6,6 +6,12 @@
 - A pharmacy's prices are now shown as one small table per product, like the main comparison grid, with strengths across and pack sizes down. The best value per tablet is marked, and buttons at the top jump straight to each product. Click any price to open that product on the pharmacy's website.
 - Registration details, delivery information and the "before you order" checklist now sit in a side panel beside the prices instead of in long sections further down. On phones they follow the prices.
 
+- Each price in the comparison grid now shows its delivery charge underneath, for example "incl. £2.90 delivery", or "Free delivery". Where we haven't confirmed a pharmacy's delivery charge yet, it says "Delivery not confirmed" or marks the charge with an asterisk.
+
+- In the price grid, pharmacies with no price for the strength you sorted by now list those that have a price for another strength first, and pharmacies that are out of stock everywhere at the very bottom. Before, these were simply in alphabetical order.
+
+- "How prices are worked out" under the price grid is tidier: on wider screens each name sits beside its formula on one line, and on narrow screens a formula that runs onto a second line lines up under its first word instead of under the "=" sign.
+
 - The price grid's scrollbar now starts below the heading row and stops short of the table's rounded corners. The heading row now runs right to the edge, with no gap beside it, so the top-right corner looks clean.
 
 ## 2026-10-22

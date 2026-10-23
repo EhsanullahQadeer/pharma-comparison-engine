@@ -18,8 +18,8 @@ const keyItems: { term: React.ReactNode; text: string }[] = [
 ];
 
 const formulas = [
-  { term: "Pack total", text: "= medicine + delivery + any consultation or other compulsory fee" },
-  { term: "Per tablet", text: "= pack total ÷ tablets" },
+  { term: "Pack total", text: "medicine + delivery + any consultation or other compulsory fee" },
+  { term: "Per tablet", text: "pack total ÷ tablets" },
 ];
 
 const box = "rounded-xl border border-border bg-card p-5";
@@ -44,11 +44,13 @@ export function PriceGridKey() {
       <div className="grid gap-4">
         <div className={box}>
           <h2 className="font-semibold text-foreground">How prices are worked out</h2>
-          <dl className="mt-4 space-y-2">
+          {/* Label and formula side by side when the box is wide enough, stacked when it isn't. */}
+          <dl className="@container mt-4 space-y-2">
             {formulas.map((formula) => (
-              <div key={formula.term} className="rounded-lg bg-muted px-3 py-2">
+              <div key={formula.term} className="grid gap-x-3 gap-y-0.5 rounded-lg bg-muted px-3 py-2.5 @md:grid-cols-[6rem_minmax(0,1fr)] @md:items-baseline">
                 <dt className={strong}>{formula.term}</dt>
-                <dd>{formula.text}</dd>
+                {/* Hanging indent: a wrapped line starts under the first word, not under the "=". */}
+                <dd className="pl-4 -indent-4"><span className="inline-block w-4 indent-0">=</span>{formula.text}</dd>
               </div>
             ))}
           </dl>

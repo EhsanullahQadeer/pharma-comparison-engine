@@ -89,6 +89,18 @@ test("default sort column is the one with the most prices; rows without a price 
   assert.deepEqual(by100.rows.map((row) => row.providerId), ["b", "a", "c"]);
 });
 
+test("without a price in the ranked column, pharmacies with a price elsewhere come before fully out-of-stock ones", () => {
+  const offers = [
+    offer({ id: "p1", provider: "p", strength: 50, total: 1000 }),
+    offer({ id: "a1", provider: "a", strength: 50, total: 900, outOfStock: true }),
+    offer({ id: "a2", provider: "a", strength: 100, total: 1200, outOfStock: true }),
+    offer({ id: "z1", provider: "z", strength: 25, total: 800 }),
+  ];
+  const grid = buildPriceGrid(offers, { ...total, column: 50 }, now);
+  // a sorts before z by name, but z has an in-stock 25mg price and a has none anywhere.
+  assert.deepEqual(grid.rows.map((row) => row.providerId), ["p", "z", "a"]);
+});
+
 test("verified fees rank first, then price, then a neutral id tie-break", () => {
   const offers = [
     offer({ id: "1", provider: "cheap", total: 500 }),

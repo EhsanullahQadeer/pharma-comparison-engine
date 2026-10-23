@@ -194,14 +194,16 @@ export function buildPriceGrid(offers: PublicOffer[], { pack: requestedPack, mod
   const sortColumn = columns[sortIndex] ?? null;
   const rankBy = compareByValue(value);
 
-  // Pharmacies with an in-stock price in the ranked column first, by price; the rest after, by name.
+  // Pharmacies with an in-stock price in the ranked column first, by price; then those with an
+  // in-stock price in another column; then those with none at all — each of the last two by name.
+  const hasAnyPrice = (row: PriceGridRow) => row.cells.some((cell) => cell.kind === "price");
   const sorted = [...unsortedRows].sort((a, b) => {
     const cellA = a.cells[sortIndex];
     const cellB = b.cells[sortIndex];
     if (cellA?.kind === "price" && cellB?.kind === "price") return rankBy(cellA.offer, cellB.offer);
     if (cellA?.kind === "price") return -1;
     if (cellB?.kind === "price") return 1;
-    return a.providerName.localeCompare(b.providerName) || a.providerId.localeCompare(b.providerId);
+    return Number(hasAnyPrice(b)) - Number(hasAnyPrice(a)) || a.providerName.localeCompare(b.providerName) || a.providerId.localeCompare(b.providerId);
   });
 
   const summaries = summarizeGridColumns(columns, sorted);

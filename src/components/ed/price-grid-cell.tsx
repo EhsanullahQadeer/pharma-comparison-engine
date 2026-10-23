@@ -21,6 +21,15 @@ function secondaryLine(offer: PublicOffer, pricing: GridPricing, anyPack: boolea
   return anyPack ? `${pack} tabs · ${total}` : `${total} for ${pack}`;
 }
 
+// What delivery (and any compulsory fee) adds: "incl." when the big price contains it, "+" under a
+// medicine-only price. A 0 fee is only "Free delivery" once checked — unchecked, it may just be unknown.
+function feeLine(offer: PublicOffer, includedInPrice: boolean) {
+  const feePence = offer.deliveredTotalPence - offer.itemPricePence;
+  if (feePence === 0) return offer.feesVerified ? "Free delivery" : "Delivery not confirmed";
+  const what = offer.consultationFeePence + offer.otherMandatoryFeesPence > 0 ? "delivery & fees" : "delivery";
+  return `${includedInPrice ? "incl." : "+"} ${formatPence(feePence)} ${what}${offer.feesVerified ? "" : "*"}`;
+}
+
 // "↓ 20p" / "↑ 10p" against the previous check — an icon and the amount, never colour alone.
 export function PriceChange({ pence }: { pence: number }) {
   const Icon = pence < 0 ? ArrowDown : ArrowUp;
@@ -45,6 +54,7 @@ function PriceCell({ offer, valuePence, lowest, pricing, anyPack, short = false 
   const code = codeSavingPence(offer, pricing.codes) > 0 ? offer.discounts.find((discount) => discount.id === offer.codeDiscountId) : undefined;
   const price = `${formatPence(valuePence)}${pricing.mode === "tablet" ? " per tablet" : ""}`;
   const terms = subscriptionTerms(offer);
+  const fees = feeLine(offer, pricing.fees);
   return (
     <Link
       href={`/ed/pharmacies/${offer.providerSlug}#${offerAnchor(offer.id)}`}
@@ -57,6 +67,7 @@ function PriceCell({ offer, valuePence, lowest, pricing, anyPack, short = false 
         {formatPence(valuePence)}{offer.feesVerified ? null : "*"}
       </span>
       <span aria-hidden="true" className="text-xs text-muted-foreground tabular-nums">{secondaryLine(offer, pricing, anyPack, short)}</span>
+      <span aria-hidden="true" className="text-xs text-muted-foreground tabular-nums">{fees}</span>
       {code ? <span aria-hidden="true" className="text-xs font-medium">with {code.code ?? "offer"}</span> : null}
       {terms ? <span aria-hidden="true" className="text-xs font-medium">{terms.short}</span> : null}
       <span aria-hidden="true" className="mt-0.5 flex flex-wrap items-center justify-end gap-1.5">
@@ -66,7 +77,7 @@ function PriceCell({ offer, valuePence, lowest, pricing, anyPack, short = false 
         {lowest ? <span className="rounded-full bg-primary px-2 py-0.5 text-[0.6875rem] font-semibold text-primary-foreground">Lowest</span> : null}
       </span>
       <span className="sr-only">
-        {offer.providerName}, {variantProductName(variant)} {variant.strengthMg}mg × {variant.packQuantity}, {price}
+        {offer.providerName}, {variantProductName(variant)} {variant.strengthMg}mg × {variant.packQuantity}, {price}, {fees.replace("*", "")}
         {code ? `, with ${code.code ? `code ${code.code}` : "the pharmacy's offer"} (${code.eligibility})` : ""}
         {offer.feesVerified ? "" : ", indicative: fees not yet verified"}{lowest ? ", lowest in this column" : ""}{movementText(offer)}{saleText(offer)}{terms ? `, ${terms.full}` : ""}: see this price at {offer.providerName}
       </span>
