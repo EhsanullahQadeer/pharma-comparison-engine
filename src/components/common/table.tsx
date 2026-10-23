@@ -82,20 +82,37 @@ function Table({
     !children || (Array.isArray(children) && children.length === 0);
   const { isPending } = usePageTransition();
   const { ref: scrollRef, edges } = useDragScroll<HTMLDivElement>(dragScroll);
+  const insetScrollbar = Boolean(maxHeight) && stickyHeader;
+  // The vertical scrollbar starts below the sticky header (whose height depends on its content)
+  // instead of running beside it into the frame's rounded corner.
+  React.useEffect(() => {
+    const box = scrollRef.current;
+    const head = box?.querySelector("thead");
+    if (!insetScrollbar || !box || !head) return;
+    const measure = () => box.style.setProperty("--scrollbar-inset-top", `${head.offsetHeight}px`);
+    measure();
+    const resize = new ResizeObserver(measure);
+    resize.observe(head);
+    return () => resize.disconnect();
+  }, [insetScrollbar, scrollRef]);
   const container = React.useMemo(
     () => ({
       ref: scrollRef,
-      style: maxHeight ? { maxHeight } : undefined,
+      // The end inset keeps both bars clear of the frame's rounded corners.
+      style: maxHeight ? ({ maxHeight, "--scrollbar-inset-end": "12px" } as React.CSSProperties) : undefined,
       tabIndex: scrollLabel ? 0 : undefined,
       role: scrollLabel ? "region" : undefined,
       "aria-label": scrollLabel,
       className: cn(
         maxHeight && "overflow-y-auto",
-        scrollLabel && "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+        // The scrollbar's strip beside the sticky header gets the header's colour, so the header row
+        // reads edge to edge (the box's own background doesn't scroll, so this strip stays put).
+        insetScrollbar && "bg-[linear-gradient(to_bottom,var(--muted)_var(--scrollbar-inset-top,0px),transparent_var(--scrollbar-inset-top,0px))]",
+        scrollLabel &&"focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
         dragScroll && edges.overflow && "cursor-grab data-dragging:cursor-grabbing data-dragging:select-none data-dragging:[&_*]:cursor-grabbing",
       ),
     }),
-    [scrollRef, maxHeight, scrollLabel, dragScroll, edges.overflow],
+    [scrollRef, maxHeight, insetScrollbar, scrollLabel, dragScroll, edges.overflow],
   );
 
   const table = (

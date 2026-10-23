@@ -1,5 +1,13 @@
 # Product updates
 
+## 2026-10-23
+
+- Pharmacy pages have a new, more compact design, the same for every pharmacy. At the top, one panel shows the pharmacy's name, website, registration number (linked to the official register), when we last checked it, its lowest prices and a "Visit" button. Dr Fox Pharmacy's page is now about a third of its old length.
+- A pharmacy's prices are now shown as one small table per product, like the main comparison grid, with strengths across and pack sizes down. The best value per tablet is marked, and buttons at the top jump straight to each product. Click any price to open that product on the pharmacy's website.
+- Registration details, delivery information and the "before you order" checklist now sit in a side panel beside the prices instead of in long sections further down. On phones they follow the prices.
+
+- The price grid's scrollbar now starts below the heading row and stops short of the table's rounded corners. The heading row now runs right to the edge, with no gap beside it, so the top-right corner looks clean.
+
 ## 2026-10-22
 
 - Clicking a price in the comparison grid now opens that pharmacy's page on our site, scrolled to the price you clicked and outlined, instead of going straight to the pharmacy's website. From there, "View at pharmacy" takes you on to the pharmacy, and that click is counted as before. Shoppers see the pharmacy's registration, delivery details and other prices before they leave.

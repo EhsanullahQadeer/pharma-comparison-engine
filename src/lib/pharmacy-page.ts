@@ -1,25 +1,52 @@
-import { ingredientLabels } from "@/lib/catalogue-labels";
-import { compareOffers, formatShortDate, isRankable, variantLabel, variantProductName } from "@/lib/comparison";
+import { baseFormulation, compareOffers, formatShortDate, isRankable, variantLabel, variantProductName } from "@/lib/comparison";
 import { discountHeadline, providerDiscounts } from "@/lib/discounts";
 import { formatPence } from "@/lib/money";
 import { regulatorRegisterUrls, regulatorTypeLabels } from "@/lib/provider-labels";
 import type { PublicDiscount, PublicOffer, PublicProviderProfile } from "@/types/comparison";
-import type { PharmacyFaq, PharmacyPageModel, PharmacyStep } from "@/types/pharmacy-page";
-
-export const PHARMACY_LAYOUT_COUNT = 10;
+import type { PharmacyFaq, PharmacyPageModel, PharmacyStep, ProfilePriceGrid } from "@/types/pharmacy-page";
 
 // "Cialis, Generic tadalafil and Viagra".
 const listFormatter = new Intl.ListFormat("en-GB", { style: "long", type: "conjunction" });
 
-// Each pharmacy keeps the same layout on every visit (and for search engines): an FNV-1a hash of
-// its slug, not Math.random, so the page is stable, cacheable and hydrates cleanly.
-export function pharmacyLayoutIndex(slug: string) {
-  let hash = 0x811c9dc5;
-  for (let i = 0; i < slug.length; i++) {
-    hash ^= slug.charCodeAt(i);
-    hash = Math.imul(hash, 0x01000193);
-  }
-  return (hash >>> 0) % PHARMACY_LAYOUT_COUNT;
+const STANDARD_FORM = /^(film-coated )?tablets?$/i;
+
+// What tells a grid apart from the product's standard one: an unusual form ("Orodispersible
+// tablet") and any qualifier other than "generic" ("daily dose"). Null for a standard tablet.
+export function formNote(variant: PublicOffer["variant"]) {
+  const base = baseFormulation(variant);
+  const qualifiers = (variant.formulation.match(/\(([^)]*)\)/)?.[1] ?? "").split(",").map((part) => part.trim()).filter((part) => part && !/^generic$/i.test(part));
+  const parts = [STANDARD_FORM.test(base) ? null : base, ...qualifiers].filter(Boolean);
+  return parts.length > 0 ? parts.join(", ") : null;
+}
+
+export const priceCellKey = (strengthMg: number, packQuantity: number) => `${strengthMg}x${packQuantity}`;
+const ascending = (values: number[]) => [...new Set(values)].sort((a, b) => a - b);
+
+// This pharmacy's prices as one grid per product (strengths across, packs down), split by form and
+// by one-off vs subscription. Within a cell, in-stock and cheaper offers come first.
+export function buildProfilePriceGrids(offers: PublicOffer[]): ProfilePriceGrid[] {
+  const groups = Map.groupBy(offers, (offer) => [variantProductName(offer.variant), formNote(offer.variant) ?? "", offer.purchaseModel].join("|"));
+  return [...groups.entries()]
+    .map(([key, group]): ProfilePriceGrid => {
+      const cells: Record<string, PublicOffer[]> = {};
+      for (const offer of [...group].sort((a, b) => Number(isRankable(b)) - Number(isRankable(a)) || a.perTabletPence - b.perTabletPence)) {
+        (cells[priceCellKey(offer.variant.strengthMg, offer.variant.packQuantity)] ??= []).push(offer);
+      }
+      const priced = group.filter(isRankable);
+      const best = priced.length > 1 ? [...priced].sort(compareOffers("tablet"))[0] : null;
+      return {
+        key,
+        product: variantProductName(group[0].variant),
+        formNote: formNote(group[0].variant),
+        subscription: group[0].purchaseModel === "RECURRING",
+        strengths: ascending(group.map((offer) => offer.variant.strengthMg)),
+        packs: ascending(group.map((offer) => offer.variant.packQuantity)),
+        cells,
+        bestValueOfferId: best?.id ?? null,
+        latestCheckAt: new Date(Math.max(...group.map((offer) => offer.checkedAt.getTime()))),
+      };
+    })
+    .sort((a, b) => a.product.localeCompare(b.product) || Number(a.subscription) - Number(b.subscription) || (a.formNote ?? "").localeCompare(b.formNote ?? ""));
 }
 
 function describeDiscount(discount: PublicDiscount) {
@@ -74,7 +101,6 @@ export function buildPharmacyPageModel(provider: PublicProviderProfile, partner:
   const discounts = providerDiscounts(offers);
   const regulatorLabel = regulatorTypeLabels[provider.regulatorType];
   const delivery = deliveryText(offers);
-  const medicines = [...new Set(offers.map((offer) => ingredientLabels[offer.variant.ingredient]))];
   const products = [...new Set(offers.map((offer) => variantProductName(offer.variant)))].sort();
   const latestCheckAt = offers.length > 0 ? new Date(Math.max(...offers.map((offer) => offer.checkedAt.getTime()))) : null;
   const name = provider.name;
@@ -89,12 +115,6 @@ export function buildPharmacyPageModel(provider: PublicProviderProfile, partner:
     `The consultation and purchase happen on ${provider.websiteDomain}, not on this site.`,
   ];
 
-  const steps: PharmacyStep[] = [
-    { title: "Compare the price", body: `Check ${name}'s prices here against every other listed pharmacy.` },
-    { title: "Open the pharmacy's site", body: `The link opens ${provider.websiteDomain} in a new tab. No discount is added by the link.` },
-    { title: "Complete the consultation", body: "Answer the pharmacy's health questions accurately. It decides whether treatment is suitable." },
-  ];
-
   return {
     provider,
     partner,
@@ -103,13 +123,12 @@ export function buildPharmacyPageModel(provider: PublicProviderProfile, partner:
     bestOffer,
     lowestTotalPence: offers.length > 0 ? Math.min(...offers.map((offer) => offer.deliveredTotalPence)) : null,
     latestCheckAt,
-    medicines,
     deliveryText: delivery,
     regulatorLabel,
     registerUrl: regulatorRegisterUrls[provider.regulatorType],
     keyFacts,
-    steps,
     checklist,
     faqs: buildFaqs(provider, partner, discounts, bestOffer, delivery, regulatorLabel),
+    priceGrids: buildProfilePriceGrids(offers),
   };
 }

@@ -11,9 +11,9 @@ function HistoryItem({ offer, points }: { offer: PublicOffer; points: PricePoint
   const values = points.map((point) => point.pence);
   const label = variantLabel(offer.variant);
   return (
-    <li className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4">
+    <li className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3">
       <div className="min-w-0">
-        <p className="font-medium">{label}</p>
+        <p className="text-sm font-medium">{label}</p>
         <p className="text-xs text-muted-foreground tabular-nums">
           Now {formatPence(values.at(-1) ?? 0)} · low {formatPence(Math.min(...values))} · high {formatPence(Math.max(...values))}
         </p>
@@ -37,23 +37,23 @@ export async function PriceHistoryBlock({ offers, pharmacyName }: { offers: Publ
   const unchanged = offers.length - moved.length;
 
   return (
-    <section aria-labelledby="price-history-heading" className="mt-12">
-      <h2 id="price-history-heading" className="text-2xl font-semibold">Price history</h2>
+    <section aria-labelledby="price-history-heading" className="mt-8">
+      <h2 id="price-history-heading" className="text-xl font-semibold tracking-tight">Price history</h2>
       <p className="mt-2 text-sm text-muted-foreground">
         How {pharmacyName}&apos;s prices have moved over the last {HISTORY_DAYS} days (medicine and delivery), from the checks we&apos;ve made of its website.
         {moved.length > 0 && unchanged > 0 ? ` ${unchanged} other price${unchanged === 1 ? " hasn't" : "s haven't"} changed.` : ""}
       </p>
       {moved.length === 0 ? (
-        <p className="mt-5 rounded-2xl border border-dashed border-border bg-card/60 px-5 py-6 text-sm text-muted-foreground">None of {pharmacyName}&apos;s prices have changed in the last {HISTORY_DAYS} days.</p>
+        <p className="mt-3 rounded-xl border border-dashed border-border bg-card/60 px-4 py-3 text-sm text-muted-foreground">None of {pharmacyName}&apos;s prices have changed in the last {HISTORY_DAYS} days.</p>
       ) : (
         <>
-          <ul className="mt-5 grid gap-3 md:grid-cols-2">
+          <ul className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {moved.slice(0, SHOWN).map(({ offer, points }) => <HistoryItem key={offer.id} offer={offer} points={points} />)}
           </ul>
           {moved.length > SHOWN ? (
             <details className="mt-3">
               <summary className="inline-flex min-h-9 cursor-pointer items-center text-sm font-medium underline-offset-4 hover:underline">Show {moved.length - SHOWN} more</summary>
-              <ul className="mt-3 grid gap-3 md:grid-cols-2">
+              <ul className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                 {moved.slice(SHOWN).map(({ offer, points }) => <HistoryItem key={offer.id} offer={offer} points={points} />)}
               </ul>
             </details>

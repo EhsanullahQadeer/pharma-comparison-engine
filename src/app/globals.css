@@ -212,6 +212,15 @@
   &::-webkit-scrollbar-corner {
     background: transparent;
   }
+  /* Optional insets, so a bar can start below a sticky header and stop short of rounded corners
+     (set by common/table.tsx). Firefox has no equivalent; its thin bar stays full length. */
+  &::-webkit-scrollbar-track:vertical {
+    margin-top: var(--scrollbar-inset-top, 0px);
+    margin-bottom: var(--scrollbar-inset-end, 0px);
+  }
+  &::-webkit-scrollbar-track:horizontal {
+    margin-inline: var(--scrollbar-inset-end, 0px);
+  }
   &::-webkit-scrollbar-button {
     display: none;
   }

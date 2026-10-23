@@ -10,13 +10,13 @@ import { WasPrice } from "@/components/ed/was-price";
 import Link from "@/components/Link";
 import type { ReferralPlacement } from "@/generated/prisma/client";
 import { availabilityBadgeVariant, availabilityLabels } from "@/lib/catalogue-labels";
-import { feeText, offerAnchor, offerSortValue, subscriptionTerms, variantLabel, variantMedicineNote } from "@/lib/comparison";
+import { feeText, offerSortValue, subscriptionTerms, variantLabel, variantMedicineNote } from "@/lib/comparison";
 import { formatPence } from "@/lib/money";
 import { revealClass, revealStyle } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import type { ComparisonSort, PublicOffer } from "@/types/comparison";
 
-export function OfferCard({ offer, now, placement, partner, rank, best, max, sort, index, context = "comparison" }: {
+export function OfferCard({ offer, now, placement, partner, rank, best, max, sort, index }: {
   offer: PublicOffer;
   now: Date;
   placement: ReferralPlacement;
@@ -27,8 +27,6 @@ export function OfferCard({ offer, now, placement, partner, rank, best, max, sor
   max: number;
   sort: ComparisonSort;
   index: number;
-  // On a pharmacy's own profile the pharmacy is implied, so the product becomes the title.
-  context?: "comparison" | "profile";
 }) {
   const fees = [
     { label: "Medicine", value: <>{formatPence(offer.itemPricePence)}{offer.wasPricePence !== null ? <WasPrice pence={offer.wasPricePence} className="ml-1 font-normal" /> : null}</> },
@@ -41,11 +39,8 @@ export function OfferCard({ offer, now, placement, partner, rank, best, max, sor
 
   return (
     <li
-      id={offerAnchor(offer.id)}
-      tabIndex={-1}
       className={cn(
-        // Arriving from a price in the comparison grid marks the price that was clicked (HashHighlight).
-        "group relative scroll-mt-28 rounded-3xl border bg-card p-5 shadow-(--shadow) transition-all duration-300 outline-none hover:-translate-y-0.5 hover:shadow-lg data-highlighted:ring-2 data-highlighted:ring-primary sm:p-6",
+        "group relative rounded-3xl border bg-card p-5 shadow-(--shadow) transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg sm:p-6",
         best ? "border-primary/60 ring-1 ring-primary/30" : "border-border hover:border-primary/40",
         revealClass,
       )}
@@ -65,11 +60,9 @@ export function OfferCard({ offer, now, placement, partner, rank, best, max, sor
         ) : null}
         <div className="min-w-0">
           <h3 className="truncate text-lg font-semibold">
-            {context === "profile" ? variantLabel(offer.variant) : (
-              <Link href={`/ed/pharmacies/${offer.providerSlug}`} className="underline-offset-4 hover:underline">{offer.providerName}</Link>
-            )}
+            <Link href={`/ed/pharmacies/${offer.providerSlug}`} className="underline-offset-4 hover:underline">{offer.providerName}</Link>
           </h3>
-          <p className="mt-0.5 text-sm text-muted-foreground">{context === "profile" ? `${variantMedicineNote(offer.variant)} · ${offer.variant.formulation}` : product}</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">{product}</p>
           {terms ? <p className="mt-0.5 text-sm font-medium">{terms.full}</p> : null}
           <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs">
             {fees.map((fee) => (

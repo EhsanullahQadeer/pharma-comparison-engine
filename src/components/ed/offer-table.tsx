@@ -11,27 +11,25 @@ import { WasPrice } from "@/components/ed/was-price";
 import Link from "@/components/Link";
 import type { ReferralPlacement } from "@/generated/prisma/client";
 import { availabilityBadgeVariant, availabilityLabels } from "@/lib/catalogue-labels";
-import { feeText, offerAnchor, subscriptionTerms, variantLabel, variantMedicineNote } from "@/lib/comparison";
+import { feeText, subscriptionTerms, variantLabel, variantMedicineNote } from "@/lib/comparison";
 import { discountHeadline } from "@/lib/discounts";
 import { formatPence } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import type { ComparisonSort, PublicOffer } from "@/types/comparison";
 
-type RowProps = { offer: PublicOffer; now: Date; sort: ComparisonSort; placement: ReferralPlacement; partner: boolean; showOffers: boolean; showRank: boolean; rank?: number; best: boolean };
+type RowProps = { offer: PublicOffer; now: Date; sort: ComparisonSort; placement: ReferralPlacement; partner: boolean; rank?: number; best: boolean };
 
-function OfferRow({ offer, now, sort, placement, partner, showOffers, showRank, rank, best }: RowProps) {
+function OfferRow({ offer, now, sort, placement, partner, rank, best }: RowProps) {
   const terms = subscriptionTerms(offer);
   return (
-    <TableRow id={offerAnchor(offer.id)} tabIndex={-1} className={cn("scroll-mt-28 outline-none data-highlighted:bg-primary/15 data-highlighted:outline-2 data-highlighted:-outline-offset-2 data-highlighted:outline-primary", best && "bg-primary/5 hover:bg-primary/10")}>
-      {showRank ? (
-        <TableCell className="text-center">
+    <TableRow className={cn(best && "bg-primary/5 hover:bg-primary/10")}>
+      <TableCell className="text-center">
           {rank ? (
             <span className={cn("inline-flex size-8 items-center justify-center rounded-full text-sm font-semibold tabular-nums", best ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground")}>
               <span className="sr-only">Rank </span>{rank}
             </span>
           ) : <span className="text-muted-foreground"><span aria-hidden="true">–</span><span className="sr-only">Not ranked</span></span>}
         </TableCell>
-      ) : null}
       <TableCell>
         <div className="flex items-center gap-3">
           <PharmacyAvatar name={offer.providerName} logoUrl={offer.providerLogoUrl} />
@@ -64,11 +62,9 @@ function OfferRow({ offer, now, sort, placement, partner, showOffers, showRank, 
         {!offer.feesVerified && <p className="text-xs text-muted-foreground">Indicative</p>}
       </TableCell>
       <TableCell className={cn("text-right tabular-nums", sort === "tablet" ? "text-base font-semibold" : "font-medium")}>{formatPence(offer.perTabletPence)}</TableCell>
-      {showOffers ? (
-        <TableCell>
-          <OfferDiscountCell offer={offer} />
-        </TableCell>
-      ) : null}
+      <TableCell>
+        <OfferDiscountCell offer={offer} />
+      </TableCell>
       <TableCell>
         <FreshnessPill freshness={offer.freshness} checkedAt={offer.checkedAt} now={now} compact />
         {offer.freshness === "stale" && <p className="mt-1 text-xs text-muted-foreground">May have changed</p>}
@@ -122,7 +118,7 @@ function OfferDiscountCell({ offer }: { offer: PublicOffer }) {
 // Every comparison row in one scannable table; scrolls horizontally on narrow screens. Ranked rows
 // (in stock, by price) come first; `other` rows (out of stock) follow under an "Also listed"
 // divider, unranked. The column the list is ranked by (`sort`) is emphasised.
-export function OfferTable({ ranked, other, now, sort, placement, showRank, showOffers, bestId, label, partnerProviderIds, rankOffset = 0 }: {
+export function OfferTable({ ranked, other, now, sort, placement, bestId, label, partnerProviderIds, rankOffset = 0 }: {
   ranked: PublicOffer[];
   other: PublicOffer[];
   // Ranked rows on earlier pages, so a later page carries on the numbering instead of restarting at 1.
@@ -130,33 +126,30 @@ export function OfferTable({ ranked, other, now, sort, placement, showRank, show
   now: Date;
   sort: ComparisonSort;
   placement: ReferralPlacement;
-  showRank: boolean;
-  // The Offers column links to each pharmacy's page — pointless on that page itself.
-  showOffers: boolean;
   bestId?: string;
   label: string;
   // Pharmacies whose "View" link is labelled as one we may earn from; every row gets a link.
   partnerProviderIds: ReadonlySet<string>;
 }) {
-  const columnCount = 7 + Number(showRank) + Number(showOffers);
+  const columnCount = 9;
   return (
     <Table resizable={false} stickyHeader={false} aria-label={label} className="min-w-4xl" frameClassName="rounded-xl">
       <TableHeader>
         <TableRow>
-          {showRank ? <TableHead className="w-14 text-center">#</TableHead> : null}
+          <TableHead className="w-14 text-center">#</TableHead>
           <TableHead>Pharmacy</TableHead>
           <TableHead className="text-right">Medicine</TableHead>
           <TableHead className="text-right">Delivery</TableHead>
           <TableHead className={cn("text-right", sort === "total" && "text-foreground")}>Total</TableHead>
           <TableHead className={cn("text-right", sort === "tablet" && "text-foreground")}>Per tablet</TableHead>
-          {showOffers ? <TableHead>Offers</TableHead> : null}
+          <TableHead>Offers</TableHead>
           <TableHead>Last checked</TableHead>
           <TableHead className="text-right"><span className="sr-only">Link</span></TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {ranked.map((offer, index) => (
-          <OfferRow key={offer.id} offer={offer} now={now} sort={sort} placement={placement} partner={partnerProviderIds.has(offer.providerId)}showOffers={showOffers} showRank={showRank} rank={rankOffset + index + 1} best={offer.id === bestId} />
+          <OfferRow key={offer.id} offer={offer} now={now} sort={sort} placement={placement} partner={partnerProviderIds.has(offer.providerId)} rank={rankOffset + index + 1} best={offer.id === bestId} />
         ))}
         {other.length > 0 && (
           <TableRow className="hover:bg-transparent">
@@ -167,7 +160,7 @@ export function OfferTable({ ranked, other, now, sort, placement, showRank, show
           </TableRow>
         )}
         {other.map((offer) => (
-          <OfferRow key={offer.id} offer={offer} now={now} sort={sort} placement={placement} partner={partnerProviderIds.has(offer.providerId)}showOffers={showOffers} showRank={showRank} best={false} />
+          <OfferRow key={offer.id} offer={offer} now={now} sort={sort} placement={placement} partner={partnerProviderIds.has(offer.providerId)} best={false} />
         ))}
       </TableBody>
     </Table>

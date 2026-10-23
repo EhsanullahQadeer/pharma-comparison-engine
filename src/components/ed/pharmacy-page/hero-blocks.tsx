@@ -1,16 +1,17 @@
-import { BadgeCheck, Clock3, Store, Tag, Wallet } from "lucide-react";
+import { ArrowRight, BadgeCheck, Clock3, Globe } from "lucide-react";
 
+import { Button } from "@/components/common/button";
 import { PharmacyAvatar } from "@/components/ed/pharmacy-avatar";
+import { VisitAction } from "@/components/ed/pharmacy-page/offer-blocks";
 import Link from "@/components/Link";
-import { formatCheckedAgo, formatShortDate } from "@/lib/comparison";
+import { formatCheckedAgo } from "@/lib/comparison";
 import { formatPence } from "@/lib/money";
-import { revealClass, revealStyle } from "@/lib/motion";
+import { regulatorEntryUrls, regulatorShortLabels } from "@/lib/provider-labels";
 import { cn } from "@/lib/utils";
 import type { PharmacyPageModel } from "@/types/pharmacy-page";
 
-import type { LucideIcon } from "lucide-react";
-
-// Hero-area building blocks shared by the ten pharmacy profile layouts.
+// The pharmacy profile's header area: breadcrumbs, then one compact card with who the pharmacy is,
+// how it's registered, when we last checked it, its headline numbers and the two actions.
 
 export function PharmacyCrumbs({ name, className }: { name: string; className?: string }) {
   return (
@@ -24,104 +25,59 @@ export function PharmacyCrumbs({ name, className }: { name: string; className?: 
   );
 }
 
-export function Eyebrow({ children, className }: { children: string; className?: string }) {
-  return (
-    <p className={cn("flex items-center gap-3 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase", className)}>
-      <span aria-hidden="true" className="h-0.5 w-8 rounded-full bg-primary" />
-      {children}
-    </p>
-  );
-}
-
-// The monj-style logo card: the pharmacy's own logo large on a plain tile, name underneath.
-export function LogoTile({ model, className, showDomain = true }: { model: PharmacyPageModel; className?: string; showDomain?: boolean }) {
-  const { provider } = model;
-  return (
-    <div className={cn("flex flex-col items-center justify-center gap-4 rounded-3xl border border-border bg-card p-8 text-center shadow-(--shadow)", className)}>
-      <PharmacyAvatar name={provider.name} logoUrl={provider.logoUrl} size="xl" />
-      <div>
-        <p className="font-semibold">{provider.name}</p>
-        {showDomain ? <p className="text-sm text-muted-foreground">{provider.websiteDomain}</p> : null}
-      </div>
-    </div>
-  );
-}
-
-export function CheckedStamp({ model, className }: { model: PharmacyPageModel; className?: string }) {
-  if (!model.latestCheckAt) return null;
-  return (
-    <p className={cn("inline-flex flex-wrap items-center gap-2 text-sm text-muted-foreground", className)}>
-      <span aria-hidden="true" className="relative flex size-2.5">
-        <span className="absolute inline-flex size-full rounded-full bg-primary opacity-60 motion-safe:animate-ping" />
-        <span className="relative inline-flex size-2.5 rounded-full bg-primary" />
-      </span>
-      <span className="font-medium text-foreground">Prices and registration checked</span>
-      <time dateTime={model.latestCheckAt.toISOString()}>{formatCheckedAgo(model.latestCheckAt, model.now)} · {formatShortDate(model.latestCheckAt)}</time>
-    </p>
-  );
-}
-
-type Stat = { icon: LucideIcon; label: string; value: string };
-
-function stats(model: PharmacyPageModel): Stat[] {
+function stats(model: PharmacyPageModel) {
   return [
-    { icon: Tag, label: "From, per tablet", value: model.bestOffer ? formatPence(model.bestOffer.perTabletPence) : "—" },
-    { icon: Wallet, label: "Lowest total", value: model.lowestTotalPence !== null ? formatPence(model.lowestTotalPence) : "—" },
-    { icon: Store, label: "Current prices", value: String(model.provider.offers.length) },
-    { icon: BadgeCheck, label: "Discounts on record", value: String(model.discounts.length) },
-    { icon: Clock3, label: "Last checked", value: model.latestCheckAt ? formatCheckedAgo(model.latestCheckAt, model.now) : "—" },
+    { label: "From, per tablet", value: model.bestOffer ? formatPence(model.bestOffer.perTabletPence) : "—" },
+    { label: "Lowest total", value: model.lowestTotalPence !== null ? formatPence(model.lowestTotalPence) : "—" },
+    { label: "Current prices", value: String(model.provider.offers.length) },
+    { label: "Discount codes", value: model.discounts.length > 0 ? String(model.discounts.length) : "None on record" },
   ];
 }
 
-// Headline numbers as tiles ("tiles") or a single divided strip ("strip").
-export function StatStrip({ model, variant = "tiles", className }: { model: PharmacyPageModel; variant?: "tiles" | "strip"; className?: string }) {
-  const items = stats(model);
-  if (variant === "strip") {
-    return (
-      <dl className={cn("grid grid-cols-2 divide-border overflow-hidden rounded-3xl border border-border bg-card sm:grid-cols-3 lg:grid-cols-5 lg:divide-x", className)}>
-        {items.map(({ label, value }) => (
-          <div key={label} className="p-4 sm:p-5">
+const metaLink = "inline-flex items-center gap-1.5 underline-offset-4 hover:text-foreground hover:underline";
+
+export function ProfileHeader({ model, className }: { model: PharmacyPageModel; className?: string }) {
+  const { provider, latestCheckAt, now } = model;
+  return (
+    <header className={cn("rounded-2xl border border-border bg-card p-5 shadow-(--shadow) sm:p-6", className)}>
+      <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+        <div className="flex min-w-0 items-start gap-4">
+          <PharmacyAvatar name={provider.name} logoUrl={provider.logoUrl} size="lg" className="shrink-0" />
+          <div className="min-w-0">
+            <h1 className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl">{provider.name}</h1>
+            <p className="mt-0.5 text-sm text-muted-foreground">Prices, discount codes and registration checks</p>
+            <ul className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
+              <li>
+                <a href={`https://${provider.websiteDomain}`} target="_blank" rel="nofollow noopener noreferrer" className={metaLink}>
+                  <Globe aria-hidden="true" className="size-3.5" />{provider.websiteDomain}<span className="sr-only"> (opens in a new tab)</span>
+                </a>
+              </li>
+              <li>
+                <a href={regulatorEntryUrls[provider.regulatorType](provider.regulatorReference)} target="_blank" rel="noopener noreferrer" className={metaLink}>
+                  <BadgeCheck aria-hidden="true" className="size-3.5 text-primary" />{regulatorShortLabels[provider.regulatorType]} {provider.regulatorReference}<span className="sr-only"> (opens the register in a new tab)</span>
+                </a>
+              </li>
+              {latestCheckAt ? (
+                <li className="inline-flex items-center gap-1.5">
+                  <Clock3 aria-hidden="true" className="size-3.5" />Checked <time dateTime={latestCheckAt.toISOString()}>{formatCheckedAgo(latestCheckAt, now)}</time>
+                </li>
+              ) : null}
+            </ul>
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-col gap-2 sm:flex-row md:flex-col md:items-stretch">
+          <VisitAction model={model} />
+          <Button variant="outline" nativeButton={false} className="h-10 rounded-full px-5" render={<Link href="/ed/compare">Compare with other pharmacies<ArrowRight aria-hidden="true" className="size-4" /></Link>} />
+        </div>
+      </div>
+      <dl className="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-4">
+        {stats(model).map(({ label, value }) => (
+          <div key={label} className="bg-card px-4 py-3">
             <dt className="text-xs text-muted-foreground">{label}</dt>
-            <dd className="mt-1 text-xl font-semibold tabular-nums">{value}</dd>
+            <dd className="mt-0.5 text-lg font-semibold tabular-nums">{value}</dd>
           </div>
         ))}
       </dl>
-    );
-  }
-  return (
-    <dl className={cn("grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5", className)}>
-      {items.map(({ icon: Icon, label, value }, index) => (
-        <div key={label} className={cn("rounded-2xl border border-border bg-card p-4 shadow-(--shadow)", revealClass)} style={revealStyle(index)}>
-          <dt className="flex items-center gap-2 text-xs text-muted-foreground"><Icon aria-hidden="true" className="size-3.5" />{label}</dt>
-          <dd className="mt-2 text-xl font-semibold tabular-nums">{value}</dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
-
-export const tocItems = [
-  { href: "#offers", label: "Offers and discounts" },
-  { href: "#prices", label: "Current prices" },
-  { href: "#checks", label: "Registration checks" },
-  { href: "#full-cost", label: "Check the full cost" },
-  { href: "#faq", label: "Common questions" },
-];
-
-export function TableOfContents({ className }: { className?: string }) {
-  return (
-    <nav aria-label="On this page" className={cn("rounded-3xl border border-border bg-card p-5", className)}>
-      <p className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">On this page</p>
-      <ol className="mt-3 space-y-2 text-sm">
-        {tocItems.map((item, index) => (
-          <li key={item.href}>
-            <a href={item.href} className="flex gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-muted hover:text-foreground">
-              <span className="text-muted-foreground tabular-nums">{index + 1}.</span>
-              {item.label}
-            </a>
-          </li>
-        ))}
-      </ol>
-    </nav>
+    </header>
   );
 }
