@@ -3,6 +3,7 @@
 ## 2026-10-24
 
 - A pharmacy's page now links to its Trustpilot reviews in the "Registration" box, where we've recorded its Trustpilot page. As in the comparison grid, the score itself stays hidden until Trustpilot's terms have been checked.
+- Trustpilot links now have a small green star in front of them, on pharmacy pages and in the price grid, so they're easier to spot.
 - Trustpilot pages are now recorded for 39 of the 82 listed pharmacies, so their links appear on the pharmacy pages and in the price grid. Each one is the pharmacy's own Trustpilot page, either linked from its own website or found by its exact web address. The other 43 (mostly small local pharmacies) don't appear to have one; staff can still add one by hand on the admin pharmacy page.
 
 - The site has a new logo: a "P" whose upright is shaped like a capsule and whose loop is the green ring from the old logo. It appears in the site header and footer and in the staff dashboard, and works in light and dark mode.

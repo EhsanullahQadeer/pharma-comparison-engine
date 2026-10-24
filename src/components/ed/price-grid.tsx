@@ -1,4 +1,4 @@
-import { ArrowUp, ChevronsUpDown, Tag } from "lucide-react";
+import { ArrowUp, ChevronsUpDown, Star, Tag } from "lucide-react";
 
 import { KeepFocus } from "@/components/common/keep-focus";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/common/table";
@@ -39,7 +39,8 @@ export function TrustpilotLink({ row, compact = false }: { row: { providerName: 
   const score = trustpilotScoreTenths === null ? null : formatTrustpilotScore(trustpilotScoreTenths);
   const text = score ? `${compact ? "TP" : "Trustpilot"} ${score}` : "Trustpilot reviews";
   return (
-    <a href={trustpilotUrl} target="_blank" rel="nofollow noopener noreferrer" className="inline-flex min-h-6 items-center text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground">
+    <a href={trustpilotUrl} target="_blank" rel="nofollow noopener noreferrer" className="inline-flex min-h-6 items-center gap-1 text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground">
+      <Star aria-hidden="true" className="size-3.5 shrink-0 fill-primary text-primary" />
       {text}{score && trustpilotReviewCount && !compact ? ` (${trustpilotReviewCount.toLocaleString("en-GB")})` : ""}
       <span className="sr-only"> for {row.providerName} (opens Trustpilot in a new tab)</span>
     </a>
