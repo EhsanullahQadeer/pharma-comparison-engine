@@ -1,5 +1,17 @@
 # Product updates
 
+## 2026-10-24
+
+- A pharmacy's page now links to its Trustpilot reviews in the "Registration" box, where we've recorded its Trustpilot page. As in the comparison grid, the score itself stays hidden until Trustpilot's terms have been checked.
+- Trustpilot pages are now recorded for 39 of the 82 listed pharmacies, so their links appear on the pharmacy pages and in the price grid. Each one is the pharmacy's own Trustpilot page, either linked from its own website or found by its exact web address. The other 43 (mostly small local pharmacies) don't appear to have one; staff can still add one by hand on the admin pharmacy page.
+
+- The site has a new logo: a "P" whose upright is shaped like a capsule and whose loop is the green ring from the old logo. It appears in the site header and footer and in the staff dashboard, and works in light and dark mode.
+- Browser tabs, bookmarks and phone home-screen shortcuts now show the new logo (on a dark green tile) instead of the default placeholder icon.
+
+- On a pharmacy's page, each price in its price tables now also shows the delivery charge included in it, for example "incl. £2.95 delivery", or "Free delivery". Where we haven't confirmed the charge yet, it says "Delivery not confirmed" or marks it with an asterisk, the same as the main comparison grid.
+
+- Clicking a price in the comparison grid now opens the pharmacy's page showing only that product's prices, with the price you clicked highlighted. A "Show all products" link just above brings back the pharmacy's full price list.
+
 ## 2026-10-23
 
 - Pharmacy pages have a new, more compact design, the same for every pharmacy. At the top, one panel shows the pharmacy's name, website, registration number (linked to the official register), when we last checked it, its lowest prices and a "Visit" button. Dr Fox Pharmacy's page is now about a third of its old length.

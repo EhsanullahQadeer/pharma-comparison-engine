@@ -4,6 +4,7 @@ import { ChevronDown, Menu, X, ArrowUpRight } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { LogoMark } from "@/components/common/logo";
 import { ThemeToggle } from "@/components/common/theme-toggle";
 import Link from "@/components/Link";
 import { edHref, navigationGroups } from "@/lib/ed-pages";
@@ -52,7 +53,7 @@ export function SiteHeader() {
       </div>
       <div className="relative mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-4 lg:px-6">
         <Link href="/" onClick={close} className="flex shrink-0 items-center gap-2 font-semibold">
-          <span aria-hidden="true" className="inline-block size-4 rounded-full border-2 border-primary" />
+          <LogoMark />
           <span>{siteConfig.brandShortName}<span className="block text-xs font-normal text-muted-foreground">{siteConfig.tagline}</span></span>
         </Link>
         <nav id="primary-navigation" aria-label="Main navigation" className={cn("absolute inset-x-0 top-full max-h-[70dvh] overflow-y-auto border-b border-border bg-background p-4 lg:static lg:block lg:overflow-visible lg:border-0 lg:p-0", mobileOpen ? "block" : "hidden")}>

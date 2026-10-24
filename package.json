@@ -35,6 +35,7 @@
     "price-alerts:send": "tsx scripts/send-price-alerts.ts",
     "content:seed-article-drafts": "tsx scripts/seed-article-drafts.ts",
     "pharmacies:fetch-logos": "tsx scripts/fetch-pharmacy-logos.ts",
+    "pharmacies:fetch-trustpilot": "tsx scripts/fetch-trustpilot-links.ts",
     "prepare": "husky"
   },
   "dependencies": {

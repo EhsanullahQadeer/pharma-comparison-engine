@@ -49,6 +49,15 @@ export function buildProfilePriceGrids(offers: PublicOffer[]): ProfilePriceGrid[
     .sort((a, b) => a.product.localeCompare(b.product) || Number(a.subscription) - Number(b.subscription) || (a.formNote ?? "").localeCompare(b.formNote ?? ""));
 }
 
+export const gridOffers = (grid: ProfilePriceGrid) => Object.values(grid.cells).flat();
+
+// The grid holding the price a shopper clicked in the comparison grid (?offer=<id>), so the profile
+// can show just that product. Null when nothing was clicked or the price is no longer listed.
+export function gridForOffer(grids: ProfilePriceGrid[], offerId: string | undefined) {
+  if (!offerId) return null;
+  return grids.find((grid) => gridOffers(grid).some((offer) => offer.id === offerId)) ?? null;
+}
+
 function describeDiscount(discount: PublicDiscount) {
   const code = discount.code ? `code ${discount.code}` : "no code needed";
   const expiry = discount.expiresAt ? `, until ${formatShortDate(discount.expiresAt)}` : "";
@@ -95,8 +104,9 @@ const checklist: PharmacyStep[] = [
   { title: "Think about repeat orders", body: "The cheapest first order isn't always the cheapest over several months." },
 ];
 
-export function buildPharmacyPageModel(provider: PublicProviderProfile, partner: boolean, now: Date): PharmacyPageModel {
+export function buildPharmacyPageModel(provider: PublicProviderProfile, partner: boolean, now: Date, focusOfferId?: string): PharmacyPageModel {
   const offers = provider.offers;
+  const priceGrids = buildProfilePriceGrids(offers);
   const bestOffer = [...offers].filter(isRankable).sort(compareOffers("tablet"))[0] ?? null;
   const discounts = providerDiscounts(offers);
   const regulatorLabel = regulatorTypeLabels[provider.regulatorType];
@@ -129,6 +139,7 @@ export function buildPharmacyPageModel(provider: PublicProviderProfile, partner:
     keyFacts,
     checklist,
     faqs: buildFaqs(provider, partner, discounts, bestOffer, delivery, regulatorLabel),
-    priceGrids: buildProfilePriceGrids(offers),
+    priceGrids,
+    focusedGrid: gridForOffer(priceGrids, focusOfferId),
   };
 }

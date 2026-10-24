@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { buildProfilePriceGrids, formNote, priceCellKey } from "@/lib/pharmacy-page";
+import { buildProfilePriceGrids, formNote, gridForOffer, priceCellKey } from "@/lib/pharmacy-page";
 import { publicOffer } from "@/lib/public-offer-fixture";
 import type { PublicOffer } from "@/types/comparison";
 
@@ -48,4 +48,17 @@ test("melts, daily dose and subscriptions get grids of their own; a shared cell 
     ["Viagra", null, true],
   ]);
   assert.deepEqual(grids[0].cells[priceCellKey(50, 4)].map((offer) => offer.id), ["cheap", "sold-out"], "in stock first, nothing dropped");
+});
+
+test("a clicked price picks out its own grid; an unknown or missing offer shows every product", () => {
+  const offers = [
+    publicOffer({ id: "film", providerId: "p", variant: sildenafil(25, 4, "Film-coated tablet") }),
+    publicOffer({ id: "plan", providerId: "p", variant: sildenafil(25, 4, "Film-coated tablet"), purchaseModel: "RECURRING" }),
+    publicOffer({ id: "generic", providerId: "p", variant: sildenafil(50, 4) }),
+  ];
+  const grids = buildProfilePriceGrids(offers);
+  assert.equal(gridForOffer(grids, "plan")?.subscription, true, "the subscription grid, not the one-off Viagra grid");
+  assert.equal(gridForOffer(grids, "generic")?.product, "Generic sildenafil");
+  assert.equal(gridForOffer(grids, "gone"), null);
+  assert.equal(gridForOffer(grids, undefined), null);
 });

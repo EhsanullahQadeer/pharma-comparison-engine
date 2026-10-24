@@ -10,11 +10,13 @@ import { ProductPriceGrid, productGridId } from "@/components/ed/pharmacy-page/p
 import { PriceHistoryBlock } from "@/components/ed/price-history-block";
 import { PublicEmptyState } from "@/components/ed/public-empty-state";
 import { PriceHistorySkeleton } from "@/components/ed/skeletons";
+import Link from "@/components/Link";
 import { formatShortDate } from "@/lib/comparison";
 import { discountHeadline } from "@/lib/discounts";
+import { gridOffers } from "@/lib/pharmacy-page";
 import { cn } from "@/lib/utils";
 import type { PublicDiscount } from "@/types/comparison";
-import type { PharmacyPageModel } from "@/types/pharmacy-page";
+import type { PharmacyPageModel, ProfilePriceGrid } from "@/types/pharmacy-page";
 
 // Offer-area blocks of the pharmacy profile: the visit action, discounts and the price grids.
 
@@ -81,37 +83,50 @@ export function DiscountList({ model, className }: { model: PharmacyPageModel; c
   );
 }
 
-// Every current price as one grid per product, then how the prices have moved.
+const gridTitle = (grid: ProfilePriceGrid) => `${grid.product}${grid.formNote ? ` · ${grid.formNote}` : ""}${grid.subscription ? " · subscription" : ""}`;
+
+// Every current price as one grid per product, then how the prices have moved. Arriving from a
+// comparison-grid price (model.focusedGrid), only that product shows, with a way back to them all.
 export function PricesBlock({ model, className }: { model: PharmacyPageModel; className?: string }) {
-  const { provider, priceGrids } = model;
+  const { provider, priceGrids, focusedGrid } = model;
+  const grids = focusedGrid ? [focusedGrid] : priceGrids;
+  const shownCount = focusedGrid ? gridOffers(focusedGrid).length : provider.offers.length;
   return (
     <section aria-labelledby="prices" className={cn("scroll-mt-28", className)}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 id="prices" className={sectionHeading}>Current prices</h2>
-        {provider.offers.length > 0 ? <p className="text-sm text-muted-foreground">{provider.offers.length} prices · totals include delivery and any fees</p> : null}
+        {shownCount > 0 ? <p className="text-sm text-muted-foreground">{shownCount} price{shownCount === 1 ? "" : "s"} · totals include delivery and any fees</p> : null}
       </div>
       {provider.offers.length === 0 ? (
         <PublicEmptyState icon={PackageSearch} title="Prices are being checked" description={`We haven't published a current price for ${provider.name} yet. Compare other pharmacies in the meantime.`} action={{ href: "/ed/compare", label: "Compare prices" }} />
       ) : (
         <>
-          {priceGrids.length > 1 ? (
+          {focusedGrid && priceGrids.length > 1 ? (
+            <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+              Showing {gridTitle(focusedGrid)} only.
+              <Link href={`/ed/pharmacies/${provider.slug}#prices`} className="font-medium text-foreground underline underline-offset-4 hover:text-primary">
+                Show all {priceGrids.length} products
+              </Link>
+            </p>
+          ) : null}
+          {!focusedGrid && priceGrids.length > 1 ? (
             // One swipeable row on phones, wrapping from sm up.
             <nav aria-label="Products" className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
               {priceGrids.map((grid) => (
                 <a key={grid.key} href={`#${productGridId(grid)}`} className="shrink-0 rounded-full border border-border bg-card px-3 py-1 text-sm whitespace-nowrap transition-colors hover:border-primary/50 hover:bg-muted">
-                  {grid.product}{grid.formNote ? ` · ${grid.formNote}` : ""}{grid.subscription ? " · subscription" : ""}
+                  {gridTitle(grid)}
                 </a>
               ))}
             </nav>
           ) : null}
           <div className="mt-4 space-y-4">
-            {priceGrids.map((grid) => <ProductPriceGrid key={grid.key} grid={grid} model={model} />)}
+            {grids.map((grid) => <ProductPriceGrid key={grid.key} grid={grid} model={model} />)}
           </div>
           <p className="mt-3 text-xs text-muted-foreground">Select a price to open it on {provider.websiteDomain}. * Delivery or consultation fees not yet verified, so the total is indicative.</p>
           {/* A price clicked in the comparison grid links here as #offer-<id>. */}
           <HashHighlight prefix="offer-" />
           <Suspense fallback={<PriceHistorySkeleton />}>
-            <PriceHistoryBlock offers={provider.offers} pharmacyName={provider.name} />
+            <PriceHistoryBlock offers={focusedGrid ? gridOffers(focusedGrid) : provider.offers} pharmacyName={provider.name} />
           </Suspense>
         </>
       )}

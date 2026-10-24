@@ -1,3 +1,4 @@
+import { LogoMark } from "@/components/common/logo";
 import Link from "@/components/Link";
 import { siteConfig } from "@/lib/site-config";
 
@@ -6,7 +7,7 @@ export function SiteFooter() {
     <footer className="border-t border-border px-6 pt-10 pb-32">
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 text-sm text-muted-foreground sm:flex-row">
         <span className="flex items-center gap-2 font-medium text-foreground">
-          <span className="inline-block size-3 rounded-full border-2 border-primary" />
+          <LogoMark className="size-5" />
           {siteConfig.brandShortName}
         </span>
         <p>&copy; {new Date().getFullYear()} {siteConfig.brandShortName}. All rights reserved.</p>

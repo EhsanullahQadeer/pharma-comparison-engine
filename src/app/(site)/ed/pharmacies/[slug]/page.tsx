@@ -53,10 +53,11 @@ export async function generateMetadata(props: PageProps<"/ed/pharmacies/[slug]">
 }
 
 export default async function PharmacyProfilePage(props: PageProps<"/ed/pharmacies/[slug]">) {
-  const { slug } = await props.params;
+  const [{ slug }, { offer }] = await Promise.all([props.params, props.searchParams]);
   const [provider, partnerProviderIds] = await Promise.all([loadProvider(slug), getPartnerProviderIds()]);
   if (!provider) notFound();
-  const model = buildPharmacyPageModel(provider, partnerProviderIds.has(provider.id), new Date());
+  // ?offer=<id>: arrived from a comparison-grid price, so the prices show only that product.
+  const model = buildPharmacyPageModel(provider, partnerProviderIds.has(provider.id), new Date(), typeof offer === "string" ? offer : undefined);
   const breadcrumbs = breadcrumbSchema(model);
 
   return (

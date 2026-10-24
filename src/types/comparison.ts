@@ -136,6 +136,7 @@ export type PublicProviderEvidence = {
 
 export type PublicProviderProfile = PublicProviderSummary & {
   dispensingPartnerName: string | null;
+  trustpilot: PublicTrustpilot;
   evidence: PublicProviderEvidence[];
   offers: PublicOffer[];
 };
@@ -198,6 +199,8 @@ export type PublicProviderFacts = {
   trustpilotScoreTenths: number | null;
   trustpilotReviewCount: number | null;
 };
+
+export type PublicTrustpilot = Pick<PublicProviderFacts, "trustpilotUrl" | "trustpilotScoreTenths" | "trustpilotReviewCount">;
 
 // The grid's filters drawer (and the quick chips above the grid).
 export type GridFilterFlags = {

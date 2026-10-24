@@ -3,6 +3,7 @@
 import { getPublicOffers } from "@/actions/offers/public-offers";
 import { displayName, providerSlug } from "@/lib/comparison";
 import { prisma } from "@/lib/prisma";
+import { showTrustpilotScores } from "@/lib/trustpilot";
 import type { PublicOffer, PublicProviderProfile, PublicProviderSummary } from "@/types/comparison";
 
 const summarySelect = {
@@ -56,13 +57,22 @@ export async function getPublicProvider(slug: string): Promise<PublicProviderPro
   if (!match) return null;
 
   const [provider, offers] = await Promise.all([
-    prisma.provider.findUniqueOrThrow({ where: { id: match.id }, select: { ...summarySelect, dispensingPartnerName: true } }),
+    prisma.provider.findUniqueOrThrow({
+      where: { id: match.id },
+      select: { ...summarySelect, dispensingPartnerName: true, trustpilotUrl: true, trustpilotScoreTenths: true, trustpilotReviewCount: true },
+    }),
     getPublicOffers({ providerId: match.id }),
   ]);
+  const scores = showTrustpilotScores();
 
   return {
     ...toSummary(provider, offers),
     dispensingPartnerName: provider.dispensingPartnerName,
+    trustpilot: {
+      trustpilotUrl: provider.trustpilotUrl,
+      trustpilotScoreTenths: scores ? provider.trustpilotScoreTenths : null,
+      trustpilotReviewCount: scores ? provider.trustpilotReviewCount : null,
+    },
     evidence: provider.evidence,
     offers,
   };

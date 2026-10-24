@@ -23,7 +23,7 @@ function secondaryLine(offer: PublicOffer, pricing: GridPricing, anyPack: boolea
 
 // What delivery (and any compulsory fee) adds: "incl." when the big price contains it, "+" under a
 // medicine-only price. A 0 fee is only "Free delivery" once checked — unchecked, it may just be unknown.
-function feeLine(offer: PublicOffer, includedInPrice: boolean) {
+export function feeLine(offer: PublicOffer, includedInPrice: boolean) {
   const feePence = offer.deliveredTotalPence - offer.itemPricePence;
   if (feePence === 0) return offer.feesVerified ? "Free delivery" : "Delivery not confirmed";
   const what = offer.consultationFeePence + offer.otherMandatoryFeesPence > 0 ? "delivery & fees" : "delivery";
@@ -46,7 +46,7 @@ function movementText(offer: PublicOffer) {
 }
 
 // The whole cell is the link, to this price on the pharmacy's own page with us (client decision
-// 2026-10-22): the shopper sees its registration, delivery and other prices first, and goes on to
+// 2026-10-22), showing only this product there (?offer): the shopper sees its registration, delivery and other prices first, and goes on to
 // the pharmacy from there ("View at pharmacy", counted). Its text reads in full for screen readers,
 // since the visible cell is just numbers and marks.
 function PriceCell({ offer, valuePence, lowest, pricing, anyPack, short = false }: PriceCellProps) {
@@ -57,7 +57,7 @@ function PriceCell({ offer, valuePence, lowest, pricing, anyPack, short = false 
   const fees = feeLine(offer, pricing.fees);
   return (
     <Link
-      href={`/ed/pharmacies/${offer.providerSlug}#${offerAnchor(offer.id)}`}
+      href={`/ed/pharmacies/${offer.providerSlug}?offer=${encodeURIComponent(offer.id)}#${offerAnchor(offer.id)}`}
       className={cn(
         "flex h-full min-h-20 flex-col items-end justify-center gap-0.5 rounded-xl border border-transparent px-3 py-2 text-right transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-ring",
         lowest && "border-primary/40 bg-primary/10 hover:bg-primary/15",

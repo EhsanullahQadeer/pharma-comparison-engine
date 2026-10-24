@@ -1,5 +1,6 @@
 import { Check, ChevronDown, ExternalLink, FileCheck2, Flag, Info, MapPin, ShieldCheck } from "lucide-react";
 
+import { TrustpilotLink } from "@/components/ed/price-grid";
 import Link from "@/components/Link";
 import { formatShortDate } from "@/lib/comparison";
 import { cn } from "@/lib/utils";
@@ -42,6 +43,7 @@ export function RegistrationChecks({ model, className }: { model: PharmacyPageMo
         <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Regulator</dt><dd className="text-right font-medium">{model.regulatorLabel}</dd></div>
         <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Number</dt><dd className="font-medium tabular-nums">{provider.regulatorReference}</dd></div>
         {provider.dispensingPartnerName ? <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Dispensed by</dt><dd className="text-right font-medium">{provider.dispensingPartnerName}</dd></div> : null}
+        {provider.trustpilot.trustpilotUrl ? <div className="flex items-center justify-between gap-3"><dt className="text-muted-foreground">Reviews</dt><dd className="text-right"><TrustpilotLink row={{ providerName: provider.name, providerFacts: provider.trustpilot }} /></dd></div> : null}
         {provider.serviceRegions.length > 0 && (
           <div>
             <dt className="text-muted-foreground">Delivers to</dt>

@@ -40,4 +40,6 @@ export type PharmacyPageModel = {
   checklist: PharmacyStep[];
   faqs: PharmacyFaq[];
   priceGrids: ProfilePriceGrid[];
+  // Arrived from a comparison-grid price: only this product's grid is shown.
+  focusedGrid: ProfilePriceGrid | null;
 };

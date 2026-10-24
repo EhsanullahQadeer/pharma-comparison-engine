@@ -2,6 +2,7 @@
 
 import { AdminIconRail } from "@/components/admin/admin-icon-rail";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { LogoMark } from "@/components/common/logo";
 import Link from "@/components/Link";
 import { siteConfig } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
@@ -17,7 +18,7 @@ export function AdminSidebar({ panelOpen, onTogglePanel }: { panelOpen: boolean;
         )}
       >
         <div className="flex h-16 w-56 shrink-0 items-center px-4">
-          <Link href="/admin" className="truncate font-semibold">{siteConfig.brandShortName}</Link>
+          <Link href="/admin" className="flex min-w-0 items-center gap-2 font-semibold"><LogoMark className="size-6" /><span className="truncate">{siteConfig.brandShortName}</span></Link>
         </div>
         <div className="w-56">
           <AdminNav />

@@ -33,6 +33,8 @@ jobs:
       - run: npx prisma generate
       # A few tests drive a headless browser; patchright only, never playwright (AGENTS.md rule 18).
       - run: npx patchright install --with-deps chromium
+      # Route types (PageProps, LayoutProps) and next-env.d.ts are generated into gitignored files.
+      - run: npx next typegen
       - run: npx tsc --noEmit
       - run: npm run lint
       - run: npm test

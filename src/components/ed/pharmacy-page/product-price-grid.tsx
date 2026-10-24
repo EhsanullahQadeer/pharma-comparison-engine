@@ -2,6 +2,7 @@ import { Badge } from "@/components/common/badge";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/common/table";
 import { FreshnessPill } from "@/components/ed/freshness-pill";
 import { OutboundLink } from "@/components/ed/outbound-link";
+import { feeLine } from "@/components/ed/price-grid-cell";
 import { SalePill, saleText } from "@/components/ed/was-price";
 import { freshnessTier, offerAnchor, slugify, subscriptionTerms, variantLabel } from "@/lib/comparison";
 import { formatPence } from "@/lib/money";
@@ -19,6 +20,7 @@ export const productGridId = (grid: ProfilePriceGrid) => `product-${slugify(grid
 function PriceLink({ offer, best, model }: { offer: PublicOffer; best: boolean; model: PharmacyPageModel }) {
   const soldOut = offer.availability === "OUT_OF_STOCK";
   const terms = subscriptionTerms(offer);
+  const fees = feeLine(offer, true);
   return (
     <OutboundLink
       offer={offer}
@@ -33,6 +35,7 @@ function PriceLink({ offer, best, model }: { offer: PublicOffer; best: boolean; 
     >
       <span aria-hidden="true" className="font-semibold tabular-nums">{formatPence(offer.deliveredTotalPence)}{offer.feesVerified ? null : "*"}</span>
       <span aria-hidden="true" className="text-xs text-muted-foreground tabular-nums">{formatPence(offer.perTabletPence)}/tablet</span>
+      <span aria-hidden="true" className="text-xs text-muted-foreground tabular-nums">{fees}</span>
       {soldOut ? <span aria-hidden="true" className="text-xs font-medium">Out of stock</span> : null}
       {terms ? <span aria-hidden="true" className="text-xs font-medium">{terms.short}</span> : null}
       {best || offer.wasPricePence !== null ? (
@@ -42,7 +45,7 @@ function PriceLink({ offer, best, model }: { offer: PublicOffer; best: boolean; 
         </span>
       ) : null}
       <span className="sr-only">
-        {variantLabel(offer.variant)}: {formatPence(offer.deliveredTotalPence)} in total, {formatPence(offer.perTabletPence)} per tablet
+        {variantLabel(offer.variant)}: {formatPence(offer.deliveredTotalPence)} in total, {formatPence(offer.perTabletPence)} per tablet, {fees.replace("*", "")}
         {offer.feesVerified ? "" : ", indicative: fees not yet verified"}{soldOut ? ", out of stock" : ""}{best ? ", best value per tablet" : ""}{saleText(offer)}{terms ? `, ${terms.full}` : ""}. Opens {offer.providerDomain} in a new tab
       </span>
     </OutboundLink>

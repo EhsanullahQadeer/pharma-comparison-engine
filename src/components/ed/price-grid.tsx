@@ -14,7 +14,7 @@ import { gridColumnLabel } from "@/lib/price-grid";
 import { inspectionOutcomeLabels, regulatorEntryUrls, regulatorShortLabels } from "@/lib/provider-labels";
 import { formatTrustpilotScore } from "@/lib/trustpilot";
 import { cn } from "@/lib/utils";
-import type { PriceGrid, PriceGridRow } from "@/types/comparison";
+import type { PriceGrid, PriceGridRow, PublicTrustpilot } from "@/types/comparison";
 
 // The pinned first column: it stays in view while the strengths scroll sideways.
 export const stickyColumn = "sticky left-0 bg-card";
@@ -33,7 +33,7 @@ const monthFormatter = new Intl.DateTimeFormat("en-GB", { month: "short", year: 
 
 // Trustpilot: a link to the pharmacy's own Trustpilot page, with the score only while scores are
 // switched on (it is null otherwise).
-export function TrustpilotLink({ row, compact = false }: { row: PriceGridRow; compact?: boolean }) {
+export function TrustpilotLink({ row, compact = false }: { row: { providerName: string; providerFacts: PublicTrustpilot }; compact?: boolean }) {
   const { trustpilotUrl, trustpilotScoreTenths, trustpilotReviewCount } = row.providerFacts;
   if (!trustpilotUrl) return null;
   const score = trustpilotScoreTenths === null ? null : formatTrustpilotScore(trustpilotScoreTenths);
